@@ -9,10 +9,6 @@ export default async function AdminDashboardPage() {
 
   return (
     <div style={{ padding: '2rem' }}>
-      <div style={{ marginBottom: '2rem' }}>
-        <h1>Admin Dashboard</h1>
-        <p>Welcome, {session?.user?.email}</p>
-      </div>
       <AdminDashboard />
     </div>
   );
