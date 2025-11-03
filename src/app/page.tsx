@@ -30,15 +30,53 @@
 // }
 
 
+// import { LoginForm } from '@/components/forms/loginform';
+
+// // This is the default export that Next.js will render for the root route ('/')
+// export default function LoginPage() {
+//   return (
+
+       
+//         <LoginForm />
+
+
+//   );
+// }
+
+
+// In: src/app/page.tsx
+
+'use client'; // Required to use hooks like useSearchParams
+
+import { useSearchParams } from 'next/navigation';
 import { LoginForm } from '@/components/forms/loginform';
 
 // This is the default export that Next.js will render for the root route ('/')
-export default function LoginPage() {
+export default function HomePage() {
+  const searchParams = useSearchParams();
+  const error = searchParams.get('error');
+
+  // This logic checks the URL for our specific error and creates a message
+  const errorMessage =
+    error === "OAuthAccountNotLinked"
+      ? "This email is already registered. Please sign in with your original method."
+      : null;
+
   return (
+    <div>
+      {/* 
+        This new div will only appear at the top of your homepage 
+        when the specific sign-in error is in the URL.
+      */}
+      {errorMessage && (
+        <div className="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 w-full max-w-md mx-auto my-4 rounded-md" role="alert">
+          <p className="font-bold">Sign-in Error</p>
+          <p>{errorMessage}</p>
+        </div>
+      )}
 
-       
-        <LoginForm />
-
-
+      {/* This renders your existing LoginForm component */}
+      <LoginForm />
+    </div>
   );
 }

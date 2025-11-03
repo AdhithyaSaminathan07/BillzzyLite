@@ -1,116 +1,27 @@
-// // src/lib/auth.ts
-
-// import { NextAuthOptions } from "next-auth";
-// import { AdapterUser } from "next-auth/adapters";
-// import { MongoDBAdapter } from "@auth/mongodb-adapter";
-// import GoogleProvider from "next-auth/providers/google";
-// import CredentialsProvider from "next-auth/providers/credentials";
-
-// import { clientPromise } from "@/lib/mongodb";
-// import dbConnect from "@/lib/mongodb";
-// import User from "@/models/User";
-// import bcrypt from 'bcryptjs';
-
-// // --- TYPE GUARD FUNCTION ---
-// // This function checks if the 'user' object has our custom 'role' property.
-// // It's the most reliable way to let TypeScript know the shape of the object.
-// function isCustomUser(user: AdapterUser | { role: 'user' | 'admin', id: string }): user is { role: 'user' | 'admin', id: string } {
-//   return 'role' in user;
-// }
-
-// export const authOptions: NextAuthOptions = {
-//   adapter: MongoDBAdapter(clientPromise),
-
-//   providers: [
-//     GoogleProvider({
-//       clientId: process.env.GOOGLE_CLIENT_ID as string,
-//       clientSecret: process.env.GOOGLE_CLIENT_SECRET as string,
-//     }),
-//     CredentialsProvider({
-//       name: 'Credentials',
-//       credentials: {
-//         email: { label: "Email", type: "email" },
-//         password: { label: "Password", type: "password" }
-//       },
-//       async authorize(credentials) {
-//         if (!credentials) return null;
-
-//         if (
-//           credentials.email === 'Techvaseegrah2025@gmail.com' &&
-//           credentials.password === 'Vaseegrah1234'
-//         ) {
-//           return { id: 'master-admin-01', email: 'Techvaseegrah2025@gmail.com', role: 'admin' };
-//         }
-        
-//         await dbConnect();
-//         const user = await User.findOne({ email: credentials.email }).select('+password');
-//         if (!user || !user.password) return null;
-        
-//         const isPasswordCorrect = await bcrypt.compare(credentials.password, user.password);
-//         if (!isPasswordCorrect) return null;
-
-//         return { id: user._id.toString(), email: user.email, role: user.role };
-//       }
-//     })
-//   ],
-//   session: {
-//     strategy: "jwt",
-//   },
-//   callbacks: {
-//     async jwt({ token, user }) {
-//       if (user) {
-//         // --- USING THE TYPE GUARD ---
-//         if (isCustomUser(user)) {
-//           // If the type guard returns true, TypeScript now KNOWS
-//           // that user.id and user.role exist.
-//           token.id = user.id;
-//           token.role = user.role;
-//         } else {
-//           // This block is for the Google user (AdapterUser).
-//           // We look them up in the DB to get their role.
-//           await dbConnect();
-//           const dbUser = await User.findOne({ email: user.email });
-//           if (dbUser) {
-//             token.id = dbUser._id.toString();
-//             token.role = dbUser.role;
-//           }
-//         }
-//       }
-//       return token;
-//     },
-//     async session({ session, token }) {
-//       if (session.user) {
-//         session.user.id = token.id;
-//         session.user.role = token.role;
-//       }
-//       return session;
-//     },
-//   },
-//   pages: {
-//     signIn: '/login',
-//   },
-//   secret: process.env.NEXTAUTH_SECRET,
-// };
-
-
 // src/lib/auth.ts
 
 import { NextAuthOptions } from "next-auth";
 import { MongoDBAdapter } from "@auth/mongodb-adapter";
 import GoogleProvider from "next-auth/providers/google";
 import CredentialsProvider from "next-auth/providers/credentials";
+import bcrypt from 'bcryptjs';
 
 import { clientPromise } from "@/lib/mongodb";
 import dbConnect from "@/lib/mongodb";
 import User from "@/models/User";
-import bcrypt from 'bcryptjs';
 
 export const authOptions: NextAuthOptions = {
+  // Use MongoDB to store user and account linking information
   adapter: MongoDBAdapter(clientPromise),
+
+  // Configure authentication providers
   providers: [
     GoogleProvider({
       clientId: process.env.GOOGLE_CLIENT_ID as string,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET as string,
+      // This setting gracefully handles when a user tries to sign in with Google
+      // using an email that is already registered with a password.
+      allowDangerousEmailAccountLinking: true,
     }),
     CredentialsProvider({
       name: 'Credentials',
@@ -118,67 +29,83 @@ export const authOptions: NextAuthOptions = {
         email: { label: "Email", type: "email" },
         password: { label: "Password", type: "password" }
       },
+      // This function contains the logic to verify a user's password.
       async authorize(credentials) {
-        if (!credentials) return null;
+        // We wrap everything in a try...catch block to find hidden errors.
+        try {
+          if (!credentials) return null;
 
-        if (
-          credentials.email === 'Techvaseegrah2025@gmail.com' &&
-          credentials.password === 'Vaseegrah1234'
-        ) {
-          return { id: 'master-admin-01', email: 'Techvaseegrah2025@gmail.com', role: 'admin' };
+          // Your master admin check using environment variables.
+          if (
+            credentials.email === process.env.ADMIN_EMAIL &&
+            credentials.password === process.env.ADMIN_PASSWORD
+          ) {
+            console.log("✅ Master admin credentials matched.");
+            return { id: 'master-admin-01', email: process.env.ADMIN_EMAIL, role: 'admin' };
+          }
+          
+          // Logic for regular users stored in the database.
+          await dbConnect();
+          const user = await User.findOne({ email: credentials.email }).select('+password');
+          
+          if (!user || !user.password) {
+            console.log("❌ Authorize failed: User not found or has no password.");
+            return null;
+          }
+          
+          const isPasswordCorrect = await bcrypt.compare(credentials.password, user.password);
+          if (!isPasswordCorrect) {
+            console.log("❌ Authorize failed: Incorrect password.");
+            return null;
+          }
+
+          console.log("✅ Database user login successful.");
+          return { id: user._id.toString(), email: user.email, role: user.role, tenantId: user.tenantId };
+
+        } catch (error) {
+          // THIS IS THE MOST IMPORTANT PART FOR DEBUGGING.
+          // If anything crashes, it will be printed in your server terminal.
+          console.error("🔥 UNEXPECTED ERROR IN AUTHORIZE FUNCTION 🔥", error);
+          return null;
         }
-        
-        await dbConnect();
-        const user = await User.findOne({ email: credentials.email }).select('+password');
-        if (!user || !user.password) return null;
-        
-        const isPasswordCorrect = await bcrypt.compare(credentials.password, user.password);
-        if (!isPasswordCorrect) return null;
-
-        return { id: user._id.toString(), email: user.email, role: user.role };
       }
     })
   ],
+
   session: { strategy: "jwt" },
-  
-  // ===================================================================
-  // THIS IS THE FINAL FIX FOR THE ESLINT ERRORS
-  // ===================================================================
+
+  // Callbacks are used to control the session token.
   callbacks: {
+    // The 'jwt' callback adds information (like role and tenantId) to the token.
     async jwt({ token, user }) {
       if (user) {
-        // We tell ESLint to ignore the 'any' type on this specific line
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const userWithRole = user as any;
-
+        // This 'user' object comes from the 'authorize' function or Google.
+        const userWithRole = user as { id: string; role: string; tenantId?: string };
         token.id = userWithRole.id;
-        if (userWithRole.role) {
-          token.role = userWithRole.role;
-        } else {
-          await dbConnect();
-          const dbUser = await User.findOne({ email: userWithRole.email });
-          if (dbUser) {
-            token.role = dbUser.role;
-          }
-        }
+        token.role = userWithRole.role;
+        token.tenantId = userWithRole.tenantId; // This is undefined for admin, which is correct.
       }
       return token;
     },
+    // The 'session' callback makes the token information available to the front-end.
     async session({ session, token }) {
-      // We do the same thing here for the other two errors
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const sessionToken = token as any;
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const sessionUser = session.user as any;
-
-      if (sessionUser && sessionToken) {
-        sessionUser.id = sessionToken.id;
-        sessionUser.role = sessionToken.role;
+      if (session.user && token) {
+        const sessionUser = session.user as { id?: string; role?: string; tenantId?: string };
+        sessionUser.id = token.id as string;
+        sessionUser.role = token.role as string;
+        sessionUser.tenantId = token.tenantId as string | undefined;
       }
       return session;
     },
   },
   
-  pages: { signIn: '/login' },
+  // This tells NextAuth where your login pages are.
+  // Your main login is at '/', and your admin login is at '/admin'.
+  // The middleware will handle sending users to the right place.
+  pages: { 
+    signIn: '/',
+    error: '/',
+  },
+
   secret: process.env.NEXTAUTH_SECRET,
 };
