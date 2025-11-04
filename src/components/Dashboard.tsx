@@ -459,27 +459,31 @@ export default function Dashboard() {
 
   // --- EFFECTS ---
   useEffect(() => {
+    if (status === "loading") {
+      setIsSalesLoading(true);
+      setIsSummaryLoading(true);
+      return;
+    }
+
     if (status !== "authenticated") {
       setIsSalesLoading(false);
       setIsSummaryLoading(false);
       return;
     }
+
     fetchSales();
-    const salesInterval = setInterval(fetchSales, REFETCH_INTERVAL);
-    return () => clearInterval(salesInterval);
-  }, [status, fetchSales]);
-
-  useEffect(() => {
-    if (status !== "authenticated") {
-      setIsSummaryLoading(false);
-      return;
-    }
     fetchInventorySummary();
-    const summaryInterval = setInterval(fetchInventorySummary, REFETCH_INTERVAL);
-    return () => clearInterval(summaryInterval);
-  }, [status, fetchInventorySummary]);
 
-  // --- UI STATES ---
+    const salesInterval = setInterval(fetchSales, REFETCH_INTERVAL);
+    const summaryInterval = setInterval(fetchInventorySummary, REFETCH_INTERVAL);
+
+    return () => {
+      clearInterval(salesInterval);
+      clearInterval(summaryInterval);
+    };
+  }, [status, fetchSales, fetchInventorySummary]);
+
+  // Handle loading state
   if (status === "loading") {
     return (
       <div className="h-full bg-gray-50 overflow-y-auto p-2.5 pb-20">

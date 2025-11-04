@@ -10,15 +10,39 @@ import { clientPromise } from "@/lib/mongodb";
 import dbConnect from "@/lib/mongodb";
 import User from "@/models/User";
 
+// Validate critical environment variables
+const validateEnvVars = () => {
+  const requiredVars = [
+    'NEXTAUTH_SECRET',
+    'GOOGLE_CLIENT_ID',
+    'GOOGLE_CLIENT_SECRET',
+    'MONGODB_URI'
+  ];
+  
+  const missingVars = requiredVars.filter(varName => !process.env[varName]);
+  
+  if (missingVars.length > 0) {
+    console.warn('Missing environment variables:', missingVars);
+    // In development, we'll throw an error
+    // In production, we'll log but continue (to avoid crashing the app)
+    if (process.env.NODE_ENV === 'development') {
+      throw new Error(`Missing required environment variables: ${missingVars.join(', ')}`);
+    }
+  }
+};
+
+// Run validation
+validateEnvVars();
+
 export const authOptions: NextAuthOptions = {
   // Use MongoDB to store user and account linking information
-  adapter: MongoDBAdapter(clientPromise),
+  adapter: process.env.MONGODB_URI ? MongoDBAdapter(clientPromise) : undefined,
 
   // Configure authentication providers
   providers: [
     GoogleProvider({
-      clientId: process.env.GOOGLE_CLIENT_ID as string,
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET as string,
+      clientId: process.env.GOOGLE_CLIENT_ID || '',
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET || '',
       // Remove allowDangerousEmailAccountLinking to prevent conflicts
       // This setting can cause issues with account linking in production
     }),
