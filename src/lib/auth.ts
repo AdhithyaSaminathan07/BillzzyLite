@@ -19,9 +19,8 @@ export const authOptions: NextAuthOptions = {
     GoogleProvider({
       clientId: process.env.GOOGLE_CLIENT_ID as string,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET as string,
-      // This setting gracefully handles when a user tries to sign in with Google
-      // using an email that is already registered with a password.
-      allowDangerousEmailAccountLinking: true,
+      // Remove allowDangerousEmailAccountLinking to prevent conflicts
+      // This setting can cause issues with account linking in production
     }),
     CredentialsProvider({
       name: 'Credentials',
@@ -77,13 +76,35 @@ export const authOptions: NextAuthOptions = {
   // Callbacks are used to control the session token.
   callbacks: {
     // The 'jwt' callback adds information (like role and tenantId) to the token.
-    async jwt({ token, user }) {
-      if (user) {
-        // This 'user' object comes from the 'authorize' function or Google.
+    async jwt({ token, user, account }) {
+      // For Google login, we need to create or find the user in our database
+      if (account && account.type === "oauth" && user) {
+        // Check if user already exists in our database
+        await dbConnect();
+        let existingUser = await User.findOne({ email: user.email });
+        
+        // If user doesn't exist, create a new tenant user
+        if (!existingUser) {
+          const newUser = new User({
+            email: user.email,
+            name: user.name,
+            role: 'tenant', // Default role for Google signups
+            tenantId: null, // Will be set when tenant creates their subdomain
+          });
+          existingUser = await newUser.save();
+        }
+        
+        // Add user info to token
+        token.id = existingUser._id.toString();
+        token.role = existingUser.role;
+        token.tenantId = existingUser.tenantId;
+      }
+      // For credentials login
+      else if (user) {
         const userWithRole = user as { id: string; role: string; tenantId?: string };
         token.id = userWithRole.id;
         token.role = userWithRole.role;
-        token.tenantId = userWithRole.tenantId; // This is undefined for admin, which is correct.
+        token.tenantId = userWithRole.tenantId;
       }
       return token;
     },

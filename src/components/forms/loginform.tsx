@@ -19,16 +19,19 @@ export function LoginForm() {
   const handleGoogleSignIn = async () => {
     setIsLoading(true);
     try {
-      // For Vercel deployments, we need to handle the callback URL properly
-      const callbackUrl = '/dashboard';
-      
-      const result = await signIn('google', { 
-        callbackUrl,
-        redirect: true
-      });
+      // Use the standard NextAuth redirect without specifying callbackUrl
+      // This allows NextAuth to handle the redirect properly
+      const result = await signIn('google');
       
       // Log the result for debugging
       console.log('Google sign-in result:', result);
+      
+      // If there's an error, stop loading
+      if (result?.error) {
+        console.error('Google sign-in error:', result.error);
+        setIsLoading(false);
+      }
+      // If there's no error, the redirect should happen automatically
     } catch (error) {
       console.error('Google sign-in error:', error);
       setIsLoading(false);
