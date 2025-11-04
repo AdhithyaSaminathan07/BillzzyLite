@@ -438,21 +438,29 @@ export default function Dashboard() {
     }
   }, []);
 
-  // Combined Effect to handle data fetching
+  // --- Effects to Orchestrate Fetching ---
+  // Effect for Sales Data: re-runs when session or period changes.
   useEffect(() => {
     if (status !== 'authenticated') {
       setIsSalesLoading(false);
-      setIsSummaryLoading(false);
       return;
     }
     fetchSales();
-    fetchInventorySummary();
-    const interval = setInterval(() => {
-        fetchSales();
-        fetchInventorySummary();
-    }, REFETCH_INTERVAL);
+    const interval = setInterval(fetchSales, REFETCH_INTERVAL);
     return () => clearInterval(interval);
-  }, [status, fetchSales, fetchInventorySummary]);
+  }, [status, fetchSales]);
+
+  // Effect for Inventory Data: re-runs only when session changes.
+  useEffect(() => {
+    if (status !== 'authenticated') {
+      setIsSummaryLoading(false);
+      return;
+    }
+    fetchInventorySummary();
+    const interval = setInterval(fetchInventorySummary, REFETCH_INTERVAL);
+    return () => clearInterval(interval);
+  }, [status, fetchInventorySummary]);
+
 
   // --- Render Logic ---
   if (status === 'loading') {
