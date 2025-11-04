@@ -10,30 +10,6 @@ import { clientPromise } from "@/lib/mongodb";
 import dbConnect from "@/lib/mongodb";
 import User from "@/models/User";
 
-// Function to get the proper base URL for different environments
-function getBaseUrl() {
-  if (typeof window !== 'undefined') {
-    // Client-side
-    return window.location.origin;
-  }
-  
-  // Server-side
-  if (process.env.NEXT_PUBLIC_BASE_URL) {
-    return process.env.NEXT_PUBLIC_BASE_URL;
-  }
-  
-  if (process.env.VERCEL_URL) {
-    return `https://${process.env.VERCEL_URL}`;
-  }
-  
-  if (process.env.NETLIFY_URL) {
-    return `https://${process.env.NETLIFY_URL}`;
-  }
-  
-  // Default for local development
-  return 'http://localhost:3000';
-}
-
 export const authOptions: NextAuthOptions = {
   // Use MongoDB to store user and account linking information
   adapter: MongoDBAdapter(clientPromise),
@@ -132,4 +108,9 @@ export const authOptions: NextAuthOptions = {
   },
 
   secret: process.env.NEXTAUTH_SECRET,
+  
+  // Vercel-specific configuration
+  ...(process.env.VERCEL_URL && {
+    redirectProxyUrl: `https://${process.env.VERCEL_URL}`,
+  }),
 };

@@ -248,12 +248,10 @@ export async function middleware(req: NextRequest) {
       // Allow access to admin login page
     } else if (isAdmin && pathname === '/') {
       // Only redirect admins from home page to admin dashboard
-      const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || req.nextUrl.origin;
-      return NextResponse.redirect(new URL('/admin/dashboard', baseUrl));
+      return NextResponse.redirect(new URL('/admin/dashboard', req.url));
     } else if (!isAdmin && pathname === '/') {
       // Only redirect regular users from home page to user dashboard
-      const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || req.nextUrl.origin;
-      return NextResponse.redirect(new URL('/dashboard', baseUrl));
+      return NextResponse.redirect(new URL('/dashboard', req.url));
     }
     // For other public routes, allow access without redirecting
   }
@@ -262,8 +260,7 @@ export async function middleware(req: NextRequest) {
   // If someone tries to access a protected admin page...
   if (adminRoutes.some(route => pathname.startsWith(route))) {
     // ...and they are NOT an admin, kick them out.
-    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || req.nextUrl.origin;
-    return NextResponse.redirect(new URL('/dashboard', baseUrl)); // Send them to the user dashboard
+    return NextResponse.redirect(new URL('/dashboard', req.url)); // Send them to the user dashboard
   }
 
   // **Rule for Regular User Routes:**
@@ -271,8 +268,7 @@ export async function middleware(req: NextRequest) {
   if (liteUserRoutes.some(route => pathname.startsWith(route))) {
     // ...and they are NOT logged in at all, send them to the main login page.
     if (!isLoggedIn) {
-      const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || req.nextUrl.origin;
-      const loginUrl = new URL('/', baseUrl);
+      const loginUrl = new URL('/', req.url);
       loginUrl.searchParams.set('callbackUrl', pathname);
       return NextResponse.redirect(loginUrl);
     }

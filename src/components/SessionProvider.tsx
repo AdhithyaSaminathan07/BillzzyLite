@@ -11,16 +11,24 @@ type Props = {
 };
 
 export default function NextAuthSessionProvider({ children, session }: Props) {
-  // For Netlify and other deployments, we need to ensure the session provider
+  // For Vercel and other deployments, we need to ensure the session provider
   // is properly configured with the correct base URL
-  const basePath = process.env.NEXTAUTH_URL ? 
-    new URL(process.env.NEXTAUTH_URL).pathname : 
-    '/api/auth';
+  const getBasePath = () => {
+    if (process.env.NEXTAUTH_URL) {
+      try {
+        return new URL(process.env.NEXTAUTH_URL).pathname;
+      } catch {
+        // Fallback if NEXTAUTH_URL is not a valid URL
+        return '/api/auth';
+      }
+    }
+    return '/api/auth';
+  };
     
   return (
     <SessionProvider 
       session={session}
-      basePath={basePath}
+      basePath={getBasePath()}
     >
       {children}
     </SessionProvider>

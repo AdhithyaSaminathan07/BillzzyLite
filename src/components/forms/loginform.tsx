@@ -19,14 +19,16 @@ export function LoginForm() {
   const handleGoogleSignIn = async () => {
     setIsLoading(true);
     try {
-      // Use the NEXT_PUBLIC_BASE_URL environment variable if available
-      const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || (typeof window !== 'undefined' ? window.location.origin : '');
-      console.log('Base URL for redirect:', baseUrl);
+      // For Vercel deployments, we need to handle the callback URL properly
+      const callbackUrl = '/dashboard';
       
-      await signIn('google', { 
-        callbackUrl: `${baseUrl}/dashboard`,
+      const result = await signIn('google', { 
+        callbackUrl,
         redirect: true
       });
+      
+      // Log the result for debugging
+      console.log('Google sign-in result:', result);
     } catch (error) {
       console.error('Google sign-in error:', error);
       setIsLoading(false);

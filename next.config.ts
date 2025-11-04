@@ -6,14 +6,15 @@ const nextConfig: NextConfig = {
   // Enable standalone mode for better deployment compatibility
   output: 'standalone',
   
-  // Ensure proper handling of environment variables
-  env: {
-    NEXT_PUBLIC_BASE_URL: process.env.NEXT_PUBLIC_BASE_URL,
-  },
-  
   // Handle images properly for all environments
   images: {
-    domains: ['localhost', 'your-netlify-site.netlify.app'], // Add your Netlify domain here
+    domains: ['localhost', 'your-netlify-site.netlify.app'], // Add your domains here
+  },
+  
+  // Environment variables handling
+  env: {
+    NEXT_PUBLIC_BASE_URL: process.env.NEXT_PUBLIC_BASE_URL,
+    VERCEL_URL: process.env.VERCEL_URL,
   },
 };
 
