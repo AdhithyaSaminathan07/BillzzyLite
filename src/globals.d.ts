@@ -1,12 +1,13 @@
-// src/globals.d.ts
+// Type declarations for next-pwa
+declare module "next-pwa" {
+  import { NextConfig } from "next";
 
-import { Mongoose } from 'mongoose';
+  interface PWAConfig {
+    dest: string;
+    disable?: boolean;
+    register?: boolean;
+    skipWaiting?: boolean;
+  }
 
-declare global {
-  var mongoose: {
-    promise: Promise<Mongoose> | null;
-    conn: Mongoose | null;
-  };
+  export default function withPWA(config: PWAConfig): (nextConfig: NextConfig) => NextConfig;
 }
-
-declare module 'react-qr-barcode-scanner';

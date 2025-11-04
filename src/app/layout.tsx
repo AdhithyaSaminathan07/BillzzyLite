@@ -1,16 +1,16 @@
-
 // In: src/app/layout.tsx
 
 import './globals.css';
 import { ReactNode } from 'react';
 import { getServerSession } from 'next-auth';
+import { authOptions } from '@/lib/auth'; // Import authOptions
 import NextAuthSessionProvider from '@/components/SessionProvider';
 
 // vvv 1. ADD THE "async" KEYWORD HERE vvv
 export default async function RootLayout({ children }: { children: ReactNode }) {
   
   // vvv 2. CALL THE FUNCTION TO CREATE THE "session" VARIABLE vvv
-  const session = await getServerSession();
+  const session = await getServerSession(authOptions); // Pass authOptions
 
   return (
     <html lang="en">

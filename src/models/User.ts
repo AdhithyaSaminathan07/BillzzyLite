@@ -5,7 +5,7 @@ import mongoose, { Schema, Document, Types } from 'mongoose';
 export interface IUser extends Document {
   email: string;
   password?: string; // Password is selected: false
-  role: 'user' | 'admin';
+  role: 'user' | 'admin' | 'tenant'; // Added 'tenant' role
   tenantId: Types.ObjectId; // A reference to the Tenant this user belongs to
 }
 
@@ -19,12 +19,12 @@ const UserSchema: Schema = new Schema({
   },
   password: { 
     type: String, 
-    required: true,
+    required: false, // Not required for OAuth users
     select: false, // Password will not be returned in queries by default
   },
   role: {
     type: String,
-    enum: ['user', 'admin'],
+    enum: ['user', 'admin', 'tenant'], // Added 'tenant' to allowed roles
     default: 'user',
   },
   // This links a User to a specific Tenant

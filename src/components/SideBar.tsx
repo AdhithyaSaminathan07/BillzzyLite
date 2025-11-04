@@ -12,7 +12,7 @@ import {
   LogOut,
   Menu,
   X,
-  Clock, // ✅ Added for Billing History
+  Clock, // Γ£à Added for Billing History
 } from 'lucide-react';
 
 //=========== PROPS DEFINITIONS ===========//
@@ -123,7 +123,7 @@ export function Sidebar({ isMobileOpen, setIsMobileOpen }: SidebarProps) {
             <span>Billing</span>
           </NavLink>
 
-          {/* ✅ New Billing History link */}
+          {/* Γ£à New Billing History link */}
           <NavLink href="/billing-history">
             <Clock className="mr-3 h-5 w-5" />
             <span>Billing History</span>

@@ -10,18 +10,41 @@ import { clientPromise } from "@/lib/mongodb";
 import dbConnect from "@/lib/mongodb";
 import User from "@/models/User";
 
+// Validate critical environment variables
+const validateEnvVars = () => {
+  const requiredVars = [
+    'NEXTAUTH_SECRET',
+    'GOOGLE_CLIENT_ID',
+    'GOOGLE_CLIENT_SECRET',
+    'MONGODB_URI'
+  ];
+  
+  const missingVars = requiredVars.filter(varName => !process.env[varName]);
+  
+  if (missingVars.length > 0) {
+    console.warn('Missing environment variables:', missingVars);
+    // In development, we'll throw an error
+    // In production, we'll log but continue (to avoid crashing the app)
+    if (process.env.NODE_ENV === 'development') {
+      throw new Error(`Missing required environment variables: ${missingVars.join(', ')}`);
+    }
+  }
+};
+
+// Run validation
+validateEnvVars();
+
 export const authOptions: NextAuthOptions = {
   // Use MongoDB to store user and account linking information
-  adapter: MongoDBAdapter(clientPromise),
+  adapter: process.env.MONGODB_URI ? MongoDBAdapter(clientPromise) : undefined,
 
   // Configure authentication providers
   providers: [
     GoogleProvider({
-      clientId: process.env.GOOGLE_CLIENT_ID as string,
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET as string,
-      // This setting gracefully handles when a user tries to sign in with Google
-      // using an email that is already registered with a password.
-      allowDangerousEmailAccountLinking: true,
+      clientId: process.env.GOOGLE_CLIENT_ID || '',
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET || '',
+      // Remove allowDangerousEmailAccountLinking to prevent conflicts
+      // This setting can cause issues with account linking in production
     }),
     CredentialsProvider({
       name: 'Credentials',
@@ -77,13 +100,41 @@ export const authOptions: NextAuthOptions = {
   // Callbacks are used to control the session token.
   callbacks: {
     // The 'jwt' callback adds information (like role and tenantId) to the token.
-    async jwt({ token, user }) {
-      if (user) {
-        // This 'user' object comes from the 'authorize' function or Google.
+    async jwt({ token, user, account }) {
+      // For Google login, we need to create or find the user in our database
+      if (account && account.provider === "google" && user) {
+        try {
+          // Check if user already exists in our database
+          await dbConnect();
+          let existingUser = await User.findOne({ email: user.email });
+          
+          // If user doesn't exist, create a new tenant user
+          if (!existingUser) {
+            const newUser = new User({
+              email: user.email,
+              name: user.name,
+              role: 'tenant', // Default role for Google signups
+              tenantId: null, // Will be set when tenant creates their subdomain
+            });
+            existingUser = await newUser.save();
+          }
+          
+          // Add user info to token
+          token.id = existingUser._id.toString();
+          token.role = existingUser.role;
+          token.tenantId = existingUser.tenantId;
+        } catch (error) {
+          console.error("Error in JWT callback:", error);
+          // Even if there's an error, we still return the token
+          // This prevents the authentication flow from breaking completely
+        }
+      }
+      // For credentials login
+      else if (user) {
         const userWithRole = user as { id: string; role: string; tenantId?: string };
         token.id = userWithRole.id;
         token.role = userWithRole.role;
-        token.tenantId = userWithRole.tenantId; // This is undefined for admin, which is correct.
+        token.tenantId = userWithRole.tenantId;
       }
       return token;
     },
@@ -108,4 +159,31 @@ export const authOptions: NextAuthOptions = {
   },
 
   secret: process.env.NEXTAUTH_SECRET,
+  
+  // Vercel-specific configuration
+  ...(process.env.VERCEL_URL && {
+    redirectProxyUrl: `https://${process.env.VERCEL_URL}`,
+  }),
+  
+  // Debug configuration to help with troubleshooting
+  debug: process.env.NODE_ENV === 'development',
+  
+  // Events for logging
+  events: {
+    signIn: async (message) => {
+      console.log("Sign in event:", message);
+    },
+    signOut: async (message) => {
+      console.log("Sign out event:", message);
+    },
+    createUser: async (message) => {
+      console.log("Create user event:", message);
+    },
+    linkAccount: async (message) => {
+      console.log("Link account event:", message);
+    },
+    session: async (message) => {
+      console.log("Session event:", message);
+    },
+  },
 };
