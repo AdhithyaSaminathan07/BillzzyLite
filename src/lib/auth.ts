@@ -78,26 +78,32 @@ export const authOptions: NextAuthOptions = {
     // The 'jwt' callback adds information (like role and tenantId) to the token.
     async jwt({ token, user, account }) {
       // For Google login, we need to create or find the user in our database
-      if (account && account.type === "oauth" && user) {
-        // Check if user already exists in our database
-        await dbConnect();
-        let existingUser = await User.findOne({ email: user.email });
-        
-        // If user doesn't exist, create a new tenant user
-        if (!existingUser) {
-          const newUser = new User({
-            email: user.email,
-            name: user.name,
-            role: 'tenant', // Default role for Google signups
-            tenantId: null, // Will be set when tenant creates their subdomain
-          });
-          existingUser = await newUser.save();
+      if (account && account.provider === "google" && user) {
+        try {
+          // Check if user already exists in our database
+          await dbConnect();
+          let existingUser = await User.findOne({ email: user.email });
+          
+          // If user doesn't exist, create a new tenant user
+          if (!existingUser) {
+            const newUser = new User({
+              email: user.email,
+              name: user.name,
+              role: 'tenant', // Default role for Google signups
+              tenantId: null, // Will be set when tenant creates their subdomain
+            });
+            existingUser = await newUser.save();
+          }
+          
+          // Add user info to token
+          token.id = existingUser._id.toString();
+          token.role = existingUser.role;
+          token.tenantId = existingUser.tenantId;
+        } catch (error) {
+          console.error("Error in JWT callback:", error);
+          // Even if there's an error, we still return the token
+          // This prevents the authentication flow from breaking completely
         }
-        
-        // Add user info to token
-        token.id = existingUser._id.toString();
-        token.role = existingUser.role;
-        token.tenantId = existingUser.tenantId;
       }
       // For credentials login
       else if (user) {
@@ -134,4 +140,26 @@ export const authOptions: NextAuthOptions = {
   ...(process.env.VERCEL_URL && {
     redirectProxyUrl: `https://${process.env.VERCEL_URL}`,
   }),
+  
+  // Debug configuration to help with troubleshooting
+  debug: process.env.NODE_ENV === 'development',
+  
+  // Events for logging
+  events: {
+    signIn: async (message) => {
+      console.log("Sign in event:", message);
+    },
+    signOut: async (message) => {
+      console.log("Sign out event:", message);
+    },
+    createUser: async (message) => {
+      console.log("Create user event:", message);
+    },
+    linkAccount: async (message) => {
+      console.log("Link account event:", message);
+    },
+    session: async (message) => {
+      console.log("Session event:", message);
+    },
+  },
 };

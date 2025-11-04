@@ -260,7 +260,9 @@ export async function middleware(req: NextRequest) {
   // If someone tries to access a protected admin page...
   if (adminRoutes.some(route => pathname.startsWith(route))) {
     // ...and they are NOT an admin, kick them out.
-    return NextResponse.redirect(new URL('/dashboard', req.url)); // Send them to the user dashboard
+    if (!isAdmin) {
+      return NextResponse.redirect(new URL('/dashboard', req.url)); // Send them to the user dashboard
+    }
   }
 
   // **Rule for Regular User Routes:**

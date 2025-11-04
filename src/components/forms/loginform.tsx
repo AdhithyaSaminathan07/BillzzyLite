@@ -21,7 +21,7 @@ export function LoginForm() {
     try {
       // Use the standard NextAuth redirect without specifying callbackUrl
       // This allows NextAuth to handle the redirect properly
-      const result = await signIn('google');
+      const result = await signIn('google', { callbackUrl: '/dashboard' });
       
       // Log the result for debugging
       console.log('Google sign-in result:', result);
