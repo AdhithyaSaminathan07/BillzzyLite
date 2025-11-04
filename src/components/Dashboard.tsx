@@ -35,8 +35,8 @@ const REFETCH_INTERVAL = 15000; // 15 seconds
 
 // --- COMPONENT ---
 export default function Dashboard() {
-  const { status } = useSession();
-
+  const { data: session, status } = useSession();
+  
   // State for Sales Data
   const [salesData, setSalesData] = useState<SalesData>({
     total: 0, cash: 0, qr: 0, bills: 0, lastUpdated: "",
@@ -54,6 +54,11 @@ export default function Dashboard() {
 
   // Effect to fetch sales data
   useEffect(() => {
+    if (status === 'loading') {
+      setIsSalesLoading(true);
+      return;
+    }
+    
     if (status !== 'authenticated') {
       setIsSalesLoading(false);
       return;
@@ -83,6 +88,11 @@ export default function Dashboard() {
 
   // Effect to fetch inventory summary
   useEffect(() => {
+    if (status === 'loading') {
+      setIsSummaryLoading(true);
+      return;
+    }
+    
     if (status !== 'authenticated') {
       setIsSummaryLoading(false);
       return;
@@ -123,6 +133,38 @@ export default function Dashboard() {
   }, [status]);
 
   const TABS: Period[] = ["Today", "Weekly", "Monthly"];
+
+  // Handle loading state
+  if (status === 'loading') {
+    return (
+      <div className="h-full bg-gray-50 overflow-y-auto p-2.5 pb-20">
+        <div className="max-w-2xl mx-auto space-y-2.5">
+          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-3.5">
+            <div className="py-6 flex flex-col items-center justify-center text-gray-400">
+              <Loader2 className="w-5 h-5 animate-spin mb-1.5 text-[#5a4fcf]" /> 
+              <span className="text-xs">Loading dashboard...</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Handle unauthenticated state
+  if (status !== 'authenticated') {
+    return (
+      <div className="h-full bg-gray-50 overflow-y-auto p-2.5 pb-20">
+        <div className="max-w-2xl mx-auto space-y-2.5">
+          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-3.5">
+            <div className="py-6 flex flex-col items-center justify-center text-red-500">
+              <AlertTriangle className="w-5 h-5 mb-1.5" /> 
+              <span className="text-xs">You must be logged in to view the dashboard</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="h-full bg-gray-50 overflow-y-auto p-2.5 pb-20">
