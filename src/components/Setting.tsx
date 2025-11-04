@@ -223,11 +223,11 @@
 //                 label="Merchant UPI ID" 
 //                 name="merchantUpiId" 
 //                 value={formData.merchantUpiId} 
-<<<<<<< HEAD
+
 //                 isEditing={isEditing} // ✅ This now correctly follows the main isEditing state
-=======
+
 //                 isEditing={isEditing} // Γ£à This now correctly follows the main isEditing state
->>>>>>> e9ca3965b6ad8373c74ecbbce7e0f049a11baa26
+
 //                 onChange={handleChange} 
 //               />
 //             </div>
@@ -323,11 +323,11 @@ const SettingsField = ({ label, value, isEditing, name, onChange, type = 'text' 
 export default function Settings() {
   const { data: session, status } = useSession();
   const router = useRouter();
-<<<<<<< HEAD
+
   // ✅ STATE CHANGE: We now track which section is being edited, not the whole page.
-=======
+
   // Γ£à STATE CHANGE: We now track which section is being edited, not the whole page.
->>>>>>> e9ca3965b6ad8373c74ecbbce7e0f049a11baa26
+
   const [editingSection, setEditingSection] = useState<string | null>(null);
   const [formData, setFormData] = useState<FormData>({
     name: '',
@@ -369,11 +369,11 @@ export default function Settings() {
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
-<<<<<<< HEAD
+
   // ✅ LOGIC CHANGE: On submit, save data and exit editing mode for the section.
-=======
+
   // Γ£à LOGIC CHANGE: On submit, save data and exit editing mode for the section.
->>>>>>> e9ca3965b6ad8373c74ecbbce7e0f049a11baa26
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (session?.user?.email) {
@@ -385,11 +385,11 @@ export default function Settings() {
     }
   };
   
-<<<<<<< HEAD
+
   // ✅ LOGIC CHANGE: On cancel, reload data and exit editing mode.
-=======
+
   // Γ£à LOGIC CHANGE: On cancel, reload data and exit editing mode.
->>>>>>> e9ca3965b6ad8373c74ecbbce7e0f049a11baa26
+
   const handleCancel = () => {
     loadFormData();
     setEditingSection(null); // Exit editing mode

@@ -450,7 +450,7 @@ const Inventory: FC = () => {
                 const sheet = workbook.Sheets[workbook.SheetNames[0]];
                 const rows: ExcelRow[] = XLSX.utils.sheet_to_json(sheet);
 
-<<<<<<< HEAD
+
                 const getColumn = (row: ExcelRow, headers: string[]): unknown => headers.map(h => h.toLowerCase()).reduce((acc, h) => acc ?? Object.entries(row).find(([k]) => k.trim().toLowerCase() === h)?.[1], undefined);
 
                 const uploaded = rows.map((row) => ({ sku: String(getColumn(row, ["Product ID", "SKU"]) || ""), name: String(getColumn(row, ["Product Name", "Name"]) || ""), quantity: Number(getColumn(row, ["Quantity", "Qty"])) || 0, buyingPrice: Number(getColumn(row, ["Buying Price"])) || 0, sellingPrice: Number(getColumn(row, ["Selling Price"])) || 0, gstRate: Number(getColumn(row, ["GST Rate", "GST"])) || 0 }));
@@ -460,7 +460,7 @@ const Inventory: FC = () => {
                 
                 const allProducts: Product[] = await response.json();
                 if (Array.isArray(allProducts)) { setProducts(allProducts); alert(`${uploaded.length} products processed successfully!`); }
-=======
+
                 const getColumn = (row: ExcelRow, expectedHeaders: string[]): string | number | undefined => {
                     for (const header of expectedHeaders) {
                         const lowerHeader = header.toLowerCase();
@@ -494,7 +494,7 @@ const Inventory: FC = () => {
                     setProducts(allProducts); 
                     alert(`${uploaded.length} products processed successfully!`); 
                 }
->>>>>>> e9ca3965b6ad8373c74ecbbce7e0f049a11baa26
+
             } catch (err: unknown) {
                 alert(`Error: ${err instanceof Error ? err.message : 'Unknown error'}`);
             } finally { e.target.value = ''; }
@@ -519,15 +519,15 @@ const Inventory: FC = () => {
 
             const url = isEditing ? `/api/products/${productData.id}` : '/api/products';
             const method = isEditing ? 'PUT' : 'POST';
-<<<<<<< HEAD
+
             const response = await fetch(url, { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ...productData, image: imageUrl }) });
-=======
+
             const response = await fetch(url, { 
                 method, 
                 headers: { 'Content-Type': 'application/json' }, 
                 body: JSON.stringify({ ...productData, image: imageUrl }) 
             });
->>>>>>> e9ca3965b6ad8373c74ecbbce7e0f049a11baa26
+
             if (!response.ok) throw new Error(`Failed to ${isEditing ? 'update' : 'create'} product`);
             
             const savedProduct = await response.json();
