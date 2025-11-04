@@ -450,6 +450,20 @@ const Inventory: FC = () => {
                 const sheet = workbook.Sheets[workbook.SheetNames[0]];
                 const rows: ExcelRow[] = XLSX.utils.sheet_to_json(sheet);
 
+<<<<<<< HEAD
+=======
+
+                const getColumn = (row: ExcelRow, headers: string[]): unknown => headers.map(h => h.toLowerCase()).reduce((acc, h) => acc ?? Object.entries(row).find(([k]) => k.trim().toLowerCase() === h)?.[1], undefined);
+
+                const uploaded = rows.map((row) => ({ sku: String(getColumn(row, ["Product ID", "SKU"]) || ""), name: String(getColumn(row, ["Product Name", "Name"]) || ""), quantity: Number(getColumn(row, ["Quantity", "Qty"])) || 0, buyingPrice: Number(getColumn(row, ["Buying Price"])) || 0, sellingPrice: Number(getColumn(row, ["Selling Price"])) || 0, gstRate: Number(getColumn(row, ["GST Rate", "GST"])) || 0 }));
+                
+                const response = await fetch('/api/products/batch', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(uploaded) });
+                if (!response.ok) throw new Error((await response.json()).message || 'Failed to upload products');
+                
+                const allProducts: Product[] = await response.json();
+                if (Array.isArray(allProducts)) { setProducts(allProducts); alert(`${uploaded.length} products processed successfully!`); }
+
+>>>>>>> d2e1dc32ca894730596c33090d4be16987a6995a
                 const getColumn = (row: ExcelRow, expectedHeaders: string[]): string | number | undefined => {
                     for (const header of expectedHeaders) {
                         const lowerHeader = header.toLowerCase();
@@ -483,6 +497,10 @@ const Inventory: FC = () => {
                     setProducts(allProducts); 
                     alert(`${uploaded.length} products processed successfully!`); 
                 }
+<<<<<<< HEAD
+=======
+
+>>>>>>> d2e1dc32ca894730596c33090d4be16987a6995a
             } catch (err: unknown) {
                 alert(`Error: ${err instanceof Error ? err.message : 'Unknown error'}`);
             } finally { e.target.value = ''; }
@@ -507,11 +525,21 @@ const Inventory: FC = () => {
 
             const url = isEditing ? `/api/products/${productData.id}` : '/api/products';
             const method = isEditing ? 'PUT' : 'POST';
+<<<<<<< HEAD
+=======
+
+            const response = await fetch(url, { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ...productData, image: imageUrl }) });
+
+>>>>>>> d2e1dc32ca894730596c33090d4be16987a6995a
             const response = await fetch(url, { 
                 method, 
                 headers: { 'Content-Type': 'application/json' }, 
                 body: JSON.stringify({ ...productData, image: imageUrl }) 
             });
+<<<<<<< HEAD
+=======
+
+>>>>>>> d2e1dc32ca894730596c33090d4be16987a6995a
             if (!response.ok) throw new Error(`Failed to ${isEditing ? 'update' : 'create'} product`);
             
             const savedProduct = await response.json();

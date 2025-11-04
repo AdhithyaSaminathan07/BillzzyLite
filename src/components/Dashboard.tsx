@@ -1,4 +1,8 @@
+<<<<<<< HEAD
 // src/components/Dashboard.new.tsx
+=======
+// src/components/Dashboard.tsx
+>>>>>>> d2e1dc32ca894730596c33090d4be16987a6995a
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
