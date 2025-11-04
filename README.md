@@ -34,3 +34,15 @@ You can check out [the Next.js GitHub repository](https://github.com/vercel/next
 The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
 
 Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+
+## Deploy on Netlify
+
+To deploy this application on Netlify:
+
+1. Create a new site from Git in your Netlify dashboard
+2. Set the build command to `next build`
+3. Set the publish directory to `.next/standalone` (if using standalone mode) or `out` (if using static export)
+4. Add the required environment variables (see `.env.local.example` for reference)
+5. Deploy the site
+
+For detailed instructions, see [NETLIFY_DEPLOYMENT.md](NETLIFY_DEPLOYMENT.md).

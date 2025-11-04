@@ -11,5 +11,18 @@ type Props = {
 };
 
 export default function NextAuthSessionProvider({ children, session }: Props) {
-  return <SessionProvider session={session}>{children}</SessionProvider>;
+  // For Netlify and other deployments, we need to ensure the session provider
+  // is properly configured with the correct base URL
+  const basePath = process.env.NEXTAUTH_URL ? 
+    new URL(process.env.NEXTAUTH_URL).pathname : 
+    '/api/auth';
+    
+  return (
+    <SessionProvider 
+      session={session}
+      basePath={basePath}
+    >
+      {children}
+    </SessionProvider>
+  );
 }

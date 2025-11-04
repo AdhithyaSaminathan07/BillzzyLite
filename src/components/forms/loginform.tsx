@@ -18,7 +18,19 @@ export function LoginForm() {
 
   const handleGoogleSignIn = async () => {
     setIsLoading(true);
-    await signIn('google', { callbackUrl: '/dashboard' });
+    try {
+      // Use the NEXT_PUBLIC_BASE_URL environment variable if available
+      const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || (typeof window !== 'undefined' ? window.location.origin : '');
+      console.log('Base URL for redirect:', baseUrl);
+      
+      await signIn('google', { 
+        callbackUrl: `${baseUrl}/dashboard`,
+        redirect: true
+      });
+    } catch (error) {
+      console.error('Google sign-in error:', error);
+      setIsLoading(false);
+    }
   };
 
   return (
