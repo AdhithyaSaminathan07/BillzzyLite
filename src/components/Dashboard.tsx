@@ -528,7 +528,6 @@ export default function Dashboard() {
               </div>
             </div>
           </div>
-
           {/* Period Tabs */}
           <div className="flex gap-1 mb-2.5 bg-gray-100 p-0.5 rounded-lg">
             {TABS.map((tab) => (
@@ -598,7 +597,6 @@ export default function Dashboard() {
             </div>
           )}
         </div>
-
         {/* Inventory Card */}
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-3.5">
           <div className="flex items-center gap-2 mb-2.5">
