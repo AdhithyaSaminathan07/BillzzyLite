@@ -20,6 +20,10 @@ interface Purchase {
   paymentStatus: 'paid' | 'pending';
 }
 
+interface PurchaseResponse extends Purchase {
+  error?: string;
+}
+
 export default function Purchase() {
   const [purchases, setPurchases] = useState<Purchase[]>([]);
   const [showForm, setShowForm] = useState(false);
@@ -35,6 +39,9 @@ export default function Purchase() {
     const fetchPurchases = async () => {
       try {
         const res = await fetch('/api/purchase');
+        if (!res.ok) {
+          throw new Error(`Failed to fetch purchases: ${res.status}`);
+        }
         const data = await res.json();
         setPurchases(data);
       } catch (error) {
@@ -75,7 +82,8 @@ export default function Purchase() {
     };
 
     try {
-      let res, data;
+      let res: Response;
+      let data: Purchase | { error?: string };
 
       if (editingId) {
         // 🟢 UPDATE existing purchase
@@ -88,8 +96,10 @@ export default function Purchase() {
 
         if (res.ok) {
           setPurchases((prev) =>
-            prev.map((p) => (p._id === editingId ? { ...p, ...data } : p))
+            prev.map((p) => (p._id === editingId ? { ...p, ...(data as Purchase) } : p))
           );
+        } else {
+          console.error('Failed to update purchase:', (data as { error?: string }).error);
         }
       } else {
         // 🟣 CREATE new purchase
@@ -101,7 +111,9 @@ export default function Purchase() {
         data = await res.json();
 
         if (res.ok) {
-          setPurchases([data, ...purchases]);
+          setPurchases([data as Purchase, ...purchases]);
+        } else {
+          console.error('Failed to create purchase:', (data as { error?: string }).error);
         }
       }
     } catch (error) {
@@ -149,6 +161,9 @@ export default function Purchase() {
       const res = await fetch(`/api/purchase/${id}`, { method: 'DELETE' });
       if (res.ok) {
         setPurchases((prev) => prev.filter((p) => p._id !== id));
+      } else {
+        const errorData = await res.json();
+        console.error('Failed to delete purchase:', errorData.error);
       }
     } catch (error) {
       console.error('Error deleting purchase:', error);
