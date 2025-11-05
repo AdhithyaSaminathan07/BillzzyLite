@@ -205,46 +205,18 @@
 
 
 // src/app/(lite)/layout.tsx
-'use client';
-
-import React, { useEffect } from 'react';
-import { useSession } from 'next-auth/react';
-import { useRouter } from 'next/navigation';
-import AppShell from '@/components/AppShell'; // <-- Import our new AppShell
-
-function FullPageLoader() {
-  return (
-    <div className="flex h-screen w-full items-center justify-center bg-gray-50">
-      <div className="animate-spin rounded-full h-24 w-24 border-t-4 border-b-4 border-indigo-600"></div>
-    </div>
-  );
-}
+import ClientBoundary from './client-boundary';
 
 export default function AppLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const { status } = useSession();
-  const router = useRouter();
-
-  useEffect(() => {
-    if (status === 'unauthenticated') {
-      router.replace('/');
-    }
-  }, [status, router]);
-
-  // While the session is loading, show a full-page loader.
-  if (status === 'loading') {
-    return <FullPageLoader />;
-  }
-
-  // ONLY if the user is authenticated, render the AppShell with the page content inside it.
-  // This structure is robust and solves the build error.
-  if (status === 'authenticated') {
-    return <AppShell>{children}</AppShell>;
-  }
-
-  // If unauthenticated, the redirect is happening. Render nothing.
-  return null;
+  // This is now a Server Component that safely renders our Client Boundary.
+  // This structure is extremely stable and solves the manifest error.
+  return (
+    <ClientBoundary>
+      {children}
+    </ClientBoundary>
+  );
 }
