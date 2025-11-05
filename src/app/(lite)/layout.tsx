@@ -154,17 +154,15 @@
 // src/app/(lite)/layout.tsx
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
-import { Sidebar, MobileHeader } from '@/components/SideBar'; // Assuming these paths are correct
-import { BottomNavBar } from '@/components/BottomNav';     // Assuming this path is correct
 
-// A loading component specifically for the main content area
-function ContentLoader() {
+// A simple loader for the entire page
+function FullPageLoader() {
   return (
-    <div className="flex h-full w-full items-center justify-center">
-      <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-indigo-500"></div>
+    <div className="flex h-screen w-full items-center justify-center bg-gray-50">
+      <div className="animate-spin rounded-full h-24 w-24 border-t-4 border-b-4 border-indigo-600"></div>
     </div>
   );
 }
@@ -174,40 +172,33 @@ export default function AppLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const [isMobileOpen, setIsMobileOpen] = useState(false);
   const { status } = useSession();
   const router = useRouter();
 
   useEffect(() => {
-    // If the session status is determined to be unauthenticated, redirect.
+    // Once the session status is determined, if the user is not authenticated,
+    // redirect them to the home page.
     if (status === 'unauthenticated') {
-      // Use 'replace' for login redirects so the user can't click "back" to a protected page.
-      router.replace('/');
+      router.replace('/'); // Use 'replace' to prevent browser "back" button issues.
     }
   }, [status, router]);
 
-  // **THE FIX**: We ALWAYS render the main layout structure.
-  // This ensures that the bundler sees `{children}` during the build process.
-  return (
-    <div className="flex h-screen bg-gray-50">
-      <Sidebar 
-        isMobileOpen={isMobileOpen} 
-        setIsMobileOpen={setIsMobileOpen} 
-      />
-      <div className="flex-1 flex flex-col">
-        <MobileHeader 
-          onMenuClick={() => setIsMobileOpen(true)} 
-        />
-        <main className="flex-1 overflow-y-auto pt-14 lg:pt-0 pb-16 lg:pb-0">
-          {/* 
-            **THE FIX**: Conditionally render content INSIDE the main area.
-            If authenticated, we show the page's children (the Dashboard).
-            Otherwise, we show a loader while the redirect from useEffect happens.
-          */}
-          {status === 'authenticated' ? children : <ContentLoader />}
-        </main>
-      </div>
-      <BottomNavBar />
-    </div>
-  );
+  // While the session is loading, show a full-page loader.
+  // This prevents the children (the dashboard) from rendering prematurely.
+  if (status === 'loading') {
+    return <FullPageLoader />;
+  }
+
+  // ONLY if the user is authenticated, render the children.
+  // This structure is safe and will not cause the manifest error.
+  if (status === 'authenticated') {
+    return (
+      <main className="h-screen bg-gray-50">
+        {children}
+      </main>
+    );
+  }
+
+  // If unauthenticated, render nothing while the redirect is in progress.
+  return null;
 }
