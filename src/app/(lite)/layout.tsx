@@ -210,16 +210,13 @@
 import React, { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
-// Make sure these import paths are correct for your project
 import { Sidebar, MobileHeader } from '@/components/SideBar'; 
 import { BottomNavBar } from '@/components/BottomNav';
 
-// A loader for the main content area
 function ContentLoader() {
   return (
     <div className="flex h-full w-full items-center justify-center">
       <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-indigo-500"></div>
-      <span className="sr-only">Loading...</span>
     </div>
   );
 }
@@ -234,14 +231,12 @@ export default function AppLayout({
   const router = useRouter();
 
   useEffect(() => {
-    // If the session status is confirmed as 'unauthenticated', redirect to the login page.
     if (status === 'unauthenticated') {
-      router.replace('/'); // Use 'replace' to prevent users from clicking "back" to a protected page.
+      router.replace('/');
     }
   }, [status, router]);
 
-  // This is the SAFE WAY to build your layout.
-  // We always render the full layout structure. This keeps the Next.js bundler happy.
+  // This is the SAFE layout structure. It ALWAYS renders the navigation.
   return (
     <div className="flex h-screen bg-gray-50">
       <Sidebar 
@@ -252,13 +247,8 @@ export default function AppLayout({
         <MobileHeader 
           onMenuClick={() => setIsMobileOpen(true)} 
         />
-        <main className="flex-1 overflow-y-auto pt-14 lg:pt-0 pb-16 lg:pb-0">
-          {/*
-            Here is the key:
-            - If the user is authenticated, we show the page content (`children`).
-            - Otherwise, we show a loader while we wait for the redirect to happen.
-            This prevents the app from crashing.
-          */}
+        <main className="flex-1 overflow-y-auto pt-14 lg:pt-0 pb-20 lg:pb-0">
+          {/* We only show the page content OR a loader here. */}
           {status === 'authenticated' ? children : <ContentLoader />}
         </main>
       </div>
