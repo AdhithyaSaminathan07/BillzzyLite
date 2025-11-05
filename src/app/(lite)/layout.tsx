@@ -206,8 +206,8 @@
 // src/app/(lite)/layout.tsx
 'use client';
 
-import React, { useState } from 'react';
-// These components are safe to import because the layout is now simple.
+import React, 'useState' from 'react';
+// These components are safe because this layout is now very simple.
 import { Sidebar, MobileHeader } from '@/components/SideBar'; 
 import { BottomNavBar } from '@/components/BottomNav';
 
@@ -219,8 +219,8 @@ export default function AppLayout({
   const [isMobileOpen, setIsMobileOpen] = useState(false);
 
   // This layout is now just a simple UI shell.
-  // It assumes that if it's being rendered, the user is already authenticated
-  // because your middleware has already protected the page.
+  // It does not need to check if you are logged in.
+  // The middleware.ts file has already protected the page for you.
   return (
     <div className="flex h-screen bg-gray-50">
       <Sidebar 
