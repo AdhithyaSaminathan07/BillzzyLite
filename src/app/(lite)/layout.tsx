@@ -251,13 +251,11 @@ import { BottomNavBar } from '@/components/BottomNav';
 export default function AppLayout({
   children,
 }: {
-  children: React.Node;
+  // THIS IS THE FIX: Changed 'Node' to 'ReactNode'
+  children: React.ReactNode; 
 }) {
   const [isMobileOpen, setIsMobileOpen] = useState(false);
 
-  // This layout is a simple UI shell.
-  // Your middleware provides security.
-  // The useSession hook inside your components will handle the session.
   return (
     <div className="flex h-screen bg-gray-50">
       <Sidebar 
