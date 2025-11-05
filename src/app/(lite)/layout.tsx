@@ -206,36 +206,19 @@
 // src/app/(lite)/layout.tsx
 'use client';
 
-import React, 'useState' from 'react';
-// These components are safe because this layout is now very simple.
-import { Sidebar, MobileHeader } from '@/components/SideBar'; 
-import { BottomNavBar } from '@/components/BottomNav';
+import React from 'react';
 
+// This is a minimal layout.
+// Its only job is to display the page.
+// It does not have the Sidebar or Bottom Navigation.
 export default function AppLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const [isMobileOpen, setIsMobileOpen] = useState(false);
-
-  // This layout is now just a simple UI shell.
-  // It does not need to check if you are logged in.
-  // The middleware.ts file has already protected the page for you.
   return (
-    <div className="flex h-screen bg-gray-50">
-      <Sidebar 
-        isMobileOpen={isMobileOpen} 
-        setIsMobileOpen={setIsMobileOpen} 
-      />
-      <div className="flex-1 flex flex-col">
-        <MobileHeader 
-          onMenuClick={() => setIsMobileOpen(true)} 
-        />
-        <main className="flex-1 overflow-y-auto pt-14 lg:pt-0 pb-20 lg:pb-0">
-          {children}
-        </main>
-      </div>
-      <BottomNavBar />
-    </div>
+    <main className="h-screen bg-gray-50">
+      {children}
+    </main>
   );
 }
