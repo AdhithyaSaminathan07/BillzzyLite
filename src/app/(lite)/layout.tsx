@@ -205,18 +205,64 @@
 
 
 // src/app/(lite)/layout.tsx
-import ClientBoundary from './client-boundary';
+'use client';
+
+import React, { useState, useEffect } from 'react';
+import { useSession } from 'next-auth/react';
+import { useRouter } from 'next/navigation';
+
+// Make sure these import paths are correct for your project
+import { Sidebar, MobileHeader } from '@/components/SideBar'; 
+import { BottomNavBar } from '@/components/BottomNav';
+
+// A simple loading animation for the main content
+function ContentLoader() {
+  return (
+    <div className="flex h-full w-full items-center justify-center">
+      <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-indigo-500"></div>
+    </div>
+  );
+}
 
 export default function AppLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  // This is now a Server Component that safely renders our Client Boundary.
-  // This structure is extremely stable and solves the manifest error.
+  const [isMobileOpen, setIsMobileOpen] = useState(false);
+  const { status } = useSession();
+  const router = useRouter();
+
+  useEffect(() => {
+    // If we confirm the user is not logged in, send them to the login page.
+    if (status === 'unauthenticated') {
+      router.replace('/'); 
+    }
+  }, [status, router]);
+
+  // This is the correct way to build your layout.
+  // It ALWAYS shows the Sidebar and Navigation.
   return (
-    <ClientBoundary>
-      {children}
-    </ClientBoundary>
+    <div className="flex h-screen bg-gray-50">
+      <Sidebar 
+        isMobileOpen={isMobileOpen} 
+        setIsMobileOpen={setIsMobileOpen} 
+      />
+      <div className="flex-1 flex flex-col">
+        <MobileHeader 
+          onMenuClick={() => setIsMobileOpen(true)} 
+        />
+        <main className="flex-1 overflow-y-auto pt-14 lg:pt-0 pb-20 lg:pb-0">
+          {/* 
+            This is the most important part:
+            - If the user is logged in, we show the page (the Dashboard).
+            - If not, we show a loader.
+            This fixes the build error.
+          */}
+          {status === 'authenticated' ? children : <ContentLoader />}
+        </main>
+      </div>
+      <BottomNavBar />
+    </div>
   );
 }
