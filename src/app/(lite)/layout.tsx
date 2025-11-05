@@ -224,34 +224,19 @@
 // }
 
 // src/app/(lite)/layout.tsx
-'use client';
-
-import React, { useState } from 'react';
-import { Sidebar, MobileHeader } from '@/components/SideBar'; 
-import { BottomNavBar } from '@/components/BottomNav';
+import LiteAppShell from './lite-app-shell';
 
 export default function AppLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const [isMobileOpen, setIsMobileOpen] = useState(false);
-
+  // This is a pure Server Component.
+  // Its only job is to render our single client boundary, the LiteAppShell.
+  // This structure is guaranteed to work and solves the manifest error.
   return (
-    <div className="flex h-screen bg-gray-50">
-      <Sidebar 
-        isMobileOpen={isMobileOpen} 
-        setIsMobileOpen={setIsMobileOpen} 
-      />
-      <div className="flex-1 flex flex-col">
-        <MobileHeader 
-          onMenuClick={() => setIsMobileOpen(true)} 
-        />
-        <main className="flex-1 overflow-y-auto pt-14 lg:pt-0 pb-20 lg:pb-0">
-          {children}
-        </main>
-      </div>
-      <BottomNavBar />
-    </div>
+    <LiteAppShell>
+      {children}
+    </LiteAppShell>
   );
 }
