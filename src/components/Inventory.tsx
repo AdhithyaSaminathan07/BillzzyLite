@@ -463,29 +463,46 @@ const Inventory: FC = () => {
                 };
 
                 const uploaded = rows.map((row) => ({ 
-                    sku: String(getColumn(row, ["Product ID", "SKU"]) || ""), 
-                    name: String(getColumn(row, ["Product Name", "Name"]) || ""), 
-                    quantity: Number(getColumn(row, ["Quantity", "Qty"])) || 0, 
-                    buyingPrice: Number(getColumn(row, ["Buying Price"])) || 0, 
-                    sellingPrice: Number(getColumn(row, ["Selling Price"])) || 0, 
-                    gstRate: Number(getColumn(row, ["GST Rate", "GST"])) || 0 
+                    sku: String(getColumn(row, ["Product ID", "SKU", "Product_ID"]) || ""), 
+                    name: String(getColumn(row, ["Product Name", "Name", "Product_Name"]) || ""), 
+                    quantity: Number(getColumn(row, ["Quantity", "Qty", "Stock"]) || 0), 
+                    buyingPrice: Number(getColumn(row, ["Buying Price", "Cost Price", "Buying_Price", "Cost_Price"]) || 0), 
+                    sellingPrice: Number(getColumn(row, ["Selling Price", "Sale Price", "Selling_Price", "Sale_Price"]) || 0), 
+                    gstRate: Number(getColumn(row, ["GST Rate", "GST", "Tax"]) || 0) 
                 }));
+
+                // Add validation for required fields
+                const invalidRows = uploaded.filter(product => !product.name || product.name.trim() === "");
+                if (invalidRows.length > 0) {
+                    alert(`Warning: ${invalidRows.length} rows have missing product names. These rows will be skipped.`);
+                }
+
+                // Filter out invalid rows
+                const validProducts = uploaded.filter(product => product.name && product.name.trim() !== "");
                 
-                const response = await fetch('/api/products/batch', { 
+                if (validProducts.length === 0) {
+                    alert("No valid products found in the Excel file. Please check the file format.");
+                    return;
+                }
+                
+                const response = await fetch('/api/products', { 
                     method: 'POST', 
                     headers: { 'Content-Type': 'application/json' }, 
-                    body: JSON.stringify(uploaded) 
+                    body: JSON.stringify(validProducts) 
                 });
                 if (!response.ok) throw new Error((await response.json()).message || 'Failed to upload products');
                 
                 const allProducts: Product[] = await response.json();
                 if (Array.isArray(allProducts)) { 
                     setProducts(allProducts); 
-                    alert(`${uploaded.length} products processed successfully!`); 
+                    alert(`${validProducts.length} products processed successfully! ${invalidRows.length > 0 ? `${invalidRows.length} rows were skipped due to missing data.` : ''}`); 
                 }
             } catch (err: unknown) {
-                alert(`Error: ${err instanceof Error ? err.message : 'Unknown error'}`);
-            } finally { e.target.value = ''; }
+                console.error("Excel upload error:", err);
+                alert(`Error: ${err instanceof Error ? err.message : 'Unknown error occurred during upload'}`);
+            } finally { 
+                e.target.value = ''; 
+            }
         };
         reader.readAsArrayBuffer(file);
     }, []);
