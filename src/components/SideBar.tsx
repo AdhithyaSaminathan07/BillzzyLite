@@ -12,7 +12,8 @@ import {
   LogOut,
   Menu,
   X,
-  Clock, // ✅ Added for Billing History
+  Clock,
+  ShoppingCart,
 } from 'lucide-react';
 
 //=========== PROPS DEFINITIONS ===========//
@@ -61,7 +62,6 @@ export function Sidebar({ isMobileOpen, setIsMobileOpen }: SidebarProps) {
     router.push('/');
   };
 
-  // Close the sidebar when a nav link is clicked on mobile
   const handleLinkClick = () => {
     setIsMobileOpen(false);
   };
@@ -99,7 +99,7 @@ export function Sidebar({ isMobileOpen, setIsMobileOpen }: SidebarProps) {
             <X size={22} />
           </button>
         </div>
-        
+
         {/* Decorative line */}
         <div className="h-1 bg-gradient-to-r from-indigo-400 via-purple-400 to-pink-400"></div>
 
@@ -123,10 +123,14 @@ export function Sidebar({ isMobileOpen, setIsMobileOpen }: SidebarProps) {
             <span>Billing</span>
           </NavLink>
 
-          {/* ✅ New Billing History link */}
           <NavLink href="/billing-history">
             <Clock className="mr-3 h-5 w-5" />
             <span>Billing History</span>
+          </NavLink>
+
+          <NavLink href="/purchase">
+            <ShoppingCart className="mr-3 h-5 w-5" />
+            <span>Purchase</span>
           </NavLink>
 
           <NavLink href="/settings">
@@ -154,6 +158,7 @@ export function Sidebar({ isMobileOpen, setIsMobileOpen }: SidebarProps) {
 export function MobileHeader({ onMenuClick }: MobileHeaderProps) {
   return (
     <header className="fixed left-0 right-0 top-0 z-20 flex h-14 items-center justify-between border-b bg-white px-4 shadow-sm lg:hidden">
+      {/* ✅ Logo on the left */}
       <Image
         src="/lite-logo.png"
         alt="BillzzyLite Logo"
@@ -161,11 +166,13 @@ export function MobileHeader({ onMenuClick }: MobileHeaderProps) {
         height={28}
         priority
       />
+
+      {/* ✅ Clean solid-colored menu button */}
       <button
         onClick={onMenuClick}
-        className="text-gray-600 hover:text-gray-900"
+        className="px-3 py-2 rounded-lg bg-[#5a4fcf] text-white shadow-sm hover:bg-[#4c42b8] transition-all duration-200 hover:shadow-md active:scale-95"
       >
-        <Menu size={24} />
+        <Menu size={22} strokeWidth={2.3} />
       </button>
     </header>
   );

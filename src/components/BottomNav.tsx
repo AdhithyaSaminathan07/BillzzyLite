@@ -5,9 +5,9 @@ import { usePathname } from 'next/navigation';
 import {
   Home,
   Package,
-  Settings,
   Clock,
   ScanLine,
+  ShoppingCart,
 } from 'lucide-react';
 
 //=========== NAV ITEMS ===========//
@@ -15,7 +15,7 @@ const navItems = [
   { href: '/dashboard', icon: Home, label: 'Dashboard' },
   { href: '/inventory', icon: Package, label: 'Inventory' },
   { href: '/billing-history', icon: Clock, label: 'History' },
-  { href: '/settings', icon: Settings, label: 'Settings' },
+  { href: '/purchase', icon: ShoppingCart, label: 'Purchase' }, // 🆕 added Purchase
 ];
 
 //=========== NAVLINK COMPONENT ===========//
