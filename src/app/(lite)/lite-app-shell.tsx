@@ -13,13 +13,11 @@ export default function LiteAppShell({
 }) {
   const [isMobileOpen, setIsMobileOpen] = useState(false);
 
-  // This is the "shell" of your application.
-  // It contains all the UI and state management.
   return (
     <div className="flex h-screen bg-gray-50">
       <Sidebar 
         isMobileOpen={isMobileOpen} 
-        setIsMobileOpe={setIsMobileOpen} 
+        setIsMobileOpen={setIsMobileOpen} // <--- THIS IS THE FIX (was "setIsMobileOpe")
       />
       <div className="flex-1 flex flex-col">
         <MobileHeader 
