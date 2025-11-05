@@ -587,7 +587,6 @@
 //   );
 // }
 
-
 // src/components/Dashboard.tsx
 "use client";
 
@@ -604,13 +603,6 @@ type SalesData = {
   lastUpdated: string;
 };
 
-interface Product {
-  id: string;
-  name: string;
-  quantity: number;
-  lowStockThreshold?: number;
-};
-
 type InventorySummary = {
   inStock: number;
   lowStock: number;
@@ -621,12 +613,13 @@ type Period = "Today" | "Weekly" | "Monthly";
 
 // --- CONSTANTS ---
 const LOW_STOCK_THRESHOLD = 10;
-const REFETCH_INTERVAL = 30000; // Increased interval to 30 seconds
+const REFETCH_INTERVAL = 30000; // 30 seconds
 const TABS: Period[] = ["Today", "Weekly", "Monthly"];
 
 // --- COMPONENT ---
 export default function Dashboard() {
-  const { data: session, status } = useSession();
+  // **FIX 1**: Removed unused 'session' variable. Only 'status' is needed here.
+  const { status } = useSession();
 
   // --- STATES ---
   const [salesData, setSalesData] = useState<SalesData | null>(null);
@@ -646,22 +639,22 @@ export default function Dashboard() {
     setSalesError(null);
     try {
       const res = await fetch(`/api/sales?period=${period.toLowerCase()}`);
-      
-      if (!res.ok) {
-        throw new Error(`API Error: ${res.status} ${res.statusText}`);
-      }
+      if (!res.ok) throw new Error(`API Error: ${res.status}`);
 
       const data = await res.json();
-      
-      // **FIX**: Check if data is valid before setting state
       if (data && typeof data.total !== 'undefined') {
         setSalesData(data);
       } else {
-        throw new Error("Received invalid sales data from API");
+        throw new Error("Received invalid sales data");
       }
 
-    } catch (err: any) {
-      console.error("Failed to load sales data:", err.message);
+    } catch (err: unknown) { // **FIX 2**: Changed 'any' to 'unknown'
+      // **FIX 3**: Added type check for safer error logging
+      if (err instanceof Error) {
+        console.error("Failed to load sales data:", err.message);
+      } else {
+        console.error("An unknown error occurred while fetching sales data:", err);
+      }
       setSalesError("Could not load sales data.");
     } finally {
       setIsSalesLoading(false);
@@ -675,14 +668,9 @@ export default function Dashboard() {
     setSummaryError(null);
     try {
       const res = await fetch(`/api/products`);
-
-      if (!res.ok) {
-        throw new Error(`API Error: ${res.status} ${res.statusText}`);
-      }
+      if (!res.ok) throw new Error(`API Error: ${res.status}`);
       
       const products = await res.json();
-
-      // **FIX**: Check if products is an array before processing
       if (Array.isArray(products)) {
         const summary: InventorySummary = products.reduce(
           (acc, product) => {
@@ -696,11 +684,16 @@ export default function Dashboard() {
         );
         setInventorySummary(summary);
       } else {
-        throw new Error("Received invalid inventory data from API");
+        throw new Error("Received invalid inventory data");
       }
 
-    } catch (err: any) {
-      console.error("Failed to load inventory summary:", err.message);
+    } catch (err: unknown) { // **FIX 2**: Changed 'any' to 'unknown'
+      // **FIX 3**: Added type check for safer error logging
+      if (err instanceof Error) {
+        console.error("Failed to load inventory summary:", err.message);
+      } else {
+        console.error("An unknown error occurred while fetching inventory:", err);
+      }
       setSummaryError("Could not load inventory summary.");
     } finally {
       setIsSummaryLoading(false);
@@ -742,75 +735,29 @@ export default function Dashboard() {
       <div className="max-w-2xl mx-auto space-y-2.5">
         {/* Sales Card */}
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-3.5">
-          {/* ... Card Header ... */}
           <div className="flex items-center justify-between mb-2.5">
-            <div className="flex items-center gap-2">
-              <div className="w-8 h-8 bg-[#5a4fcf] rounded-lg flex items-center justify-center"><TrendingUp className="w-4 h-4 text-white" /></div>
-              <div>
-                <h3 className="text-sm font-bold text-gray-900">Sales</h3>
-                <p className="text-xs text-gray-500">{activePeriod === "Today" ? "Today" : `This ${activePeriod.slice(0, -2)}`}</p>
-              </div>
-            </div>
+            <div className="flex items-center gap-2"><div className="w-8 h-8 bg-[#5a4fcf] rounded-lg flex items-center justify-center"><TrendingUp className="w-4 h-4 text-white" /></div><div><h3 className="text-sm font-bold text-gray-900">Sales</h3><p className="text-xs text-gray-500">{activePeriod === "Today" ? "Today" : `This ${activePeriod.slice(0, -2)}`}</p></div></div>
           </div>
           <div className="flex gap-1 mb-2.5 bg-gray-100 p-0.5 rounded-lg">
-            {TABS.map((tab) => (
-              <button key={tab} onClick={() => setActivePeriod(tab)} className={`flex-1 py-1.5 text-xs font-semibold rounded-md transition-all ${activePeriod === tab ? "bg-[#5a4fcf] text-white" : "text-gray-600"}`}>
-                {tab}
-              </button>
-            ))}
+            {TABS.map((tab) => (<button key={tab} onClick={() => setActivePeriod(tab)} className={`flex-1 py-1.5 text-xs font-semibold rounded-md transition-all ${activePeriod === tab ? "bg-[#5a4fcf] text-white" : "text-gray-600"}`}>{tab}</button>))}
           </div>
-          {isSalesLoading ? (
-            <div className="py-6 flex flex-col items-center justify-center text-gray-400"><Loader2 className="w-5 h-5 animate-spin mb-1.5 text-[#5a4fcf]" /><span className="text-xs">Loading Sales...</span></div>
-          ) : salesError || !salesData ? (
-            <div className="py-6 flex flex-col items-center justify-center text-red-500"><AlertTriangle className="w-5 h-5 mb-1.5" /><span className="text-xs">{salesError || "An unknown error occurred."}</span></div>
-          ) : (
+          {isSalesLoading ? (<div className="py-6 flex flex-col items-center justify-center text-gray-400"><Loader2 className="w-5 h-5 animate-spin mb-1.5 text-[#5a4fcf]" /><span className="text-xs">Loading Sales...</span></div>) : salesError || !salesData ? (<div className="py-6 flex flex-col items-center justify-center text-red-500"><AlertTriangle className="w-5 h-5 mb-1.5" /><span className="text-xs">{salesError || "An unknown error occurred."}</span></div>) : (
             <div className="space-y-2.5">
-              <div className="bg-gradient-to-br from-[#5a4fcf] to-[#7c6fdd] rounded-lg p-3 text-white">
-                <div className="flex items-center justify-between">
-                  <div><p className="text-xs opacity-90">Total Sales</p><p className="text-2xl font-bold">₹{salesData.total.toLocaleString()}</p></div>
-                  <div className="w-9 h-9 bg-white/20 rounded-full flex items-center justify-center"><TrendingUp className="w-5 h-5" /></div>
-                </div>
-              </div>
-              <div className="grid grid-cols-2 gap-2">
-                <div className="bg-gradient-to-br from-green-50 to-green-100 rounded-lg p-2.5 border border-green-200">
-                  <div className="flex items-center gap-1.5 mb-1"><Wallet className="w-3.5 h-3.5 text-green-600" /><p className="text-xs font-semibold text-green-700">Cash</p></div>
-                  <p className="text-lg font-bold text-green-800">₹{salesData.cash.toLocaleString()}</p>
-                </div>
-                <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-lg p-2.5 border border-blue-200">
-                  <div className="flex items-center gap-1.5 mb-1"><CreditCard className="w-3.5 h-3.5 text-blue-600" /><p className="text-xs font-semibold text-blue-700">QR/Online</p></div>
-                  <p className="text-lg font-bold text-blue-800">₹{salesData.qr.toLocaleString()}</p>
-                </div>
-              </div>
-              <div className="flex justify-between items-center pt-1.5 border-t border-gray-200">
-                <span className="text-xs font-medium text-gray-700">{salesData.bills} Bills</span>
-                <span className="text-xs text-gray-500">{salesData.lastUpdated}</span>
-              </div>
+              <div className="bg-gradient-to-br from-[#5a4fcf] to-[#7c6fdd] rounded-lg p-3 text-white"><div className="flex items-center justify-between"><div><p className="text-xs opacity-90">Total Sales</p><p className="text-2xl font-bold">₹{salesData.total.toLocaleString()}</p></div><div className="w-9 h-9 bg-white/20 rounded-full flex items-center justify-center"><TrendingUp className="w-5 h-5" /></div></div></div>
+              <div className="grid grid-cols-2 gap-2"><div className="bg-gradient-to-br from-green-50 to-green-100 rounded-lg p-2.5 border border-green-200"><div className="flex items-center gap-1.5 mb-1"><Wallet className="w-3.5 h-3.5 text-green-600" /><p className="text-xs font-semibold text-green-700">Cash</p></div><p className="text-lg font-bold text-green-800">₹{salesData.cash.toLocaleString()}</p></div><div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-lg p-2.5 border border-blue-200"><div className="flex items-center gap-1.5 mb-1"><CreditCard className="w-3.5 h-3.5 text-blue-600" /><p className="text-xs font-semibold text-blue-700">QR/Online</p></div><p className="text-lg font-bold text-blue-800">₹{salesData.qr.toLocaleString()}</p></div></div>
+              <div className="flex justify-between items-center pt-1.5 border-t border-gray-200"><span className="text-xs font-medium text-gray-700">{salesData.bills} Bills</span><span className="text-xs text-gray-500">{salesData.lastUpdated}</span></div>
             </div>
           )}
         </div>
 
         {/* Inventory Card */}
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-3.5">
-          {/* ... Card Header ... */}
-          <div className="flex items-center gap-2 mb-2.5">
-            <div className="w-8 h-8 bg-[#5a4fcf] rounded-lg flex items-center justify-center"><Package className="w-4 h-4 text-white" /></div>
-            <div><h3 className="text-sm font-bold text-gray-900">Inventory</h3><p className="text-xs text-gray-500">Stock levels</p></div>
-          </div>
-          {isSummaryLoading ? (
-            <div className="py-6 flex flex-col items-center justify-center text-gray-400"><Loader2 className="w-5 h-5 animate-spin mb-1.5 text-[#5a4fcf]" /><span className="text-xs">Loading Inventory...</span></div>
-          ) : summaryError || !inventorySummary ? (
-            <div className="py-6 flex flex-col items-center justify-center text-red-500"><AlertTriangle className="w-5 h-5 mb-1.5" /><span className="text-xs">{summaryError || "An unknown error occurred."}</span></div>
-          ) : (
+          <div className="flex items-center gap-2 mb-2.5"><div className="w-8 h-8 bg-[#5a4fcf] rounded-lg flex items-center justify-center"><Package className="w-4 h-4 text-white" /></div><div><h3 className="text-sm font-bold text-gray-900">Inventory</h3><p className="text-xs text-gray-500">Stock levels</p></div></div>
+          {isSummaryLoading ? (<div className="py-6 flex flex-col items-center justify-center text-gray-400"><Loader2 className="w-5 h-5 animate-spin mb-1.5 text-[#5a4fcf]" /><span className="text-xs">Loading Inventory...</span></div>) : summaryError || !inventorySummary ? (<div className="py-6 flex flex-col items-center justify-center text-red-500"><AlertTriangle className="w-5 h-5 mb-1.5" /><span className="text-xs">{summaryError || "An unknown error occurred."}</span></div>) : (
             <div className="space-y-2.5">
-              <div className="bg-gradient-to-br from-green-50 to-green-100 p-2.5 rounded-lg border-2 border-green-200">
-                <div className="flex items-center justify-between"><div className="flex items-center gap-2.5"><div className="w-9 h-9 bg-green-500 rounded-lg flex items-center justify-center"><Package className="w-5 h-5 text-white" /></div><div><p className="text-xs font-semibold text-green-700">In Stock</p><p className="text-xl font-bold text-green-800">{inventorySummary.inStock}</p></div></div></div>
-              </div>
-              <div className="bg-gradient-to-br from-orange-50 to-orange-100 p-2.5 rounded-lg border-2 border-orange-200">
-                <div className="flex items-center justify-between"><div className="flex items-center gap-2.5"><div className="w-9 h-9 bg-orange-500 rounded-lg flex items-center justify-center"><AlertTriangle className="w-5 h-5 text-white" /></div><div><p className="text-xs font-semibold text-orange-700">Low Stock</p><p className="text-xl font-bold text-orange-800">{inventorySummary.lowStock}</p></div></div></div>
-              </div>
-              <div className="bg-gradient-to-br from-red-50 to-red-100 p-2.5 rounded-lg border-2 border-red-200">
-                <div className="flex items-center justify-between"><div className="flex items-center gap-2.5"><div className="w-9 h-9 bg-red-500 rounded-lg flex items-center justify-center"><XCircle className="w-5 h-5 text-white" /></div><div><p className="text-xs font-semibold text-red-700">Out of Stock</p><p className="text-xl font-bold text-red-800">{inventorySummary.outOfStock}</p></div></div></div>
-              </div>
+              <div className="bg-gradient-to-br from-green-50 to-green-100 p-2.5 rounded-lg border-2 border-green-200"><div className="flex items-center justify-between"><div className="flex items-center gap-2.5"><div className="w-9 h-9 bg-green-500 rounded-lg flex items-center justify-center"><Package className="w-5 h-5 text-white" /></div><div><p className="text-xs font-semibold text-green-700">In Stock</p><p className="text-xl font-bold text-green-800">{inventorySummary.inStock}</p></div></div></div></div>
+              <div className="bg-gradient-to-br from-orange-50 to-orange-100 p-2.5 rounded-lg border-2 border-orange-200"><div className="flex items-center justify-between"><div className="flex items-center gap-2.5"><div className="w-9 h-9 bg-orange-500 rounded-lg flex items-center justify-center"><AlertTriangle className="w-5 h-5 text-white" /></div><div><p className="text-xs font-semibold text-orange-700">Low Stock</p><p className="text-xl font-bold text-orange-800">{inventorySummary.lowStock}</p></div></div></div></div>
+              <div className="bg-gradient-to-br from-red-50 to-red-100 p-2.5 rounded-lg border-2 border-red-200"><div className="flex items-center justify-between"><div className="flex items-center gap-2.5"><div className="w-9 h-9 bg-red-500 rounded-lg flex items-center justify-center"><XCircle className="w-5 h-5 text-white" /></div><div><p className="text-xs font-semibold text-red-700">Out of Stock</p><p className="text-xl font-bold text-red-800">{inventorySummary.outOfStock}</p></div></div></div></div>
             </div>
           )}
         </div>
