@@ -79,20 +79,92 @@
 //   );
 // }
 
+// // src/app/(lite)/layout.tsx
+// 'use client';
+
+// import React, { useState, useEffect } from 'react';
+// import { useSession } from 'next-auth/react'; // <-- Import useSession
+// import { useRouter } from 'next/navigation'; // <-- Import useRouter
+// import { Sidebar, MobileHeader } from '@/components/SideBar';
+// import { BottomNavBar } from '@/components/BottomNav';
+
+// // A loading component to show while checking the session
+// function LoadingSpinner() {
+//   return (
+//     <div className="flex h-screen w-full items-center justify-center">
+//       <div className="animate-spin rounded-full h-32 w-32 border-t-2 border-b-2 border-indigo-500"></div>
+//     </div>
+//   );
+// }
+
+// export default function AppLayout({
+//   children,
+// }: {
+//   children: React.ReactNode;
+// }) {
+//   const [isMobileOpen, setIsMobileOpen] = useState(false);
+//   const { data: session, status } = useSession(); // <-- Get session status
+//   const router = useRouter();
+
+//   // This effect will run when the session status changes.
+//   useEffect(() => {
+//     // If the session is still loading, we don't do anything yet.
+//     if (status === 'loading') {
+//       return;
+//     }
+
+//     // If the user is not authenticated, redirect them to the login page.
+//     if (status === 'unauthenticated') {
+//       router.push('/');
+//     }
+//   }, [status, router]); // <-- Dependencies for the effect
+
+//   // While the session is loading, show a loading indicator.
+//   if (status === 'loading') {
+//     return <LoadingSpinner />;
+//   }
+
+//   // If the user is authenticated, render the layout and the page content.
+//   if (status === 'authenticated') {
+//     return (
+//       <div className="flex h-screen bg-gray-50">
+//         <Sidebar 
+//           isMobileOpen={isMobileOpen} 
+//           setIsMobileOpen={setIsMobileOpen} 
+//         />
+//         <div className="flex-1 flex flex-col">
+//           <MobileHeader 
+//             onMenuClick={() => setIsMobileOpen(true)} 
+//           />
+//           <main className="flex-1 overflow-y-auto pt-14 lg:pt-0 pb-16 lg:pb-0">
+//             {children}
+//           </main>
+//         </div>
+//         <BottomNavBar />
+//       </div>
+//     );
+//   }
+
+//   // If the user is not authenticated and not loading, render nothing.
+//   // The useEffect hook will handle the redirect.
+//   return null;
+// }
+
+
 // src/app/(lite)/layout.tsx
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { useSession } from 'next-auth/react'; // <-- Import useSession
-import { useRouter } from 'next/navigation'; // <-- Import useRouter
-import { Sidebar, MobileHeader } from '@/components/SideBar';
-import { BottomNavBar } from '@/components/BottomNav';
+import { useSession } from 'next-auth/react';
+import { useRouter } from 'next/navigation';
+import { Sidebar, MobileHeader } from '@/components/SideBar'; // Assuming these are correct paths
+import { BottomNavBar } from '@/components/BottomNav';     // Assuming this is the correct path
 
-// A loading component to show while checking the session
-function LoadingSpinner() {
+// A loading component for the main content area
+function PageLoader() {
   return (
-    <div className="flex h-screen w-full items-center justify-center">
-      <div className="animate-spin rounded-full h-32 w-32 border-t-2 border-b-2 border-indigo-500"></div>
+    <div className="flex h-full w-full items-center justify-center">
+      <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-indigo-500"></div>
     </div>
   );
 }
@@ -103,49 +175,38 @@ export default function AppLayout({
   children: React.ReactNode;
 }) {
   const [isMobileOpen, setIsMobileOpen] = useState(false);
-  const { data: session, status } = useSession(); // <-- Get session status
+  const { status } = useSession(); // We only need the status here
   const router = useRouter();
 
-  // This effect will run when the session status changes.
   useEffect(() => {
-    // If the session is still loading, we don't do anything yet.
-    if (status === 'loading') {
-      return;
-    }
-
-    // If the user is not authenticated, redirect them to the login page.
+    // We only care about redirecting when the status is confirmed unauthenticated.
     if (status === 'unauthenticated') {
-      router.push('/');
+      router.replace('/'); // Use replace instead of push for login redirects
     }
-  }, [status, router]); // <-- Dependencies for the effect
+  }, [status, router]);
 
-  // While the session is loading, show a loading indicator.
-  if (status === 'loading') {
-    return <LoadingSpinner />;
-  }
-
-  // If the user is authenticated, render the layout and the page content.
-  if (status === 'authenticated') {
-    return (
-      <div className="flex h-screen bg-gray-50">
-        <Sidebar 
-          isMobileOpen={isMobileOpen} 
-          setIsMobileOpen={setIsMobileOpen} 
+  // **THE FIX**: ALWAYS render the main layout structure.
+  // This allows the Next.js bundler to see the `{children}` prop during the build.
+  return (
+    <div className="flex h-screen bg-gray-50">
+      <Sidebar 
+        isMobileOpen={isMobileOpen} 
+        setIsMobileOpen={setIsMobileOpen} 
+      />
+      <div className="flex-1 flex flex-col">
+        <MobileHeader 
+          onMenuClick={() => setIsMobileOpen(true)} 
         />
-        <div className="flex-1 flex flex-col">
-          <MobileHeader 
-            onMenuClick={() => setIsMobileOpen(true)} 
-          />
-          <main className="flex-1 overflow-y-auto pt-14 lg:pt-0 pb-16 lg:pb-0">
-            {children}
-          </main>
-        </div>
-        <BottomNavBar />
+        <main className="flex-1 overflow-y-auto pt-14 lg:pt-0 pb-16 lg:pb-0">
+          {/* 
+            **THE FIX**: Conditionally render the children OR a loader INSIDE the main content area.
+            - If loading or unauthenticated, show a loader (redirect is happening in useEffect).
+            - If authenticated, show the actual page content.
+          */}
+          {status === 'authenticated' ? children : <PageLoader />}
+        </main>
       </div>
-    );
-  }
-
-  // If the user is not authenticated and not loading, render nothing.
-  // The useEffect hook will handle the redirect.
-  return null;
+      <BottomNavBar />
+    </div>
+  );
 }
