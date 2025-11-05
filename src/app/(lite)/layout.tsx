@@ -207,16 +207,15 @@
 // src/app/(lite)/layout.tsx
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
-import { Sidebar, MobileHeader } from '@/components/SideBar'; 
-import { BottomNavBar } from '@/components/BottomNav';
+import AppShell from '@/components/AppShell'; // <-- Import our new AppShell
 
-function ContentLoader() {
+function FullPageLoader() {
   return (
-    <div className="flex h-full w-full items-center justify-center">
-      <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-indigo-500"></div>
+    <div className="flex h-screen w-full items-center justify-center bg-gray-50">
+      <div className="animate-spin rounded-full h-24 w-24 border-t-4 border-b-4 border-indigo-600"></div>
     </div>
   );
 }
@@ -226,7 +225,6 @@ export default function AppLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const [isMobileOpen, setIsMobileOpen] = useState(false);
   const { status } = useSession();
   const router = useRouter();
 
@@ -236,23 +234,17 @@ export default function AppLayout({
     }
   }, [status, router]);
 
-  // This is the SAFE layout structure. It ALWAYS renders the navigation.
-  return (
-    <div className="flex h-screen bg-gray-50">
-      <Sidebar 
-        isMobileOpen={isMobileOpen} 
-        setIsMobileOpen={setIsMobileOpen} 
-      />
-      <div className="flex-1 flex flex-col">
-        <MobileHeader 
-          onMenuClick={() => setIsMobileOpen(true)} 
-        />
-        <main className="flex-1 overflow-y-auto pt-14 lg:pt-0 pb-20 lg:pb-0">
-          {/* We only show the page content OR a loader here. */}
-          {status === 'authenticated' ? children : <ContentLoader />}
-        </main>
-      </div>
-      <BottomNavBar />
-    </div>
-  );
+  // While the session is loading, show a full-page loader.
+  if (status === 'loading') {
+    return <FullPageLoader />;
+  }
+
+  // ONLY if the user is authenticated, render the AppShell with the page content inside it.
+  // This structure is robust and solves the build error.
+  if (status === 'authenticated') {
+    return <AppShell>{children}</AppShell>;
+  }
+
+  // If unauthenticated, the redirect is happening. Render nothing.
+  return null;
 }
