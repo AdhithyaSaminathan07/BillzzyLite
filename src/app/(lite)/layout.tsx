@@ -203,26 +203,13 @@
 //   return null;
 // }
 
-
 // src/app/(lite)/layout.tsx
 'use client';
 
-import React, { useState, useEffect } from 'react';
-import { useSession } from 'next-auth/react';
-import { useRouter } from 'next/navigation';
-
-// Make sure these import paths are correct for your project
+import React, { useState } from 'react';
+// These components are safe to import because the layout is now simple.
 import { Sidebar, MobileHeader } from '@/components/SideBar'; 
 import { BottomNavBar } from '@/components/BottomNav';
-
-// A simple loading animation for the main content
-function ContentLoader() {
-  return (
-    <div className="flex h-full w-full items-center justify-center">
-      <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-indigo-500"></div>
-    </div>
-  );
-}
 
 export default function AppLayout({
   children,
@@ -230,18 +217,10 @@ export default function AppLayout({
   children: React.ReactNode;
 }) {
   const [isMobileOpen, setIsMobileOpen] = useState(false);
-  const { status } = useSession();
-  const router = useRouter();
 
-  useEffect(() => {
-    // If we confirm the user is not logged in, send them to the login page.
-    if (status === 'unauthenticated') {
-      router.replace('/'); 
-    }
-  }, [status, router]);
-
-  // This is the correct way to build your layout.
-  // It ALWAYS shows the Sidebar and Navigation.
+  // This layout is now just a simple UI shell.
+  // It assumes that if it's being rendered, the user is already authenticated
+  // because your middleware has already protected the page.
   return (
     <div className="flex h-screen bg-gray-50">
       <Sidebar 
@@ -253,13 +232,7 @@ export default function AppLayout({
           onMenuClick={() => setIsMobileOpen(true)} 
         />
         <main className="flex-1 overflow-y-auto pt-14 lg:pt-0 pb-20 lg:pb-0">
-          {/* 
-            This is the most important part:
-            - If the user is logged in, we show the page (the Dashboard).
-            - If not, we show a loader.
-            This fixes the build error.
-          */}
-          {status === 'authenticated' ? children : <ContentLoader />}
+          {children}
         </main>
       </div>
       <BottomNavBar />
