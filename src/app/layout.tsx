@@ -34,16 +34,42 @@
 //   );
 // }
 
+// // src/app/layout.tsx
+// import './globals.css';
+// import { ReactNode } from 'react';
+// import { getServerSession } from 'next-auth';
+// import { authOptions } from '@/lib/auth'; // Ensure this path is correct
+// import NextAuthSessionProvider from '@/components/SessionProvider';
+
+// export default async function RootLayout({ children }: { children: ReactNode }) {
+//   const session = await getServerSession(authOptions);
+
+//   return (
+//     <html lang="en">
+//       <head>
+//         <title>Billzzy Lite</title>
+//         <meta name="description" content="A lightweight billing PWA" />
+//         <link rel="manifest" href="/manifest.json" />
+//         <meta name="theme-color" content="#0ea5e9" />
+//         <meta name="apple-mobile-web-app-capable" content="yes" />
+//       </head>
+//       <body className='bg-gray-50'>
+//         <NextAuthSessionProvider session={session}>
+//           {children}
+//         </NextAuthSessionProvider>
+//       </body>
+//     </html>
+//   );
+// }
+
 // src/app/layout.tsx
 import './globals.css';
 import { ReactNode } from 'react';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth'; // Ensure this path is correct
+// We only need the provider component now
 import NextAuthSessionProvider from '@/components/SessionProvider';
 
-export default async function RootLayout({ children }: { children: ReactNode }) {
-  const session = await getServerSession(authOptions);
-
+// This is no longer an 'async' function
+export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="en">
       <head>
@@ -54,7 +80,8 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
         <meta name="apple-mobile-web-app-capable" content="yes" />
       </head>
       <body className='bg-gray-50'>
-        <NextAuthSessionProvider session={session}>
+        {/* The provider will now handle fetching the session on the client */}
+        <NextAuthSessionProvider>
           {children}
         </NextAuthSessionProvider>
       </body>
