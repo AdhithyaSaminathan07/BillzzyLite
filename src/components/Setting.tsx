@@ -33,7 +33,7 @@ type SettingsFieldProps = {
   type?: string;
 };
 
-// This component remains unchanged
+// Compacted field component for a static view
 const SettingsField = ({ label, value, isEditing, name, onChange, type = 'text' }: SettingsFieldProps) => (
   <div className="py-2 border-b border-gray-200 last:border-b-0">
     <label htmlFor={name} className="block text-xs font-medium text-gray-500 uppercase tracking-wide">
@@ -69,19 +69,21 @@ export default function Settings() {
     merchantUpiId: '',
   });
 
+  // Load data from localStorage or set defaults
   const loadFormData = () => {
     if (session?.user?.email) {
       const savedData = localStorage.getItem(`userSettings-${session.user.email}`);
       if (savedData) {
         setFormData(JSON.parse(savedData));
       } else {
+        // Set default data if nothing is saved
         setFormData({
           name: session.user.name || '',
           phoneNumber: '(555) 123-4567',
           address: '456 User Lane, Profile City, 12345',
           shopName: 'Billzzy Lite Store',
           shopAddress: '123 Innovation Dr, Tech City',
-          merchantUpiId: 'merchant-id@upi',
+          merchantUpiId: 'merchant-id@upi', // Example default UPI
         });
       }
     }
@@ -100,7 +102,7 @@ export default function Settings() {
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
-  // LOGIC CHANGE: On submit, save data and exit editing mode for the section.
+  // Save data to localStorage on submit
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (session?.user?.email) {
@@ -207,7 +209,11 @@ export default function Settings() {
               <h2 className="text-sm font-semibold text-gray-800">Account Actions</h2>
             </div>
             <div className="px-3 py-2.5">
-              <button onClick={() => signOut({ callbackUrl: '/' })} type="button" className="w-full rounded-md bg-red-50 border border-red-200 px-4 py-2 text-sm font-semibold text-red-700 hover:bg-red-100 transition-colors flex items-center justify-center gap-2">
+              <button 
+                onClick={() => signOut({ callbackUrl: '/' })} 
+                type="button" 
+                className="w-full rounded-md bg-red-50 border border-red-200 px-4 py-2 text-sm font-semibold text-red-700 hover:bg-red-100 transition-colors flex items-center justify-center gap-2"
+              >
                 Log Out
               </button>
             </div>
