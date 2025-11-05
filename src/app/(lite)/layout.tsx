@@ -157,11 +157,11 @@
 import React, { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
-import { Sidebar, MobileHeader } from '@/components/SideBar'; // Assuming these are correct paths
-import { BottomNavBar } from '@/components/BottomNav';     // Assuming this is the correct path
+import { Sidebar, MobileHeader } from '@/components/SideBar'; // Assuming these paths are correct
+import { BottomNavBar } from '@/components/BottomNav';     // Assuming this path is correct
 
-// A loading component for the main content area
-function PageLoader() {
+// A loading component specifically for the main content area
+function ContentLoader() {
   return (
     <div className="flex h-full w-full items-center justify-center">
       <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-indigo-500"></div>
@@ -175,18 +175,19 @@ export default function AppLayout({
   children: React.ReactNode;
 }) {
   const [isMobileOpen, setIsMobileOpen] = useState(false);
-  const { status } = useSession(); // We only need the status here
+  const { status } = useSession();
   const router = useRouter();
 
   useEffect(() => {
-    // We only care about redirecting when the status is confirmed unauthenticated.
+    // If the session status is determined to be unauthenticated, redirect.
     if (status === 'unauthenticated') {
-      router.replace('/'); // Use replace instead of push for login redirects
+      // Use 'replace' for login redirects so the user can't click "back" to a protected page.
+      router.replace('/');
     }
   }, [status, router]);
 
-  // **THE FIX**: ALWAYS render the main layout structure.
-  // This allows the Next.js bundler to see the `{children}` prop during the build.
+  // **THE FIX**: We ALWAYS render the main layout structure.
+  // This ensures that the bundler sees `{children}` during the build process.
   return (
     <div className="flex h-screen bg-gray-50">
       <Sidebar 
@@ -199,11 +200,11 @@ export default function AppLayout({
         />
         <main className="flex-1 overflow-y-auto pt-14 lg:pt-0 pb-16 lg:pb-0">
           {/* 
-            **THE FIX**: Conditionally render the children OR a loader INSIDE the main content area.
-            - If loading or unauthenticated, show a loader (redirect is happening in useEffect).
-            - If authenticated, show the actual page content.
+            **THE FIX**: Conditionally render content INSIDE the main area.
+            If authenticated, we show the page's children (the Dashboard).
+            Otherwise, we show a loader while the redirect from useEffect happens.
           */}
-          {status === 'authenticated' ? children : <PageLoader />}
+          {status === 'authenticated' ? children : <ContentLoader />}
         </main>
       </div>
       <BottomNavBar />
