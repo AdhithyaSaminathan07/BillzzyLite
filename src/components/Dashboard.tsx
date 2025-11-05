@@ -508,7 +508,7 @@
 //     }
 //   }, [status, fetchSales, fetchInventorySummary]);
 
-//   // Handle loading state for the session
+//   // Handle loading state
 //   if (status === "loading") {
 //     return (
 //       <div className="flex h-full items-center justify-center p-4">
