@@ -94,15 +94,8 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import {
-  Home,
-  Package,
-  Settings,
-  Clock,
-  ScanLine,
-} from 'lucide-react';
+import { Home, Package, Settings, Clock, ScanLine } from 'lucide-react';
 
-//=========== NAV ITEMS ===========//
 const navItems = [
   { href: '/dashboard', icon: Home, label: 'Dashboard' },
   { href: '/inventory', icon: Package, label: 'Inventory' },
@@ -110,10 +103,8 @@ const navItems = [
   { href: '/settings', icon: Settings, label: 'Settings' },
 ];
 
-//=========== NAVLINK COMPONENT ===========//
 function NavLink({ href, icon: Icon, label }: { href: string; icon: React.ElementType; label: string; }) {
   const pathname = usePathname();
-  // Check if the current path is exactly the href for better accuracy
   const isActive = pathname === href;
 
   return (
@@ -129,7 +120,6 @@ function NavLink({ href, icon: Icon, label }: { href: string; icon: React.Elemen
   );
 }
 
-//=========== MAIN COMPONENT ===========//
 export function BottomNavBar() {
   const pathname = usePathname();
   const isBilling = pathname === '/billing';

@@ -298,6 +298,7 @@
 //   ],
 // };
 
+
 // src/middleware.ts
 import { getToken } from 'next-auth/jwt';
 import { NextRequest, NextResponse } from 'next/server';
@@ -355,3 +356,4 @@ export const config = {
     '/((?!api|_next/static|_next/image|favicon.ico).*)',
   ],
 };
+
