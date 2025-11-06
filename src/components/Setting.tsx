@@ -102,13 +102,34 @@ export default function Settings() {
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
-  // Save data to localStorage on submit
-  const handleSubmit = (e: React.FormEvent) => {
+  // Save data to localStorage and database on submit
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (session?.user?.email) {
+      // Save to localStorage
       localStorage.setItem(`userSettings-${session.user.email}`, JSON.stringify(formData));
-      setEditingSection(null); // Exit editing mode
-      alert('Settings saved successfully!');
+      
+      // Save phone number to database
+      try {
+        const response = await fetch('/api/users/phone', {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ phoneNumber: formData.phoneNumber }),
+        });
+        
+        if (!response.ok) {
+          throw new Error('Failed to update phone number');
+        }
+        
+        setEditingSection(null); // Exit editing mode
+        alert('Settings saved successfully!');
+      } catch (error) {
+        console.error('Error saving phone number:', error);
+        alert('Settings saved locally, but failed to update phone number in database.');
+        setEditingSection(null); // Exit editing mode
+      }
     } else {
       alert('Could not save settings. User not found.');
     }

@@ -11,6 +11,7 @@ interface User {
   _id: string;
   name: string;
   email: string;
+  phoneNumber?: string;
   billCount?: number;
 }
 
@@ -55,7 +56,7 @@ export default function AdminDashboard() {
   }, []);
 
   // Handle date filter submission
-  const handleFilter = (e: React.FormEvent) => {
+  const handleFilter = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     fetchUsers(startDate, endDate);
   };
@@ -74,9 +75,10 @@ export default function AdminDashboard() {
     }, 500);
   };
 
-  const filteredUsers = users.filter(user =>
+  const filteredUsers = users.filter((user: User) =>
     user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    user.email.toLowerCase().includes(searchTerm.toLowerCase())
+    user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (user.phoneNumber && user.phoneNumber.includes(searchTerm))
   );
 
   if (loading) {
@@ -183,6 +185,7 @@ export default function AdminDashboard() {
                 <tr>
                   <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tenant</th>
                   <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
+                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Mobile</th>
                   <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Bill Count</th>
                 </tr>
               </thead>
@@ -194,6 +197,9 @@ export default function AdminDashboard() {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm text-gray-500">{user.email}</div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="text-sm text-gray-500">{user.phoneNumber || '-'}</div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">

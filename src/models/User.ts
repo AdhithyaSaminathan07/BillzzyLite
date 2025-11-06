@@ -1,5 +1,3 @@
-// src/models/User.ts
-
 import mongoose, { Schema, Document, Types } from 'mongoose';
 
 export interface IUser extends Document {
@@ -7,6 +5,7 @@ export interface IUser extends Document {
   password?: string; // Password is selected: false
   role: 'user' | 'admin' | 'tenant'; // Added 'tenant' role
   tenantId: Types.ObjectId; // A reference to the Tenant this user belongs to
+  phoneNumber?: string; // Added phone number field
 }
 
 const UserSchema: Schema = new Schema({
@@ -32,6 +31,10 @@ const UserSchema: Schema = new Schema({
     type: Schema.Types.ObjectId,
     ref: 'Tenant', // This must match the name you used in mongoose.model('Tenant', ...)
     required: false, // Not required, because the admin user will not have a tenantId
+  },
+  phoneNumber: {
+    type: String,
+    required: false,
   },
 }, { timestamps: true });
 

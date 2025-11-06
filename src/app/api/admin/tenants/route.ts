@@ -23,10 +23,10 @@ export async function GET(request: Request) {
     const endDate = searchParams.get('endDate');
     
     // Find all users where the role is NOT 'admin'
-    const users = await User.find({ role: { $ne: 'admin' } }).select('name email createdAt');
+    const users = await User.find({ role: { $ne: 'admin' } }).select('name email createdAt phoneNumber');
     
     // Get bill count for each user with optional date filtering
-    const usersWithBillCount = await Promise.all(users.map(async (user) => {
+    const usersWithBillCount = await Promise.all(users.map(async (user: any) => {
       // Build the query for sales
       const saleQuery: { tenantId: string; createdAt?: { $gte?: Date; $lte?: Date } } = { tenantId: user.email };
       
