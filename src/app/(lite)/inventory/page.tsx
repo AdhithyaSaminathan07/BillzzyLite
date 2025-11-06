@@ -1,9 +1,5 @@
  
-
-
 // src/app/(lite)/inventory/page.tsx
-
-
 import Inventory from "@/components/Inventory";
 
 
