@@ -49,8 +49,6 @@ export function Sidebar({ isMobileOpen, setIsMobileOpen }: SidebarProps) {
     signOut({ callbackUrl: '/' });
   };
   
-  const handleLinkClick = () => setIsMobileOpen(false);
-
   return (
     <>
       <div className={`fixed inset-0 bg-black bg-opacity-50 z-30 lg:hidden transition-opacity ${isMobileOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'}`} onClick={() => setIsMobileOpen(false)} />

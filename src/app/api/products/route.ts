@@ -146,7 +146,7 @@ interface MongoDuplicateKeyError {
 }
 
 const transformProduct = (product: IProductFromDB) => {
-  const { _id, __v, ...rest } = product;
+  const { _id, ...rest } = product;
   return {
     ...rest,
     id: _id.toString(),

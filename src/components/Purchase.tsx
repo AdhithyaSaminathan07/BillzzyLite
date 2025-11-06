@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { ShoppingCart, Plus, Download, Calendar, Store, DollarSign, Edit2, X, Trash2 } from 'lucide-react';
+import { Plus, Download, Calendar, Store, DollarSign, Edit2, X, Trash2 } from 'lucide-react';
 
 interface Product {
   id: string;
@@ -20,9 +20,9 @@ interface Purchase {
   paymentStatus: 'paid' | 'pending';
 }
 
-interface PurchaseResponse extends Purchase {
-  error?: string;
-}
+// interface PurchaseResponse extends Purchase {
+//   error?: string;
+// }
 
 export default function Purchase() {
   const [purchases, setPurchases] = useState<Purchase[]>([]);

@@ -1,12 +1,12 @@
 'use client';
 
-import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import React from 'react';
 import { useSession } from 'next-auth/react';
 import { Scanner, IDetectedBarcode } from '@yudiel/react-qr-scanner';
 import QRCode from 'react-qr-code';
 import {
   Scan, Trash2, Edit2, Check, X, AlertTriangle,
-  CreditCard, CheckCircle, DollarSign, RefreshCw, MessageSquare, Plus
+  CreditCard, CheckCircle, DollarSign, MessageSquare, Plus
 } from 'lucide-react';
 
 // --- GST UPDATE: Helper functions for currency and GST calculation ---
@@ -57,7 +57,7 @@ type ModalProps = {
   showCancel?: boolean;
 };
 
-const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, children, onConfirm, confirmText = 'OK', showCancel = false }) => {
+const Modal = ({ isOpen, onClose, title, children, onConfirm, confirmText = 'OK', showCancel = false }: ModalProps) => {
   if (!isOpen) return null;
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-sm">
@@ -83,29 +83,29 @@ const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, children, onConfi
 // --- MAIN BILLING COMPONENT ---
 export default function BillingPage() {
   const { data: session, status } = useSession();
-  const [cart, setCart] = useState<CartItem[]>([]);
-  const [productName, setProductName] = useState('');
-  const [scanning, setScanning] = useState(false);
-  const [inventory, setInventory] = useState<InventoryProduct[]>([]);
-  const [suggestions, setSuggestions] = useState<InventoryProduct[]>([]);
-  const [showSuggestions, setShowSuggestions] = useState(false);
-  const [showWhatsAppSharePanel, setShowWhatsAppSharePanel] = useState(false);
-  const [showPaymentOptions, setShowPaymentOptions] = useState(false);
-  const [selectedPayment, setSelectedPayment] = useState<string>('');
-  const [merchantUpi, setMerchantUpi] = useState('');
-  const [merchantName, setMerchantName] = useState('Billzzy Lite');
-  const [whatsAppNumber, setWhatsAppNumber] = useState('');
-  const [amountGiven, setAmountGiven] = useState<number | ''>('');
-  const [isMessaging, setIsMessaging] = useState(false);
-  const [scannerError, setScannerError] = useState<string>('');
-  const [modal, setModal] = useState<{ isOpen: boolean; title: string; message: string | React.ReactNode; onConfirm?: (() => void); confirmText: string; showCancel: boolean; }>({ isOpen: false, title: '', message: '', confirmText: 'OK', showCancel: false });
-  const suggestionsRef = useRef<HTMLDivElement | null>(null);
+  const [cart, setCart] = React.useState<CartItem[]>([]);
+  const [productName, setProductName] = React.useState('');
+  const [scanning, setScanning] = React.useState(false);
+  const [inventory, setInventory] = React.useState<InventoryProduct[]>([]);
+  const [suggestions, setSuggestions] = React.useState<InventoryProduct[]>([]);
+  const [showSuggestions, setShowSuggestions] = React.useState(false);
+  const [showWhatsAppSharePanel, setShowWhatsAppSharePanel] = React.useState(false);
+  const [showPaymentOptions, setShowPaymentOptions] = React.useState(false);
+  const [selectedPayment, setSelectedPayment] = React.useState<string>('');
+  const [merchantUpi, setMerchantUpi] = React.useState('');
+  const [merchantName, setMerchantName] = React.useState('Billzzy Lite');
+  const [whatsAppNumber, setWhatsAppNumber] = React.useState('');
+  const [amountGiven, setAmountGiven] = React.useState<number | ''>('');
+  const [isMessaging, setIsMessaging] = React.useState(false);
+  const [scannerError, setScannerError] = React.useState<string>('');
+  const [modal, setModal] = React.useState<{ isOpen: boolean; title: string; message: string | React.ReactNode; onConfirm?: (() => void); confirmText: string; showCancel: boolean; }>({ isOpen: false, title: '', message: '', confirmText: 'OK', showCancel: false });
+  const suggestionsRef = React.useRef<HTMLDivElement | null>(null);
   
   // --- DISCOUNT state ---
-  const [discountInput, setDiscountInput] = useState<string>('');
-  const [discountType, setDiscountType] = useState<'percentage' | 'fixed'>('percentage');
+  const [discountInput, setDiscountInput] = React.useState<string>('');
+  const [discountType, setDiscountType] = React.useState<'percentage' | 'fixed'>('percentage');
 
-  const subtotal = useMemo(() =>
+  const subtotal = React.useMemo(() =>
     cart.reduce((sum, item) => {
       const { totalPrice } = calculateGstDetails(item.price, item.gstRate);
       return sum + totalPrice * item.quantity;
@@ -114,7 +114,7 @@ export default function BillingPage() {
   );
 
   // Calculate discount and total amount
-  const { discountAmount, totalAmount } = useMemo(() => {
+  const { discountAmount, totalAmount } = React.useMemo(() => {
     const discountValue = parseFloat(discountInput) || 0;
     let calculatedDiscount = 0;
     
@@ -128,7 +128,7 @@ export default function BillingPage() {
     return { discountAmount: calculatedDiscount, totalAmount: finalTotal };
   }, [subtotal, discountInput, discountType]);
 
-  const balance = useMemo(() => {
+  const balance = React.useMemo(() => {
     const total = totalAmount;
     const given = Number(amountGiven);
     return given > 0 ? given - total : 0;
@@ -136,7 +136,7 @@ export default function BillingPage() {
 
   const upiQR = merchantUpi ? `upi://pay?pa=${merchantUpi}&pn=${encodeURIComponent(merchantName)}&am=${totalAmount.toFixed(2)}&cu=INR&tn=Bill%20Payment` : '';
 
-  useEffect(() => {
+  React.useEffect(() => {
     if (status === 'authenticated' && session?.user?.email) {
       const savedData = localStorage.getItem(`userSettings-${session.user.email}`);
       if (savedData) {
@@ -147,7 +147,7 @@ export default function BillingPage() {
     }
   }, [status, session]);
 
-  useEffect(() => {
+  React.useEffect(() => {
     if (status !== 'authenticated') return;
     (async () => {
       try {
@@ -166,7 +166,7 @@ export default function BillingPage() {
     })();
   }, [status]);
 
-  useEffect(() => {
+  React.useEffect(() => {
     if (!productName.trim()) { setShowSuggestions(false); return; }
     const query = productName.trim().toLowerCase();
     const filtered = inventory.filter(p => p.name.toLowerCase().includes(query) || p.sku?.toLowerCase().includes(query)).slice(0, 5);
@@ -174,7 +174,7 @@ export default function BillingPage() {
     setShowSuggestions(filtered.length > 0);
   }, [productName, inventory]);
 
-  useEffect(() => {
+  React.useEffect(() => {
     const handler = (e: MouseEvent) => {
       if (suggestionsRef.current && !suggestionsRef.current.contains(e.target as Node)) {
         setShowSuggestions(false);
@@ -310,7 +310,7 @@ export default function BillingPage() {
     return await sendWhatsAppMessage(whatsAppNumber, templateType);
   };
 
-  const addToCart = useCallback((name: string, price: number, gstRate: number, productId?: string, isEditing = false) => {
+  const addToCart = React.useCallback((name: string, price: number, gstRate: number, productId?: string, isEditing = false) => {
     if (!name || price < 0) return;
     setCart(prev => {
       const existingItem = productId ? prev.find(item => item.productId === productId) : null;
@@ -323,7 +323,7 @@ export default function BillingPage() {
     setShowSuggestions(false);
   }, []);
 
-  const handleScan = useCallback((results: IDetectedBarcode[]) => {
+  const handleScan = React.useCallback((results: IDetectedBarcode[]) => {
     if (results && results[0]) {
       const scannedValue = results[0].rawValue;
       const foundProduct = inventory.find(p => p.id === scannedValue || p.sku?.toLowerCase() === scannedValue.toLowerCase() || p.name.toLowerCase() === scannedValue.toLowerCase());
@@ -337,7 +337,7 @@ export default function BillingPage() {
     }
   }, [inventory, addToCart]);
 
-  const handleScanError = useCallback((error: unknown) => {
+  const handleScanError = React.useCallback((error: unknown) => {
     console.log('Scanner error:', error);
     setScannerError(error instanceof Error ? error.message : 'Unknown scanner error');
     if (error instanceof Error) {
@@ -364,7 +364,7 @@ export default function BillingPage() {
     }
   }, []);
 
-  const handleManualAdd = useCallback(() => {
+  const handleManualAdd = React.useCallback(() => {
     const name = productName.trim();
     if (!name) { 
       setModal({ 
@@ -383,7 +383,7 @@ export default function BillingPage() {
   const toggleEdit = (id: number) => setCart(prev => prev.map(item => item.id === id ? { ...item, isEditing: !item.isEditing } : { ...item, isEditing: false }));
   const updateCartItem = (id: number, updatedValues: Partial<CartItem>) => setCart(prev => prev.map(item => item.id === id ? { ...item, ...updatedValues } : item));
 
-  const handleTransactionDone = useCallback(() => {
+  const handleTransactionDone = React.useCallback(() => {
     setCart([]); 
     setSelectedPayment(''); 
     setShowWhatsAppSharePanel(false); 
@@ -394,7 +394,7 @@ export default function BillingPage() {
     setModal({ ...modal, isOpen: false });
   }, [modal]);
 
-  const handleProceedToPayment = useCallback(() => {
+  const handleProceedToPayment = React.useCallback(() => {
     if (cart.length === 0) {
       setModal({ 
         isOpen: true, 
@@ -410,7 +410,7 @@ export default function BillingPage() {
     setShowPaymentOptions(true);
   }, [cart.length]);
 
-  const handlePaymentSuccess = useCallback(async () => {
+  const handlePaymentSuccess = React.useCallback(async () => {
     const updatePromises = cart.filter(item => item.productId).map(item => 
       fetch(`/api/products/${item.productId}`, { 
         method: 'PUT', 
@@ -444,11 +444,11 @@ export default function BillingPage() {
     } catch (error) {
       console.error("Network error when saving sale:", error);
       setModal({ 
-        isOpen: true, 
-        title: 'Network Error', 
-        message: 'Could not connect to the server to save the sale.', 
-        confirmText: 'OK', 
-        showCancel: false 
+          isOpen: true, 
+          title: 'Network Error', 
+          message: 'Could not connect to the server to save the sale.', 
+          confirmText: 'OK', 
+          showCancel: false 
       });
       return;
     }
@@ -474,9 +474,9 @@ export default function BillingPage() {
       onConfirm: handleTransactionDone,
       showCancel: false
     });
-  }, [selectedPayment, totalAmount, cart, handleTransactionDone, whatsAppNumber]);
+  }, [selectedPayment, totalAmount, cart, handleTransactionDone, whatsAppNumber, sendWhatsAppReceipt]);
 
-  const handleStartNewBill = useCallback(() => {
+  const handleStartNewBill = React.useCallback(() => {
     if (cart.length === 0) return;
     setModal({ 
       isOpen: true, 
@@ -488,7 +488,7 @@ export default function BillingPage() {
     });
   }, [cart.length]);
 
-  const toggleScanner = useCallback(() => {
+  const toggleScanner = React.useCallback(() => {
     setScanning(prev => { 
       if (!prev) { 
         setScannerError(''); 

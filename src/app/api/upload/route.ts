@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { writeFile, mkdir } from "fs/promises";
 import { join } from "path";
-import { stat } from "fs";
 
 export async function POST(req: NextRequest) {
   const data = await req.formData();

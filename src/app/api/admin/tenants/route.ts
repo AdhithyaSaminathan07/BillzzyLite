@@ -4,7 +4,7 @@ import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/lib/auth';
 import dbConnect from '@/lib/mongodb';
-import User from '@/models/User';
+import User, { IUser } from '@/models/User';
 import Sale from '@/models/Sales';
 
 export async function GET(request: Request) {
@@ -26,7 +26,7 @@ export async function GET(request: Request) {
     const users = await User.find({ role: { $ne: 'admin' } }).select('name email createdAt phoneNumber');
     
     // Get bill count for each user with optional date filtering
-    const usersWithBillCount = await Promise.all(users.map(async (user: any) => {
+    const usersWithBillCount = await Promise.all(users.map(async (user: IUser) => {
       // Build the query for sales
       const saleQuery: { tenantId: string; createdAt?: { $gte?: Date; $lte?: Date } } = { tenantId: user.email };
       

@@ -121,7 +121,7 @@ const TECH_LOGO_URL = '/tech-logo.png'; // Path to your tech logo
 
 export function LoginForm() {
   const [isLoading, setIsLoading] = useState(false);
-  const router = useRouter();
+  // const router = useRouter();
 
   const handleGoogleSignIn = async () => {
     setIsLoading(true);
@@ -233,7 +233,7 @@ export function LoginForm() {
           </div>
         </div>
           {/* Footer with the Tech Vaseegarh IMAGE */}
-        <p className="flex items-center justify-center text-center text-sm text-gray-600 mt-6 space-x-1.5">
+        {/* <p className="flex items-center justify-center text-center text-sm text-gray-600 mt-6 space-x-1.5">
           <span>© 2025 Billzzy Lite. All rights reserved by</span>
           <Image
             src={TECH_LOGO_URL}
@@ -243,7 +243,7 @@ export function LoginForm() {
             className="h-auto"
           />
           <span>.</span>
-        </p>
+        </p> */}
       </div>
     </div>
   );

@@ -9,7 +9,7 @@ import User from '@/models/User';
 export async function PUT(request: Request) {
   const session = await getServerSession(authOptions);
 
-  if (!session) {
+  if (!session || !session.user) {
     return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
   }
 
@@ -20,7 +20,7 @@ export async function PUT(request: Request) {
     
     // Update the user's phone number
     const updatedUser = await User.findOneAndUpdate(
-      { email: session.user.email },
+      { email: (session.user as { email: string }).email },
       { phoneNumber },
       { new: true }
     ).select('name email phoneNumber');

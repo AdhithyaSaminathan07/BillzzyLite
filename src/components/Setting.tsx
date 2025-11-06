@@ -91,7 +91,7 @@ export default function Settings() {
   
   useEffect(() => {
     if (status === 'authenticated') loadFormData();
-  }, [session, status]);
+  }, [session, status, loadFormData]);
 
   useEffect(() => {
     if (status === 'unauthenticated') router.push('/');
