@@ -101,7 +101,7 @@ export default function BillingPage() {
   const [modal, setModal] = useState<{ isOpen: boolean; title: string; message: string | React.ReactNode; onConfirm?: (() => void); confirmText: string; showCancel: boolean; }>({ isOpen: false, title: '', message: '', confirmText: 'OK', showCancel: false });
   const suggestionsRef = useRef<HTMLDivElement | null>(null);
   
-  // --- NEW: Discount state ---
+  // --- DISCOUNT state ---
   const [discountInput, setDiscountInput] = useState<string>('');
   const [discountType, setDiscountType] = useState<'percentage' | 'fixed'>('percentage');
 
@@ -113,16 +113,18 @@ export default function BillingPage() {
     [cart]
   );
 
+  // Calculate discount and total amount
   const { discountAmount, totalAmount } = useMemo(() => {
     const discountValue = parseFloat(discountInput) || 0;
     let calculatedDiscount = 0;
+    
     if (discountType === 'percentage' && discountValue > 0) {
       calculatedDiscount = (subtotal * discountValue) / 100;
     } else if (discountType === 'fixed' && discountValue > 0) {
-      calculatedDiscount = discountValue;
+      calculatedDiscount = Math.min(discountValue, subtotal); // Don't allow discount more than subtotal
     }
-    calculatedDiscount = Math.min(subtotal, calculatedDiscount);
-    const finalTotal = subtotal - calculatedDiscount;
+    
+    const finalTotal = Math.max(0, subtotal - calculatedDiscount);
     return { discountAmount: calculatedDiscount, totalAmount: finalTotal };
   }, [subtotal, discountInput, discountType]);
 
@@ -183,54 +185,128 @@ export default function BillingPage() {
   }, []);
 
   const sendWhatsAppMessage = async (phoneNumber: string, messageType: string) => {
-    if (!phoneNumber.trim() || !/^\d{10,15}$/.test(phoneNumber)) {
-      setModal({ isOpen: true, title: 'Invalid Number', message: 'Please enter a valid WhatsApp number including the country code (e.g., 919876543210).', showCancel: false, confirmText: 'Got it', onConfirm: undefined });
-      return false;
-    }
-    setIsMessaging(true);
-    try {
-      const formattedPhone = phoneNumber.startsWith('91') ? phoneNumber : `91${phoneNumber}`;
-      const orderId = `INV-${Date.now().toString().slice(-6)}`;
-      const itemsList = cart.map(item => `${item.name} (x${item.quantity})`).join(', ');
-      let templateName = '';
-      let bodyParameters: string[] = [];
-      switch (messageType) {
-        case 'finalizeBill': templateName = "invoice_with_payment"; bodyParameters = [merchantName, `₹${totalAmount.toFixed(2)}`, itemsList]; break;
-        case 'cashPayment': templateName = "payment_receipt_cashh"; bodyParameters = [orderId, merchantName, `₹${totalAmount.toFixed(2)}`, itemsList]; break;
-        case 'qrPayment': templateName = "payment_receipt_upii"; bodyParameters = [orderId, merchantName, `₹${totalAmount.toFixed(2)}`, itemsList]; break;
-        case 'cardPayment': templateName = "payment_receipt_card"; bodyParameters = [orderId, merchantName, `₹${totalAmount.toFixed(2)}`, itemsList]; break;
-        default: throw new Error(`Invalid message type: ${messageType}`);
-      }
-      const messageData = { messaging_product: "whatsapp", recipient_type: "individual", to: formattedPhone, type: "template", template: { name: templateName, language: { code: "en" }, components: [{ type: "body", parameters: bodyParameters.map(text => ({ type: "text", text })) }] } };
-      const response = await fetch('/api/whatsapp/send', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(messageData) });
-      const result = await response.json();
-      if (!response.ok) { throw new Error(result.message || `HTTP ${response.status}: Failed to send message`); }
-      if (!result.success) { throw new Error(result.message || 'WhatsApp API returned success: false'); }
-      console.log(`${messageType} message sent successfully using template: ${templateName}`);
-      return true;
-    } catch (error) {
-      console.error("WhatsApp API error:", error);
-      setModal({ isOpen: true, title: 'Messaging Error', message: `Failed to send WhatsApp message: ${error instanceof Error ? error.message : 'Unknown error'}.`, showCancel: false, confirmText: 'OK', onConfirm: undefined });
-      return false;
-    } finally { setIsMessaging(false); }
-  };
+  if (!phoneNumber.trim() || !/^\d{10,15}$/.test(phoneNumber)) {
+    setModal({
+      isOpen: true,
+      title: 'Invalid Number',
+      message:
+        'Please enter a valid WhatsApp number including the country code (e.g., 919876543210).',
+      showCancel: false,
+      confirmText: 'Got it',
+      onConfirm: undefined,
+    });
+    return false;
+  }
 
-  const handleProceedToPaymentWithWhatsApp = async () => {
-    if (!whatsAppNumber || !whatsAppNumber.trim()) {
-      setModal({ isOpen: true, title: 'Enter Number', message: 'Please enter a WhatsApp number to send the bill.', showCancel: false, confirmText: 'OK' });
-      return;
+  setIsMessaging(true);
+  try {
+    const formattedPhone = phoneNumber.startsWith('91')
+      ? phoneNumber
+      : `91${phoneNumber}`;
+    const orderId = `INV-${Date.now().toString().slice(-6)}`;
+    const itemsList = cart
+      .map((item) => `${item.name} (x${item.quantity})`)
+      .join(', ');
+
+    let templateName = '';
+    let bodyParameters: string[] = [];
+
+    // ✅ Choose template and assign parameters (5 total)
+    switch (messageType) {
+      case 'cashPayment':
+        templateName = 'payment_receipt_cashh';
+        break;
+      case 'qrPayment':
+      case 'cardPayment':
+        templateName = 'payment_receipt_upii';
+        break;
+      default:
+        throw new Error(`Invalid message type: ${messageType}`);
     }
-    const success = await sendWhatsAppMessage(whatsAppNumber, 'finalizeBill');
-    if (success) {
-      setShowWhatsAppSharePanel(false);
-      setShowPaymentOptions(true);
-      setModal({ isOpen: true, title: 'Bill Shared', message: 'The invoice has been sent to the customer via WhatsApp. Proceeding to payment...', showCancel: false, confirmText: 'OK' });
+
+    bodyParameters = [
+      orderId, // {{1}} Order ID
+      merchantName, // {{2}} Shop Name
+      `₹${subtotal.toFixed(2)}`, // {{3}} Amount before discount
+      itemsList, // {{4}} Items list
+      discountAmount > 0
+        ? `₹${discountAmount.toFixed(2)}`
+        : '₹0.00', // {{5}} Discount amount
+    ];
+
+    const messageData = {
+      messaging_product: 'whatsapp',
+      recipient_type: 'individual',
+      to: formattedPhone,
+      type: 'template',
+      template: {
+        name: templateName,
+        language: { code: 'en' },
+        components: [
+          {
+            type: 'body',
+            parameters: bodyParameters.map((text) => ({
+              type: 'text',
+              text,
+            })),
+          },
+        ],
+      },
+    };
+
+    const response = await fetch('/api/whatsapp/send', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(messageData),
+    });
+
+    const result = await response.json();
+    if (!response.ok) {
+      throw new Error(
+        result.message || `HTTP ${response.status}: Failed to send message`
+      );
     }
-  };
+    if (!result.success) {
+      throw new Error(result.message || 'WhatsApp API returned success: false');
+    }
+
+    console.log(
+      `${messageType} message sent successfully using template: ${templateName}`
+    );
+    return true;
+  } catch (error) {
+    console.error('WhatsApp API error:', error);
+    setModal({
+      isOpen: true,
+      title: 'Messaging Error',
+      message: `Failed to send WhatsApp message: ${
+        error instanceof Error ? error.message : 'Unknown error'
+      }.`,
+      showCancel: false,
+      confirmText: 'OK',
+      onConfirm: undefined,
+    });
+    return false;
+  } finally {
+    setIsMessaging(false);
+  }
+};
 
   const sendWhatsAppReceipt = async (paymentMethod: string) => {
     let templateType = '';
-    switch (paymentMethod) { case 'cash': templateType = 'cashPayment'; break; case 'qr-code': templateType = 'qrPayment'; break; case 'card': templateType = 'cardPayment'; break; default: templateType = 'cashPayment'; }
+    switch (paymentMethod) { 
+      case 'cash': 
+        templateType = 'cashPayment'; 
+        break; 
+      case 'qr-code': 
+        templateType = 'qrPayment'; 
+        break; 
+      case 'card': 
+        templateType = 'cardPayment'; 
+        break; 
+      default: 
+        templateType = 'cashPayment'; 
+    }
     return await sendWhatsAppMessage(whatsAppNumber, templateType);
   };
 
@@ -265,14 +341,41 @@ export default function BillingPage() {
     console.log('Scanner error:', error);
     setScannerError(error instanceof Error ? error.message : 'Unknown scanner error');
     if (error instanceof Error) {
-      if (error.name === 'NotFoundError') { setModal({ isOpen: true, title: 'Camera Not Found', message: 'No camera device found. Please check if your camera is connected and permissions are granted.', showCancel: false, confirmText: 'OK', onConfirm: undefined }); }
-      else if (error.name === 'NotAllowedError') { setModal({ isOpen: true, title: 'Camera Permission Denied', message: 'Camera access was denied. Please allow camera permissions in your browser settings.', showCancel: false, confirmText: 'OK', onConfirm: undefined }); }
+      if (error.name === 'NotFoundError') { 
+        setModal({ 
+          isOpen: true, 
+          title: 'Camera Not Found', 
+          message: 'No camera device found. Please check if your camera is connected and permissions are granted.', 
+          showCancel: false, 
+          confirmText: 'OK', 
+          onConfirm: undefined 
+        }); 
+      }
+      else if (error.name === 'NotAllowedError') { 
+        setModal({ 
+          isOpen: true, 
+          title: 'Camera Permission Denied', 
+          message: 'Camera access was denied. Please allow camera permissions in your browser settings.', 
+          showCancel: false, 
+          confirmText: 'OK', 
+          onConfirm: undefined 
+        }); 
+      }
     }
   }, []);
 
   const handleManualAdd = useCallback(() => {
     const name = productName.trim();
-    if (!name) { setModal({ isOpen: true, title: 'Item Name Required', message: 'Please enter a name for the custom item.', showCancel: false, confirmText: 'OK' }); return; }
+    if (!name) { 
+      setModal({ 
+        isOpen: true, 
+        title: 'Item Name Required', 
+        message: 'Please enter a name for the custom item.', 
+        showCancel: false, 
+        confirmText: 'OK' 
+      }); 
+      return; 
+    }
     addToCart(name, 0, 0, undefined, true);
   }, [productName, addToCart]);
 
@@ -281,17 +384,42 @@ export default function BillingPage() {
   const updateCartItem = (id: number, updatedValues: Partial<CartItem>) => setCart(prev => prev.map(item => item.id === id ? { ...item, ...updatedValues } : item));
 
   const handleTransactionDone = useCallback(() => {
-    setCart([]); setSelectedPayment(''); setShowWhatsAppSharePanel(false); setShowPaymentOptions(false); setWhatsAppNumber(''); setAmountGiven(''); setDiscountInput(''); setModal({ ...modal, isOpen: false });
+    setCart([]); 
+    setSelectedPayment(''); 
+    setShowWhatsAppSharePanel(false); 
+    setShowPaymentOptions(false); 
+    setWhatsAppNumber(''); 
+    setAmountGiven(''); 
+    setDiscountInput(''); // Clear discount on transaction done
+    setModal({ ...modal, isOpen: false });
   }, [modal]);
 
   const handleProceedToPayment = useCallback(() => {
-    if (whatsAppNumber && !/^\d{10,15}$/.test(whatsAppNumber.trim())) { setModal({ isOpen: true, title: 'Invalid Number', message: 'The number you entered is not valid. Please correct it or leave it blank.', confirmText: 'OK', onConfirm: undefined, showCancel: false }); return; }
-    setShowWhatsAppSharePanel(false); setShowPaymentOptions(true);
-  }, [whatsAppNumber]);
+    if (cart.length === 0) {
+      setModal({ 
+        isOpen: true, 
+        title: 'Cart Empty', 
+        message: 'Please add items to the cart before finalizing.', 
+        confirmText: 'OK', 
+        showCancel: false 
+      });
+      return;
+    }
+    // Directly show payment options without WhatsApp sharing panel
+    setShowWhatsAppSharePanel(false);
+    setShowPaymentOptions(true);
+  }, [cart.length]);
 
   const handlePaymentSuccess = useCallback(async () => {
-    const updatePromises = cart.filter(item => item.productId).map(item => fetch(`/api/products/${item.productId}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ quantityToDecrement: item.quantity }) }));
+    const updatePromises = cart.filter(item => item.productId).map(item => 
+      fetch(`/api/products/${item.productId}`, { 
+        method: 'PUT', 
+        headers: { 'Content-Type': 'application/json' }, 
+        body: JSON.stringify({ quantityToDecrement: item.quantity }) 
+      })
+    );
     await Promise.all(updatePromises).catch(err => console.error("Inventory update failed:", err));
+    
     try {
       const response = await fetch('/api/sales', {
         method: 'POST',
@@ -304,15 +432,29 @@ export default function BillingPage() {
       if (!response.ok) {
         const errorData = await response.json();
         console.error("Failed to create sale:", errorData);
-        setModal({ isOpen: true, title: 'Error', message: `Could not save the sale. Server responded: ${errorData.message}`, confirmText: 'OK', showCancel: false });
+        setModal({ 
+          isOpen: true, 
+          title: 'Error', 
+          message: `Could not save the sale. Server responded: ${errorData.message}`, 
+          confirmText: 'OK', 
+          showCancel: false 
+        });
         return;
       }
     } catch (error) {
       console.error("Network error when saving sale:", error);
-      setModal({ isOpen: true, title: 'Network Error', message: 'Could not connect to the server to save the sale.', confirmText: 'OK', showCancel: false });
+      setModal({ 
+        isOpen: true, 
+        title: 'Network Error', 
+        message: 'Could not connect to the server to save the sale.', 
+        confirmText: 'OK', 
+        showCancel: false 
+      });
       return;
     }
+    
     let receiptSent = false;
+    // Send receipt only if WhatsApp number is provided
     if (whatsAppNumber && whatsAppNumber.trim()) {
       try {
         receiptSent = await sendWhatsAppReceipt(selectedPayment);
@@ -321,10 +463,13 @@ export default function BillingPage() {
         receiptSent = false;
       }
     }
+    
     setModal({
       isOpen: true,
       title: 'Success!',
-      message: receiptSent ? 'Transaction completed! Receipt sent to customer via WhatsApp and inventory updated.' : 'Transaction completed and inventory updated. Ready for a new bill.',
+      message: receiptSent 
+        ? 'Transaction completed! Receipt sent to customer via WhatsApp and inventory updated.' 
+        : 'Transaction completed and inventory updated. Ready for a new bill.',
       confirmText: 'New Bill',
       onConfirm: handleTransactionDone,
       showCancel: false
@@ -333,11 +478,23 @@ export default function BillingPage() {
 
   const handleStartNewBill = useCallback(() => {
     if (cart.length === 0) return;
-    setModal({ isOpen: true, title: 'Clear Bill?', message: 'This will clear all items from the current bill. Are you sure?', showCancel: true, confirmText: 'Yes, Clear', onConfirm: () => setCart([]) });
+    setModal({ 
+      isOpen: true, 
+      title: 'Clear Bill?', 
+      message: 'This will clear all items from the current bill. Are you sure?', 
+      showCancel: true, 
+      confirmText: 'Yes, Clear', 
+      onConfirm: () => setCart([]) 
+    });
   }, [cart.length]);
 
   const toggleScanner = useCallback(() => {
-    setScanning(prev => { if (!prev) { setScannerError(''); } return !prev; });
+    setScanning(prev => { 
+      if (!prev) { 
+        setScannerError(''); 
+      } 
+      return !prev; 
+    });
   }, []);
 
   return (
@@ -502,7 +659,7 @@ export default function BillingPage() {
         <div className="flex-shrink-0 bg-white shadow-[0_-4px_10px_rgba(0,0,0,0.1)] border-t-2 border-gray-200">
           <div className="p-2.5 space-y-2 max-h-[45vh] overflow-y-auto">
             
-            {/* NEW: Total Amount & Discount Section */}
+            {/* Total Amount & Discount Section */}
             <div className="space-y-2">
               <div className="relative">
                   <input
@@ -570,7 +727,7 @@ export default function BillingPage() {
                   className="w-full rounded-lg border-2 border-green-300 p-2 text-sm outline-none focus:border-green-500 focus:ring-2 focus:ring-green-200" 
                 />
                 <button 
-                  onClick={handleProceedToPaymentWithWhatsApp} 
+                  onClick={handleProceedToPayment} 
                   disabled={isMessaging} 
                   className="w-full flex items-center justify-center gap-2 rounded-lg bg-green-600 py-2 font-semibold text-white hover:bg-green-700 disabled:bg-gray-400 transition-colors shadow-md text-sm"
                 >
