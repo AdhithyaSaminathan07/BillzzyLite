@@ -7,9 +7,9 @@ import { signIn } from 'next-auth/react';
 
 // --- Configuration: Image Paths ---
 // NOTE: These files MUST exist in your project's 'public' folder.
-const BILLZZY_LOGO_URL = '/lite-logo.png';
-const LOGIN_HEADER_BACKGROUND_IMAGE_URL = '/big-image-login.png'; // The image with the mascot/store
-const TECH_LOGO_URL = '/tech-logo.png'; // Path to your tech logo
+const BILLZZY_LOGO_URL = '/assets/lite-logo.png';
+const LOGIN_HEADER_BACKGROUND_IMAGE_URL = '/assets/big-image-login.png'; // The image with the mascot/store
+const TECH_LOGO_URL = '/assets/tech-logo.png'; // Path to your tech logo
 // --- End Configuration ---
 
 export function LoginForm() {
@@ -19,8 +19,6 @@ export function LoginForm() {
   const handleGoogleSignIn = async () => {
     setIsLoading(true);
     try {
-      // Use the standard NextAuth redirect without specifying callbackUrl
-      // This allows NextAuth to handle the redirect properly
       const result = await signIn('google', { callbackUrl: '/dashboard' });
       
       // Log the result for debugging

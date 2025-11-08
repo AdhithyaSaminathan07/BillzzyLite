@@ -54,7 +54,7 @@ export function Sidebar({ isMobileOpen, setIsMobileOpen }: SidebarProps) {
       <div className={`fixed inset-0 bg-black bg-opacity-50 z-30 lg:hidden transition-opacity ${isMobileOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'}`} onClick={() => setIsMobileOpen(false)} />
       <aside className={`fixed top-0 left-0 h-full w-64 flex flex-col bg-white z-40 lg:relative transform transition-transform duration-300 ease-in-out shadow-2xl lg:shadow-none lg:border-r ${isMobileOpen ? 'translate-x-0' : '-translate-x-full'} lg:translate-x-0`}>
         <div className="flex h-16 items-center justify-between px-5 bg-gradient-to-r from-indigo-50 to-purple-50">
-          <Image src="/lite-logo.png" alt="BillzzyLite Logo" width={130} height={32} priority />
+          <Image src="/assets/lite-logo.png" alt="BillzzyLite Logo" width={130} height={32} priority />
           <button onClick={() => setIsMobileOpen(false)} className="lg:hidden p-2 rounded-full hover:bg-white/50 text-gray-600 hover:text-gray-900 transition-colors">
             <X size={22} />
           </button>
@@ -82,7 +82,7 @@ export function Sidebar({ isMobileOpen, setIsMobileOpen }: SidebarProps) {
 export function MobileHeader({ onMenuClick }: MobileHeaderProps) {
   return (
     <header className="fixed left-0 right-0 top-0 z-20 flex h-14 items-center justify-between border-b bg-white px-4 shadow-sm lg:hidden">
-      <Image src="/lite-logo.png" alt="BillzzyLite Logo" width={110} height={28} priority />
+      <Image src="/assets/lite-logo.png" alt="BillzzyLite Logo" width={110} height={28} priority />
       <button 
         onClick={onMenuClick} 
         className="px-3 py-2 rounded-lg bg-[#5a4fcf] text-white shadow-sm hover:bg-[#4c42b8] transition-all duration-200 hover:shadow-md active:scale-95"
