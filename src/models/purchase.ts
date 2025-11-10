@@ -31,7 +31,10 @@ const PurchaseSchema = new Schema(
     totalAmount: { type: Number, required: true },
     paymentStatus: { type: String, enum: ["paid", "pending"], default: "pending" },
   },
-  { timestamps: true }
+  { 
+    timestamps: true,
+    collection: 'purchases' // Explicitly specify collection name
+  }
 );
 
 const Purchase = models.Purchase || mongoose.model<IPurchase>("Purchase", PurchaseSchema);

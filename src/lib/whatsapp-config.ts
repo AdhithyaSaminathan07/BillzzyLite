@@ -27,12 +27,12 @@ export const whatsappTemplates = {
     name: "invoice_with_payment",
     language: { code: "en" }
   },
-  payment_receipt_cashhh: {
-    name: "payment_receipt_cashhh", 
+  payment_receipt_cashs: {
+    name: "payment_receipt_cashs", 
     language: { code: "en" }
   },
-  payment_receipt_upiii: {
-    name: "payment_receipt_upiii",
+  payment_receipt_upii: {
+    name: "payment_receipt_upii",
     language: { code: "en" }
   },
   payment_receipt_card: {

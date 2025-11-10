@@ -2,7 +2,6 @@
 
 import React, { useState } from 'react';
 import Image from 'next/image';
-import { useRouter } from 'next/navigation';
 import { signIn } from 'next-auth/react';
 
 // --- Configuration: Image Paths ---

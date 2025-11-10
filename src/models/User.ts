@@ -36,7 +36,10 @@ const UserSchema: Schema = new Schema({
     type: String,
     required: false,
   },
-}, { timestamps: true });
+}, { 
+  timestamps: true,
+  collection: 'users' // Explicitly specify collection name
+});
 
 
 export default mongoose.models.User || mongoose.model<IUser>('User', UserSchema);

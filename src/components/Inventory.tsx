@@ -396,6 +396,12 @@ const Inventory: FC = () => {
     const [searchQuery, setSearchQuery] = useState<string>("");
     const [isMounted, setIsMounted] = useState(false);
     const [updatedProductInfo, setUpdatedProductInfo] = useState<UpdateInfo | null>(null);
+    const [refreshTrigger, setRefreshTrigger] = useState(0);
+    
+    // Add a function to trigger refresh
+    const refreshProducts = useCallback(() => {
+        setRefreshTrigger(prev => prev + 1);
+    }, []);
 
     useEffect(() => { setIsMounted(true); }, []);
 
@@ -435,7 +441,7 @@ const Inventory: FC = () => {
             setProducts([]);
             setFetchStatus('succeeded');
         }
-    }, [sessionStatus]);
+    }, [sessionStatus, refreshTrigger]); // Add refreshTrigger as dependency
 
     const handleExcelUpload = useCallback(async (e: ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
@@ -480,7 +486,8 @@ const Inventory: FC = () => {
                 
                 const allProducts: Product[] = await response.json();
                 if (Array.isArray(allProducts)) { 
-                    setProducts(allProducts); 
+                    // Refresh the product list to ensure consistency
+                    refreshProducts();
                     alert(`${uploaded.length} products processed successfully!`); 
                 }
             } catch (err: unknown) {
@@ -488,7 +495,7 @@ const Inventory: FC = () => {
             } finally { e.target.value = ''; }
         };
         reader.readAsArrayBuffer(file);
-    }, []);
+    }, [refreshProducts]);
 
     const handleSaveProduct = useCallback(async (productData: ProductFormData, imageFile: File | null) => {
         const isEditing = !!productData.id;
@@ -516,32 +523,30 @@ const Inventory: FC = () => {
             
             const savedProduct = await response.json();
             
+            // Refresh the product list to ensure consistency
+            refreshProducts();
+            
             if (isEditing) {
-                setProducts(prev => prev.map(p => p.id === savedProduct.id ? savedProduct : p));
                 const quantityChange = savedProduct.quantity - originalQuantity;
                 if (quantityChange !== 0) setUpdatedProductInfo({ id: savedProduct.id, change: quantityChange });
-            } else {
-                setProducts(prev => [savedProduct, ...prev]);
             }
             setModalState({ isOpen: false, product: null });
         } catch (err: unknown) {
             alert(`Error: ${err instanceof Error ? err.message : 'Could not save product'}`);
         }
-    }, [products]);
+    }, [products, refreshProducts]);
 
     const handleDeleteProduct = useCallback(async (id: string) => {
         if (!window.confirm('Are you sure you want to delete this product?')) return;
-        const previousProducts = products;
-        setProducts(prev => prev.filter(p => p.id !== id));
-        setSwipedProductId(null);
         try {
             const response = await fetch(`/api/products/${id}`, { method: 'DELETE' });
             if (response.status !== 204) throw new Error('Failed to delete product on the server.');
+            // Refresh the product list to ensure consistency
+            refreshProducts();
         } catch (err: unknown) {
             alert(`Error: ${err instanceof Error ? err.message : 'Could not delete product'}`);
-            setProducts(previousProducts);
         }
-    }, [products]);
+    }, [refreshProducts]);
     
     const renderContent = () => {
         if (!isMounted || sessionStatus === 'loading' || fetchStatus === 'loading') {

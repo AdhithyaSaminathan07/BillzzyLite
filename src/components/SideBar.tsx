@@ -26,13 +26,21 @@ interface MobileHeaderProps {
   onMenuClick: () => void;
 }
 
-function NavLink({ href, children }: { href: string; children: React.ReactNode; }) {
+function NavLink({ href, children, setIsMobileOpen }: { href: string; children: React.ReactNode; setIsMobileOpen?: Dispatch<SetStateAction<boolean>>; }) {
   const pathname = usePathname();
   const isActive = pathname === href;
+
+  const handleClick = () => {
+    // Close mobile sidebar when a link is clicked
+    if (setIsMobileOpen) {
+      setIsMobileOpen(false);
+    }
+  };
 
   return (
     <Link
       href={href}
+      onClick={handleClick}
       className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 ${
         isActive
           ? 'bg-gradient-to-r from-indigo-500 to-indigo-600 text-white shadow-md'
@@ -61,12 +69,12 @@ export function Sidebar({ isMobileOpen, setIsMobileOpen }: SidebarProps) {
         </div>
         <div className="h-1 bg-gradient-to-r from-indigo-400 via-purple-400 to-pink-400" />
         <nav className="flex flex-1 flex-col space-y-2 p-4">
-          <NavLink href="/dashboard"><Home className="h-5 w-5" /><span>Dashboard</span></NavLink>
-          <NavLink href="/inventory"><Package className="h-5 w-5" /><span>Inventory</span></NavLink>
-          <NavLink href="/billing"><CreditCard className="h-5 w-5" /><span>Billing</span></NavLink>
-          <NavLink href="/billing-history"><Clock className="h-5 w-5" /><span>Billing History</span></NavLink>
-          <NavLink href="/purchase"><ShoppingCart className="h-5 w-5" /><span>Purchase</span></NavLink>
-          <NavLink href="/settings"><Settings className="h-5 w-5" /><span>Settings</span></NavLink>
+          <NavLink href="/dashboard" setIsMobileOpen={setIsMobileOpen}><Home className="h-5 w-5" /><span>Dashboard</span></NavLink>
+          <NavLink href="/inventory" setIsMobileOpen={setIsMobileOpen}><Package className="h-5 w-5" /><span>Inventory</span></NavLink>
+          <NavLink href="/billing" setIsMobileOpen={setIsMobileOpen}><CreditCard className="h-5 w-5" /><span>Billing</span></NavLink>
+          <NavLink href="/billing-history" setIsMobileOpen={setIsMobileOpen}><Clock className="h-5 w-5" /><span>Billing History</span></NavLink>
+          <NavLink href="/purchase" setIsMobileOpen={setIsMobileOpen}><ShoppingCart className="h-5 w-5" /><span>Purchase</span></NavLink>
+          <NavLink href="/settings" setIsMobileOpen={setIsMobileOpen}><Settings className="h-5 w-5" /><span>Settings</span></NavLink>
         </nav>
         <div className="p-4 mt-auto bg-gray-50 border-t">
           <button onClick={handleLogout} className="flex w-full items-center gap-3 rounded-xl px-4 py-3 text-red-600 transition-all hover:bg-red-50 active:bg-red-100 font-medium">

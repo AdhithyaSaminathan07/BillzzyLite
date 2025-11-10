@@ -5,7 +5,7 @@ import dbConnect from "@/lib/mongodb";
 import Purchase from "@/models/purchase";
 
 // ✅ GET all purchases for the tenant
-export async function GET(req: Request) {
+export async function GET(_req: Request) {
   try {
     const session = await getServerSession(authOptions);
     const tenantId = session?.user?.email;
@@ -18,7 +18,7 @@ export async function GET(req: Request) {
     await dbConnect();
     const purchases = await Purchase.find({ tenantId }).sort({ createdAt: -1 });
     return NextResponse.json(purchases);
-  } catch (error) {
+  } catch (_error) {
     return NextResponse.json({ error: "Failed to fetch purchases" }, { status: 500 });
   }
 }
@@ -38,7 +38,7 @@ export async function POST(req: Request) {
     const body = await req.json();
     const newPurchase = await Purchase.create({ ...body, tenantId });
     return NextResponse.json(newPurchase);
-  } catch (error) {
+  } catch (_error) {
     return NextResponse.json({ error: "Failed to create purchase" }, { status: 500 });
   }
 }

@@ -214,11 +214,13 @@ export default function BillingPage() {
     // ✅ Choose template and assign parameters (5 total)
     switch (messageType) {
       case 'cashPayment':
-        templateName = 'payment_receipt_cashh';
+        templateName = 'payment_receipt_cashs';
         break;
       case 'qrPayment':
-      case 'cardPayment':
         templateName = 'payment_receipt_upii';
+        break;
+      case 'cardPayment':
+        templateName = 'payment_receipt_card';
         break;
       default:
         throw new Error(`Invalid message type: ${messageType}`);
@@ -292,7 +294,7 @@ export default function BillingPage() {
   }
 };
 
-  const sendWhatsAppReceipt = async (paymentMethod: string) => {
+  const sendWhatsAppReceipt = React.useCallback(async (paymentMethod: string) => {
     let templateType = '';
     switch (paymentMethod) { 
       case 'cash': 
@@ -301,14 +303,11 @@ export default function BillingPage() {
       case 'qr-code': 
         templateType = 'qrPayment'; 
         break; 
-      case 'card': 
-        templateType = 'cardPayment'; 
-        break; 
       default: 
         templateType = 'cashPayment'; 
     }
     return await sendWhatsAppMessage(whatsAppNumber, templateType);
-  };
+  }, [whatsAppNumber, sendWhatsAppMessage]);
 
   const addToCart = React.useCallback((name: string, price: number, gstRate: number, productId?: string, isEditing = false) => {
     if (!name || price < 0) return;
@@ -476,7 +475,7 @@ export default function BillingPage() {
     });
   }, [selectedPayment, totalAmount, cart, handleTransactionDone, whatsAppNumber, sendWhatsAppReceipt]);
 
-  const handleStartNewBill = React.useCallback(() => {
+  const handleClearBill = React.useCallback(() => {
     if (cart.length === 0) return;
     setModal({ 
       isOpen: true, 
@@ -749,11 +748,10 @@ export default function BillingPage() {
             {showPaymentOptions && cart.length > 0 && (
               <div className="space-y-2">
                 <p className="text-xs font-semibold text-gray-700 text-center">Select Payment Method</p>
-                <div className="grid grid-cols-3 gap-1.5">
+                <div className="grid grid-cols-2 gap-1.5">
                   {[
                     { method: 'cash', label: 'Cash', color: 'green' },
-                    { method: 'qr-code', label: 'QR/UPI', color: 'blue' },
-                    { method: 'card', label: 'Card', color: 'purple' }
+                    { method: 'qr-code', label: 'QR/UPI', color: 'blue' }
                   ].map(({ method, label }) => (
                     <button 
                       key={method} 
@@ -844,30 +842,6 @@ export default function BillingPage() {
                   </div>
                 )}
 
-                {selectedPayment === 'card' && (
-                  <div className="rounded-xl bg-gradient-to-br from-purple-50 to-pink-50 p-2.5 border-2 border-purple-200">
-                    <p className="text-xs text-center font-medium text-gray-700 mb-2">
-                      Confirm card transaction was successful
-                    </p>
-                    <button 
-                      onClick={handlePaymentSuccess} 
-                      disabled={isMessaging} 
-                      className="w-full flex items-center justify-center gap-2 rounded-lg bg-purple-600 py-2 font-bold text-white disabled:bg-gray-400 hover:bg-purple-700 transition-colors shadow-md text-xs"
-                    >
-                      {isMessaging ? (
-                        <div className="flex items-center gap-2">
-                          <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent"></div>
-                          <span>Processing...</span>
-                        </div>
-                      ) : (
-                        <>
-                          <CreditCard size={16} />
-                          <span>Confirm Card Payment</span>
-                        </>
-                      )}
-                    </button>
-                  </div>
-                )}
               </div>
             )}
           </div>

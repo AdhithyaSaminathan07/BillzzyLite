@@ -34,9 +34,14 @@ const validateEnvVars = () => {
 // Run validation
 validateEnvVars();
 
+// Extract database name from URI for MongoDB adapter
+const MONGODB_URI = process.env.MONGODB_URI;
+const uri = new URL(MONGODB_URI!);
+const dbName = uri.pathname.substring(1) || 'billzzyDB';
+
 export const authOptions: NextAuthOptions = {
   // Use MongoDB to store user and account linking information
-  adapter: process.env.MONGODB_URI ? MongoDBAdapter(clientPromise) : undefined,
+  adapter: process.env.MONGODB_URI ? MongoDBAdapter(clientPromise, { databaseName: dbName }) : undefined,
 
   // Configure authentication providers
   providers: [

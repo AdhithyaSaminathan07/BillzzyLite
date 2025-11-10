@@ -37,7 +37,7 @@ const transformProduct = (product: IProductFromDB) => {
 
 
 // GET all products for a specific tenant
-export async function GET(request: NextRequest) {
+export async function GET(_request: NextRequest) {
   // 3. GET THE SESSION using getServerSession with your authOptions
   const session = await getServerSession(authOptions);
   const tenantId = session?.user?.email;

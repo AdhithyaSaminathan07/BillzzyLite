@@ -60,6 +60,7 @@ const ProductSchema = new Schema<IProduct>({
   },
 }, {
   timestamps: true,
+  collection: 'products' // Explicitly specify collection name
 });
 
 ProductSchema.index({ tenantId: 1, sku: 1 }, { unique: true, sparse: true });

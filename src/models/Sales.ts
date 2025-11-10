@@ -31,6 +31,8 @@ const SaleSchema = new Schema<ISale>({
     type: Date,
     default: Date.now,
   },
+}, {
+  collection: 'sales' // Explicitly specify collection name
 });
 
 const Sale = models.Sale || mongoose.model<ISale>("Sale", SaleSchema);

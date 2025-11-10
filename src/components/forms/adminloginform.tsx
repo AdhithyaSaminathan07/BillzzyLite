@@ -47,7 +47,7 @@ export default function AdminLoginForm() {
         router.push('/admin/dashboard');
         router.refresh();
       }
-    } catch (error) {
+    } catch (_error) {
       setError('An unexpected error occurred.');
     } finally {
       setLoading(false);
