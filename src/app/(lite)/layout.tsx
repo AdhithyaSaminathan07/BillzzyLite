@@ -1,10 +1,9 @@
 // src/app/(lite)/layout.tsx
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Sidebar, MobileHeader } from '@/components/SideBar'; 
 import { BottomNavBar } from '@/components/BottomNav';
-import { isIOS } from '@/lib/pwa-utils';
 
 export default function AppLayout({
   children,
@@ -13,40 +12,6 @@ export default function AppLayout({
   children: React.ReactNode; 
 }) {
   const [isMobileOpen, setIsMobileOpen] = useState(false);
-  const [deferredPrompt, setDeferredPrompt] = useState<Event | null>(null);
-  const [isStandalone, setIsStandalone] = useState(false);
-  const [isIOSSevice, setIsIOSSevice] = useState(false);
-
-  useEffect(() => {
-    // Check if already installed
-    const checkStandalone = () => {
-      const standalone = window.matchMedia('(display-mode: standalone)').matches || 
-        (window.navigator as unknown as { standalone?: boolean }).standalone === true;
-      setIsStandalone(standalone);
-    };
-
-    // Check if it's iOS
-    const checkIOS = () => {
-      const ios = isIOS();
-      setIsIOSSevice(ios);
-    };
-
-    checkStandalone();
-    checkIOS();
-
-    // Handle installation prompt
-    const handleBeforeInstallPrompt = (e: Event) => {
-      e.preventDefault();
-      setDeferredPrompt(e);
-      console.log('PWA install prompt available');
-    };
-
-    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
-
-    return () => {
-      window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
-    };
-  }, []);
 
   return (
     <div className="flex h-screen bg-gray-50">
