@@ -60,18 +60,28 @@ export default function AppLayout({
       promptEvent.userChoice.then((choiceResult) => {
         if (choiceResult.outcome === 'accepted') {
           console.log('User accepted the install prompt');
+          // Show success message
+          alert('App installed successfully! You can now use it from your home screen.');
           // Refresh the page to ensure proper installation
           setTimeout(() => {
             window.location.reload();
-          }, 1000);
+          }, 2000);
         } else {
           console.log('User dismissed the install prompt');
+          alert('Installation cancelled. You can try again later.');
         }
+        setDeferredPrompt(null);
+      }).catch((error) => {
+        console.error('Error during PWA installation prompt:', error);
+        alert('Installation failed. Please try again later.');
         setDeferredPrompt(null);
       });
     } else if (isIOS) {
       // For iOS devices
       alert('To install this app on iOS:\n1. Tap the Share button\n2. Select "Add to Home Screen"\n3. Tap "Add"');
+    } else {
+      // Fallback for when deferredPrompt is not available
+      alert('Installation is not available at this time. Please try again later or manually add to home screen.');
     }
   };
 

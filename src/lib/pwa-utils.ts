@@ -53,6 +53,10 @@ export function promptInstallPWA(): void {
       console.log('User accepted the install prompt');
       // Show a success message
       alert('App installed successfully! You can now use it from your home screen.');
+      // Refresh the page to ensure proper installation
+      setTimeout(() => {
+        window.location.reload();
+      }, 2000);
     } else {
       console.log('User dismissed the install prompt');
       // Show a message to the user
@@ -65,6 +69,8 @@ export function promptInstallPWA(): void {
     console.error('Error during PWA installation prompt:', error);
     // Show an error message to the user
     alert('Installation failed. Please try again later.');
+    // Clear the saved prompt since it can't be used again
+    (window as unknown as { deferredPrompt?: Event }).deferredPrompt = undefined;
   });
 }
 
