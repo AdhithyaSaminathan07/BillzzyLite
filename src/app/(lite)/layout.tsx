@@ -4,6 +4,7 @@
 import React, { useState, useEffect } from 'react';
 import { Sidebar, MobileHeader } from '@/components/SideBar'; 
 import { BottomNavBar } from '@/components/BottomNav';
+import { isIOS } from '@/lib/pwa-utils';
 
 export default function AppLayout({
   children,
@@ -14,7 +15,7 @@ export default function AppLayout({
   const [isMobileOpen, setIsMobileOpen] = useState(false);
   const [deferredPrompt, setDeferredPrompt] = useState<Event | null>(null);
   const [isStandalone, setIsStandalone] = useState(false);
-  const [isIOS, setIsIOS] = useState(false);
+  const [isIOSSevice, setIsIOSSevice] = useState(false);
 
   useEffect(() => {
     // Check if already installed
@@ -26,9 +27,8 @@ export default function AppLayout({
 
     // Check if it's iOS
     const checkIOS = () => {
-      const userAgent = window.navigator.userAgent.toLowerCase();
-      const ios = /iphone|ipad|ipod/.test(userAgent);
-      setIsIOS(ios);
+      const ios = isIOS();
+      setIsIOSSevice(ios);
     };
 
     checkStandalone();
@@ -48,43 +48,6 @@ export default function AppLayout({
     };
   }, []);
 
-  const handleInstallClick = () => {
-    if (deferredPrompt) {
-      // Cast to unknown first, then to the specific type
-      const promptEvent = deferredPrompt as unknown as {
-        prompt: () => Promise<void>;
-        userChoice: Promise<{ outcome: string }>;
-      };
-      
-      promptEvent.prompt();
-      promptEvent.userChoice.then((choiceResult) => {
-        if (choiceResult.outcome === 'accepted') {
-          console.log('User accepted the install prompt');
-          // Show success message
-          alert('App installed successfully! You can now use it from your home screen.');
-          // Refresh the page to ensure proper installation
-          setTimeout(() => {
-            window.location.reload();
-          }, 2000);
-        } else {
-          console.log('User dismissed the install prompt');
-          alert('Installation cancelled. You can try again later.');
-        }
-        setDeferredPrompt(null);
-      }).catch((error) => {
-        console.error('Error during PWA installation prompt:', error);
-        alert('Installation failed. Please try again later.');
-        setDeferredPrompt(null);
-      });
-    } else if (isIOS) {
-      // For iOS devices
-      alert('To install this app on iOS:\n1. Tap the Share button\n2. Select "Add to Home Screen"\n3. Tap "Add"');
-    } else {
-      // Fallback for when deferredPrompt is not available
-      alert('Installation is not available at this time. Please try again later or manually add to home screen.');
-    }
-  };
-
   return (
     <div className="flex h-screen bg-gray-50">
       <Sidebar 
@@ -101,20 +64,6 @@ export default function AppLayout({
         </main>
       </div>
       <BottomNavBar />
-      {/* PWA Installation Button - only show if not already installed */}
-      {!isStandalone && (
-        <div className="fixed bottom-24 left-0 right-0 flex justify-center z-50">
-          <button
-            onClick={handleInstallClick}
-            className="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-3 px-6 rounded-full shadow-lg transform transition-all duration-300 hover:scale-105 flex items-center gap-2"
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-              <path fillRule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clipRule="evenodd" />
-            </svg>
-            Install App
-          </button>
-        </div>
-      )}
     </div>
   );
 }

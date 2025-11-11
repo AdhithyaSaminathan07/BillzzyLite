@@ -2,34 +2,12 @@
 'use client';
 
 import './globals.css';
-import { ReactNode, useEffect } from 'react';
+import { ReactNode } from 'react';
 // We only need the provider component now
 import NextAuthSessionProvider from '@/components/SessionProvider';
-import { registerServiceWorker } from '@/lib/pwa-utils';
 
 // This is no longer an 'async' function
 export default function RootLayout({ children }: { children: ReactNode }) {
-  useEffect(() => {
-    // Register service worker for PWA functionality
-    registerServiceWorker();
-    
-    // Handle PWA installation prompt
-    const handleBeforeInstallPrompt = (e: Event) => {
-      // Prevent the mini-infobar from appearing on mobile
-      e.preventDefault();
-      // Stash the event so it can be triggered later
-      (window as unknown as { deferredPrompt: Event }).deferredPrompt = e;
-      // Update UI to notify the user they can install the PWA
-      console.log('PWA install prompt available');
-    };
-
-    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
-
-    return () => {
-      window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
-    };
-  }, []);
-
   return (
     <html lang="en">
       <head>

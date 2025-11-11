@@ -35,7 +35,7 @@ export function promptInstallPWA(): void {
   if (!promptEvent) {
     console.log('No installation prompt available');
     // Show a message to the user
-    alert('Installation is not available at this time. Please try again later or manually add to home screen.');
+    alert('To install this app, look for the install icon in your browser\'s address bar or use the browser menu to "Add to Home Screen".');
     return;
   }
 
@@ -53,10 +53,6 @@ export function promptInstallPWA(): void {
       console.log('User accepted the install prompt');
       // Show a success message
       alert('App installed successfully! You can now use it from your home screen.');
-      // Refresh the page to ensure proper installation
-      setTimeout(() => {
-        window.location.reload();
-      }, 2000);
     } else {
       console.log('User dismissed the install prompt');
       // Show a message to the user
