@@ -60,6 +60,10 @@ export default function AppLayout({
       promptEvent.userChoice.then((choiceResult) => {
         if (choiceResult.outcome === 'accepted') {
           console.log('User accepted the install prompt');
+          // Refresh the page to ensure proper installation
+          setTimeout(() => {
+            window.location.reload();
+          }, 1000);
         } else {
           console.log('User dismissed the install prompt');
         }
