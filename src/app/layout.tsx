@@ -22,7 +22,10 @@
 //         <meta name="mobile-web-app-capable" content="yes" />
 //         <meta name="apple-mobile-web-app-capable" content="yes" />
 //         <meta name="apple-mobile-web-app-status-bar-style" content="default" />
-//         <link rel="apple-touch-icon" href="/icons/icon-192.png" />
+//         <meta name="apple-mobile-web-app-title" content="Billzzy Lite" />
+//         <link rel="apple-touch-icon" href="/assets/icon-192.png" />
+//         <link rel="icon" type="image/png" sizes="192x192" href="/assets/icon-192.png" />
+//         <link rel="icon" type="image/png" sizes="512x512" href="/assets/icon-512.png" />
 //       </head>
 //       <body className='bg-gray-50'>
 //         {/* Now this line will work because 'session' has been defined above */}
@@ -63,13 +66,37 @@
 // }
 
 // src/app/layout.tsx
+'use client';
+
 import './globals.css';
-import { ReactNode } from 'react';
+import { ReactNode, useEffect } from 'react';
 // We only need the provider component now
 import NextAuthSessionProvider from '@/components/SessionProvider';
+import { registerServiceWorker } from '@/lib/pwa-utils';
 
 // This is no longer an 'async' function
 export default function RootLayout({ children }: { children: ReactNode }) {
+  useEffect(() => {
+    // Register service worker for PWA functionality
+    registerServiceWorker();
+    
+    // Handle PWA installation prompt
+    const handleBeforeInstallPrompt = (e: Event) => {
+      // Prevent the mini-infobar from appearing on mobile
+      e.preventDefault();
+      // Stash the event so it can be triggered later
+      (window as unknown as { deferredPrompt: Event }).deferredPrompt = e;
+      // Update UI to notify the user they can install the PWA
+      console.log('PWA install prompt available');
+    };
+
+    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+
+    return () => {
+      window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+    };
+  }, []);
+
   return (
     <html lang="en">
       <head>
@@ -77,13 +104,34 @@ export default function RootLayout({ children }: { children: ReactNode }) {
         <meta name="description" content="A lightweight billing PWA" />
         <link rel="manifest" href="/manifest.json" />
         <meta name="theme-color" content="#0ea5e9" />
+        <meta name="mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+        <meta name="apple-mobile-web-app-title" content="Billzzy Lite" />
+        <link rel="apple-touch-icon" href="/assets/icon-192.png" />
+        <link rel="icon" type="image/png" sizes="192x192" href="/assets/icon-192.png" />
+        <link rel="icon" type="image/png" sizes="512x512" href="/assets/icon-512.png" />
       </head>
       <body className='bg-gray-50'>
         {/* The provider will now handle fetching the session on the client */}
         <NextAuthSessionProvider>
           {children}
         </NextAuthSessionProvider>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              if ('serviceWorker' in navigator) {
+                window.addEventListener('load', function() {
+                  navigator.serviceWorker.register('/sw.js').then(function(registration) {
+                    console.log('SW registered: ', registration);
+                  }).catch(function(registrationError) {
+                    console.log('SW registration failed: ', registrationError);
+                  });
+                });
+              }
+            `,
+          }}
+        />
       </body>
     </html>
   );

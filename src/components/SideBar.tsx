@@ -59,11 +59,26 @@ export function Sidebar({ isMobileOpen, setIsMobileOpen }: SidebarProps) {
   
   return (
     <>
-      <div className={`fixed inset-0 bg-black bg-opacity-50 z-30 lg:hidden transition-opacity ${isMobileOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'}`} onClick={() => setIsMobileOpen(false)} />
-      <aside className={`fixed top-0 left-0 h-full w-64 flex flex-col bg-white z-40 lg:relative transform transition-transform duration-300 ease-in-out shadow-2xl lg:shadow-none lg:border-r ${isMobileOpen ? 'translate-x-0' : '-translate-x-full'} lg:translate-x-0`}>
+      {/* Overlay with proper z-index */}
+      <div 
+        className={`fixed inset-0 bg-black bg-opacity-50 z-30 lg:hidden transition-opacity duration-300 ease-in-out ${
+          isMobileOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'
+        }`} 
+        onClick={() => setIsMobileOpen(false)} 
+      />
+      {/* Sidebar with consistent z-index */}
+      <aside 
+        className={`fixed top-0 left-0 h-full w-64 flex flex-col bg-white z-40 lg:relative transform transition-transform duration-300 ease-in-out shadow-2xl lg:shadow-none lg:border-r ${
+          isMobileOpen ? 'translate-x-0' : '-translate-x-full'
+        } lg:translate-x-0`}
+      >
         <div className="flex h-16 items-center justify-between px-5 bg-gradient-to-r from-indigo-50 to-purple-50">
           <Image src="/assets/lite-logo.png" alt="BillzzyLite Logo" width={130} height={32} priority />
-          <button onClick={() => setIsMobileOpen(false)} className="lg:hidden p-2 rounded-full hover:bg-white/50 text-gray-600 hover:text-gray-900 transition-colors">
+          <button 
+            onClick={() => setIsMobileOpen(false)} 
+            className="lg:hidden p-2 rounded-full hover:bg-white/50 text-gray-600 hover:text-gray-900 transition-colors"
+            aria-label="Close menu"
+          >
             <X size={22} />
           </button>
         </div>
@@ -77,7 +92,10 @@ export function Sidebar({ isMobileOpen, setIsMobileOpen }: SidebarProps) {
           <NavLink href="/settings" setIsMobileOpen={setIsMobileOpen}><Settings className="h-5 w-5" /><span>Settings</span></NavLink>
         </nav>
         <div className="p-4 mt-auto bg-gray-50 border-t">
-          <button onClick={handleLogout} className="flex w-full items-center gap-3 rounded-xl px-4 py-3 text-red-600 transition-all hover:bg-red-50 active:bg-red-100 font-medium">
+          <button 
+            onClick={handleLogout} 
+            className="flex w-full items-center gap-3 rounded-xl px-4 py-3 text-red-600 transition-all hover:bg-red-50 active:bg-red-100 font-medium"
+          >
             <LogOut className="h-5 w-5" />
             <span>Logout</span>
           </button>
@@ -94,6 +112,7 @@ export function MobileHeader({ onMenuClick }: MobileHeaderProps) {
       <button 
         onClick={onMenuClick} 
         className="px-3 py-2 rounded-lg bg-[#5a4fcf] text-white shadow-sm hover:bg-[#4c42b8] transition-all duration-200 hover:shadow-md active:scale-95"
+        aria-label="Open menu"
       >
         <Menu size={22} strokeWidth={2.3} />
       </button>
