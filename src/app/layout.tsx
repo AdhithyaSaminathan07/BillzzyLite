@@ -27,7 +27,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
         <meta name="msapplication-config" content="none" />
         
         {/* Apple Touch Icons */}
-        <link rel="apple-touch-icon" sizes="180x180" href="/assets/pwa-app.png" />
+        <link rel="apple-touch-icon" sizes="180x180" href="/assets/icon-192.png" />
         <link rel="apple-touch-icon" sizes="152x152" href="/assets/icon-192.png" />
         <link rel="apple-touch-icon" sizes="120x120" href="/assets/icon-192.png" />
         <link rel="apple-touch-icon" sizes="76x76" href="/assets/icon-192.png" />
@@ -39,7 +39,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
         <link rel="icon" type="image/png" sizes="16x16" href="/assets/icon-192.png" />
         
         {/* Mask Icons for Safari */}
-        <link rel="mask-icon" href="/assets/pwa-app.png" color="#0ea5e9" />
+        <link rel="mask-icon" href="/assets/icon-192.png" color="#0ea5e9" />
       </head>
       <body className='bg-gray-50'>
         {/* The provider will now handle fetching the session on the client */}
