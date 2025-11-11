@@ -1,15 +1,6 @@
 // src/lib/pwa-utils.ts
 // Utility functions for PWA functionality
 
-interface BeforeInstallPromptEvent extends Event {
-  readonly platforms: string[];
-  readonly userChoice: Promise<{
-    outcome: 'accepted' | 'dismissed';
-    platform: string;
-  }>;
-  prompt(): Promise<void>;
-}
-
 /**
  * Register the service worker for PWA functionality
  */
@@ -40,27 +31,40 @@ export function isRunningStandalone(): boolean {
  * Prompt user to install the PWA (for browsers that support it)
  */
 export function promptInstallPWA(): void {
-  const promptEvent = (window as unknown as { deferredPrompt?: BeforeInstallPromptEvent }).deferredPrompt;
+  const promptEvent = (window as unknown as { deferredPrompt?: Event }).deferredPrompt;
   if (!promptEvent) {
     console.log('No installation prompt available');
+    // Show a message to the user
+    alert('Installation is not available at this time. Please try again later or manually add to home screen.');
     return;
   }
 
   // Show the install prompt
-  promptEvent.prompt();
+  const installPrompt = promptEvent as unknown as {
+    prompt: () => Promise<void>;
+    userChoice: Promise<{ outcome: string }>;
+  };
+  
+  installPrompt.prompt();
   
   // Wait for the user to respond to the prompt
-  promptEvent.userChoice.then((choiceResult) => {
+  installPrompt.userChoice.then((choiceResult) => {
     if (choiceResult.outcome === 'accepted') {
       console.log('User accepted the install prompt');
+      // Show a success message
+      alert('App installed successfully! You can now use it from your home screen.');
     } else {
       console.log('User dismissed the install prompt');
+      // Show a message to the user
+      alert('Installation cancelled. You can try again later.');
     }
     
     // Clear the saved prompt since it can't be used again
-    (window as unknown as { deferredPrompt?: BeforeInstallPromptEvent }).deferredPrompt = undefined;
+    (window as unknown as { deferredPrompt?: Event }).deferredPrompt = undefined;
   }).catch((error) => {
     console.error('Error during PWA installation prompt:', error);
+    // Show an error message to the user
+    alert('Installation failed. Please try again later.');
   });
 }
 
@@ -68,5 +72,13 @@ export function promptInstallPWA(): void {
  * Check if PWA is installable
  */
 export function isPWAInstallable(): boolean {
-  return !!((window as unknown as { deferredPrompt?: BeforeInstallPromptEvent }).deferredPrompt);
+  return !!((window as unknown as { deferredPrompt?: Event }).deferredPrompt);
+}
+
+/**
+ * Check if the device is iOS
+ */
+export function isIOS(): boolean {
+  const userAgent = window.navigator.userAgent.toLowerCase();
+  return /iphone|ipad|ipod/.test(userAgent);
 }
