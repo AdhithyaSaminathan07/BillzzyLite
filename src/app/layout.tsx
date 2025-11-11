@@ -27,7 +27,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
         <meta name="msapplication-config" content="none" />
         
         {/* Apple Touch Icons */}
-        <link rel="apple-touch-icon" sizes="180x180" href="/assets/icon-192.png" />
+        <link rel="apple-touch-icon" sizes="180x180" href="/assets/pwa-app.png" />
         <link rel="apple-touch-icon" sizes="152x152" href="/assets/icon-192.png" />
         <link rel="apple-touch-icon" sizes="120x120" href="/assets/icon-192.png" />
         <link rel="apple-touch-icon" sizes="76x76" href="/assets/icon-192.png" />

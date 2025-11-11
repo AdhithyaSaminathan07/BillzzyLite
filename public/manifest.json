@@ -6,10 +6,13 @@
   "id": "/",
   "scope": "/",
   "display": "standalone",
+  "display_override": ["standalone", "minimal-ui"],
   "background_color": "#ffffff",
   "theme_color": "#0ea5e9",
   "orientation": "portrait-primary",
   "lang": "en",
+  "dir": "ltr",
+  "prefer_related_applications": false,
   "icons": [
     {
       "src": "/assets/icon-192.png",
@@ -34,6 +37,12 @@
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "maskable"
+    },
+    {
+      "src": "/assets/pwa-app.png",
+      "sizes": "180x180",
+      "type": "image/png",
+      "purpose": "any apple touch icon"
     }
   ],
   "shortcuts": [
@@ -60,5 +69,9 @@
       ]
     }
   ],
-  "categories": ["business", "productivity", "finance"]
+  "categories": ["business", "productivity", "finance"],
+  "launch_handler": {
+    "client_mode": "focus-existing"
+  },
+  "related_applications": []
 }
