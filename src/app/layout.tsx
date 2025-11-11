@@ -109,9 +109,16 @@ export default function RootLayout({ children }: { children: ReactNode }) {
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="default" />
         <meta name="apple-mobile-web-app-title" content="Billzzy Lite" />
-        <link rel="apple-touch-icon" href="/assets/icon-192.png" />
+        <link rel="apple-touch-icon" sizes="180x180" href="/assets/pwa-app.png" />
         <link rel="icon" type="image/png" sizes="192x192" href="/assets/icon-192.png" />
         <link rel="icon" type="image/png" sizes="512x512" href="/assets/icon-512.png" />
+        <link rel="icon" type="image/png" sizes="32x32" href="/assets/icon-192.png" />
+        <link rel="icon" type="image/png" sizes="16x16" href="/assets/icon-192.png" />
+        {/* Add additional meta tags for better PWA support */}
+        <meta name="application-name" content="Billzzy Lite" />
+        <meta name="format-detection" content="telephone=no" />
+        <meta name="msapplication-TileColor" content="#0ea5e9" />
+        <meta name="msapplication-TileImage" content="/assets/icon-192.png" />
       </head>
       <body className='bg-gray-50'>
         {/* The provider will now handle fetching the session on the client */}
@@ -126,7 +133,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
                   navigator.serviceWorker.register('/sw.js').then(function(registration) {
                     console.log('SW registered: ', registration);
                   }).catch(function(registrationError) {
-                    console.log('SW registration failed: ', registrationError);
+                    console.error('SW registration failed: ', registrationError);
                   });
                 });
               }

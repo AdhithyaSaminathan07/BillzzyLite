@@ -22,7 +22,7 @@ export function registerServiceWorker() {
           console.log('Service Worker registered: ', registration);
         })
         .catch((error) => {
-          console.log('Service Worker registration failed: ', error);
+          console.error('Service Worker registration failed: ', error);
         });
     });
   }
@@ -59,5 +59,14 @@ export function promptInstallPWA(): void {
     
     // Clear the saved prompt since it can't be used again
     (window as unknown as { deferredPrompt?: BeforeInstallPromptEvent }).deferredPrompt = undefined;
+  }).catch((error) => {
+    console.error('Error during PWA installation prompt:', error);
   });
+}
+
+/**
+ * Check if PWA is installable
+ */
+export function isPWAInstallable(): boolean {
+  return !!((window as unknown as { deferredPrompt?: BeforeInstallPromptEvent }).deferredPrompt);
 }
