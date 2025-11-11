@@ -30,5 +30,33 @@
       "type": "image/png",
       "purpose": "any maskable"
     }
-  ]
+  ],
+  "shortcuts": [
+    {
+      "name": "Dashboard",
+      "url": "/dashboard",
+      "icons": [
+        {
+          "src": "/assets/icon-192.png",
+          "sizes": "192x192",
+          "type": "image/png"
+        }
+      ]
+    },
+    {
+      "name": "Billing",
+      "url": "/billing",
+      "icons": [
+        {
+          "src": "/assets/icon-192.png",
+          "sizes": "192x192",
+          "type": "image/png"
+        }
+      ]
+    }
+  ],
+  "categories": ["business", "productivity", "finance"],
+  "lang": "en",
+  "dir": "ltr",
+  "prefer_related_applications": false
 }

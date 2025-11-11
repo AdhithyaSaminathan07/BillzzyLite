@@ -23,7 +23,7 @@ export default function AppLayout({
         <MobileHeader 
           onMenuClick={() => setIsMobileOpen(true)} 
         />
-        {/* Added z-index to ensure content is properly layered */}
+        {/* Added proper z-index and positioning to ensure content doesn't interfere with sidebar */}
         <main className="flex-1 overflow-y-auto pt-14 lg:pt-0 pb-20 lg:pb-0 z-10 relative">
           {children}
         </main>

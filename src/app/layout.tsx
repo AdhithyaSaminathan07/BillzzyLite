@@ -102,6 +102,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
       <head>
         <title>Billzzy Lite</title>
         <meta name="description" content="A lightweight billing PWA" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
         <link rel="manifest" href="/manifest.json" />
         <meta name="theme-color" content="#0ea5e9" />
         <meta name="mobile-web-app-capable" content="yes" />

@@ -26,19 +26,24 @@ interface MobileHeaderProps {
   onMenuClick: () => void;
 }
 
-function NavLink({ href, children, setIsMobileOpen }: { href: string; children: React.ReactNode; setIsMobileOpen?: Dispatch<SetStateAction<boolean>>; }) {
-  const pathname = usePathname();
-  const isActive = pathname === href;
-
-  const handleClick = () => {
-    // Close mobile sidebar when a link is clicked
-    if (setIsMobileOpen) {
-      setIsMobileOpen(false);
-    }
+// Create a separate component for NavLink to ensure proper closure
+const NavLink = React.forwardRef<
+  HTMLAnchorElement,
+  {
+    href: string;
+    children: React.ReactNode;
+    setIsMobileOpen: Dispatch<SetStateAction<boolean>>;
+    isActive: boolean;
+  }
+>(({ href, children, setIsMobileOpen, isActive }, ref) => {
+  const handleClick = (e: React.MouseEvent) => {
+    // Close the mobile sidebar after clicking a link
+    setIsMobileOpen(false);
   };
 
   return (
     <Link
+      ref={ref}
       href={href}
       onClick={handleClick}
       className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 ${
@@ -50,25 +55,28 @@ function NavLink({ href, children, setIsMobileOpen }: { href: string; children: 
       {children}
     </Link>
   );
-}
+});
+
+NavLink.displayName = 'NavLink';
 
 export function Sidebar({ isMobileOpen, setIsMobileOpen }: SidebarProps) {
+  const pathname = usePathname();
   const handleLogout = () => {
     signOut({ callbackUrl: '/' });
   };
   
   return (
     <>
-      {/* Overlay with proper z-index */}
+      {/* Overlay with proper z-index - higher than bottom nav */}
       <div 
-        className={`fixed inset-0 bg-black bg-opacity-50 z-30 lg:hidden transition-opacity duration-300 ease-in-out ${
+        className={`fixed inset-0 bg-black bg-opacity-50 z-50 lg:hidden transition-opacity duration-300 ease-in-out ${
           isMobileOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'
         }`} 
         onClick={() => setIsMobileOpen(false)} 
       />
-      {/* Sidebar with consistent z-index */}
+      {/* Sidebar with highest z-index to appear above all other elements */}
       <aside 
-        className={`fixed top-0 left-0 h-full w-64 flex flex-col bg-white z-40 lg:relative transform transition-transform duration-300 ease-in-out shadow-2xl lg:shadow-none lg:border-r ${
+        className={`fixed top-0 left-0 h-full w-64 flex flex-col bg-white z-50 lg:relative transform transition-transform duration-300 ease-in-out shadow-2xl lg:shadow-none lg:border-r ${
           isMobileOpen ? 'translate-x-0' : '-translate-x-full'
         } lg:translate-x-0`}
       >
@@ -84,12 +92,48 @@ export function Sidebar({ isMobileOpen, setIsMobileOpen }: SidebarProps) {
         </div>
         <div className="h-1 bg-gradient-to-r from-indigo-400 via-purple-400 to-pink-400" />
         <nav className="flex flex-1 flex-col space-y-2 p-4">
-          <NavLink href="/dashboard" setIsMobileOpen={setIsMobileOpen}><Home className="h-5 w-5" /><span>Dashboard</span></NavLink>
-          <NavLink href="/inventory" setIsMobileOpen={setIsMobileOpen}><Package className="h-5 w-5" /><span>Inventory</span></NavLink>
-          <NavLink href="/billing" setIsMobileOpen={setIsMobileOpen}><CreditCard className="h-5 w-5" /><span>Billing</span></NavLink>
-          <NavLink href="/billing-history" setIsMobileOpen={setIsMobileOpen}><Clock className="h-5 w-5" /><span>Billing History</span></NavLink>
-          <NavLink href="/purchase" setIsMobileOpen={setIsMobileOpen}><ShoppingCart className="h-5 w-5" /><span>Purchase</span></NavLink>
-          <NavLink href="/settings" setIsMobileOpen={setIsMobileOpen}><Settings className="h-5 w-5" /><span>Settings</span></NavLink>
+          <NavLink 
+            href="/dashboard" 
+            setIsMobileOpen={setIsMobileOpen} 
+            isActive={pathname === '/dashboard'}
+          >
+            <Home className="h-5 w-5" /><span>Dashboard</span>
+          </NavLink>
+          <NavLink 
+            href="/inventory" 
+            setIsMobileOpen={setIsMobileOpen} 
+            isActive={pathname === '/inventory'}
+          >
+            <Package className="h-5 w-5" /><span>Inventory</span>
+          </NavLink>
+          <NavLink 
+            href="/billing" 
+            setIsMobileOpen={setIsMobileOpen} 
+            isActive={pathname === '/billing'}
+          >
+            <CreditCard className="h-5 w-5" /><span>Billing</span>
+          </NavLink>
+          <NavLink 
+            href="/billing-history" 
+            setIsMobileOpen={setIsMobileOpen} 
+            isActive={pathname === '/billing-history'}
+          >
+            <Clock className="h-5 w-5" /><span>Billing History</span>
+          </NavLink>
+          <NavLink 
+            href="/purchase" 
+            setIsMobileOpen={setIsMobileOpen} 
+            isActive={pathname === '/purchase'}
+          >
+            <ShoppingCart className="h-5 w-5" /><span>Purchase</span>
+          </NavLink>
+          <NavLink 
+            href="/settings" 
+            setIsMobileOpen={setIsMobileOpen} 
+            isActive={pathname === '/settings'}
+          >
+            <Settings className="h-5 w-5" /><span>Settings</span>
+          </NavLink>
         </nav>
         <div className="p-4 mt-auto bg-gray-50 border-t">
           <button 
@@ -107,7 +151,7 @@ export function Sidebar({ isMobileOpen, setIsMobileOpen }: SidebarProps) {
 
 export function MobileHeader({ onMenuClick }: MobileHeaderProps) {
   return (
-    <header className="fixed left-0 right-0 top-0 z-20 flex h-14 items-center justify-between border-b bg-white px-4 shadow-sm lg:hidden">
+    <header className="fixed left-0 right-0 top-0 z-40 flex h-14 items-center justify-between border-b bg-white px-4 shadow-sm lg:hidden">
       <Image src="/assets/lite-logo.png" alt="BillzzyLite Logo" width={110} height={28} priority />
       <button 
         onClick={onMenuClick} 
