@@ -1,77 +1,38 @@
 {
+  "theme_color": "#0ea5e9",
+  "background_color": "#ffffff",
+  "display": "standalone",
+  "scope": "/",
+  "start_url": "/",
   "name": "Billzzy Lite",
   "short_name": "Billzzy",
   "description": "A lightweight billing PWA",
-  "start_url": "/",
-  "id": "/",
-  "scope": "/",
-  "display": "standalone",
-  "display_override": ["standalone", "minimal-ui"],
-  "background_color": "#ffffff",
-  "theme_color": "#0ea5e9",
-  "orientation": "portrait-primary",
-  "lang": "en",
-  "dir": "ltr",
-  "prefer_related_applications": false,
   "icons": [
     {
       "src": "/assets/icon-192.png",
       "sizes": "192x192",
-      "type": "image/png",
-      "purpose": "any"
+      "type": "image/png"
     },
     {
-      "src": "/assets/icon-192.png",
-      "sizes": "192x192",
-      "type": "image/png",
-      "purpose": "maskable"
+      "src": "/assets/icon-256.png", 
+      "sizes": "256x256",
+      "type": "image/png"
+    },
+    {
+      "src": "/assets/icon-384.png",
+      "sizes": "384x384",
+      "type": "image/png"
+    },
+    {
+      "src": "/assets/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
     },
     {
       "src": "/assets/icon-512.png",
       "sizes": "512x512",
       "type": "image/png",
-      "purpose": "any"
-    },
-    {
-      "src": "/assets/icon-512.png",
-      "sizes": "512x512",
-      "type": "image/png",
-      "purpose": "maskable"
-    },
-    {
-      "src": "/assets/pwa-app.png",
-      "sizes": "180x180",
-      "type": "image/png",
-      "purpose": "any apple touch icon"
+      "purpose": "any maskable"
     }
-  ],
-  "shortcuts": [
-    {
-      "name": "Dashboard",
-      "url": "/dashboard",
-      "icons": [
-        {
-          "src": "/assets/icon-192.png",
-          "sizes": "192x192",
-          "type": "image/png"
-        }
-      ]
-    },
-    {
-      "name": "Billing",
-      "url": "/billing",
-      "icons": [
-        {
-          "src": "/assets/icon-192.png",
-          "sizes": "192x192",
-          "type": "image/png"
-        }
-      ]
-    }
-  ],
-  "categories": ["business", "productivity", "finance"],
-  "launch_handler": {
-    "client_mode": "focus-existing"
-  },
-  "related_applications": []
+  ]
 }
