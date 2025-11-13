@@ -23,6 +23,7 @@ export default function AdminDashboard() {
   const [searchTerm, setSearchTerm] = useState('');
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
+  const [deletingId, setDeletingId] = useState<string | null>(null);
 
   // Create a separate function for fetching users with date filters
   const fetchUsers = async (start: string = '', end: string = '') => {
@@ -66,6 +67,32 @@ export default function AdminDashboard() {
     setStartDate('');
     setEndDate('');
     fetchUsers();
+  };
+
+  // Add the delete tenant function
+  const handleDeleteTenant = async (userId: string, userName: string) => {
+    // Confirm before deleting
+    if (!confirm(`Are you sure you want to delete tenant "${userName}"? This action cannot be undone.`)) {
+      return;
+    }
+    
+    try {
+      setDeletingId(userId);
+      const res = await fetch(`/api/admin/tenants?userId=${userId}`, {
+        method: 'DELETE',
+      });
+      
+      if (!res.ok) {
+        throw new Error('Failed to delete tenant');
+      }
+      
+      // Refresh the user list
+      fetchUsers();
+    } catch (err) {
+      setError((err as Error).message);
+    } finally {
+      setDeletingId(null);
+    }
   };
 
   const handleLogout = async () => {
@@ -187,6 +214,7 @@ export default function AdminDashboard() {
                   <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
                   <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Mobile</th>
                   <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Bill Count</th>
+                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
@@ -205,6 +233,19 @@ export default function AdminDashboard() {
                       <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
                         {user.billCount || 0}
                       </span>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                      <button
+                        onClick={() => handleDeleteTenant(user._id, user.name)}
+                        disabled={deletingId === user._id}
+                        className={`px-3 py-1 rounded-md text-white text-sm ${
+                          deletingId === user._id 
+                            ? 'bg-red-400 cursor-not-allowed' 
+                            : 'bg-red-600 hover:bg-red-700'
+                        }`}
+                      >
+                        {deletingId === user._id ? 'Deleting...' : 'Delete'}
+                      </button>
                     </td>
                   </tr>
                 ))}
