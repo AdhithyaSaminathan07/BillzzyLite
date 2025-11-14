@@ -306,7 +306,7 @@ const ProductFormModal: FC<ProductFormModalProps> = ({ product, onSave, onClose 
                     <button onClick={onClose} className="text-white hover:bg-white/20 rounded-full p-1.5 transition-colors"><X className="w-5 h-5" /></button>
                 </div>
 
-                <div className="p-4 space-y-3.5 max-h-[70vh] overflow-y-auto">
+                <div className="p-4 space-y-3.5 max-h-[60vh] sm:max-h-[70vh] overflow-y-auto">
                     {isScannerOpen ? (
                         <div className="space-y-3">
                             <div className="w-full rounded-xl overflow-hidden border-2 border-gray-200 aspect-square">
