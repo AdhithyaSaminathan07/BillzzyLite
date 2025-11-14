@@ -113,7 +113,7 @@ const MobileProductCard: FC<MobileProductCardProps> = React.memo(({ product, isS
                     <p className="text-xs text-gray-700 font-medium">Qty: {product.quantity}</p>
                     <AnimatePresence>
                       {updateInfo && (
-                          <motion.div
+                          <motion.div 
                               initial={{ scale: 0.5, opacity: 0 }}
                               animate={{ scale: 1, opacity: 1 }}
                               exit={{ scale: 0.5, opacity: 0, transition: { duration: 0.2 } }}
@@ -174,7 +174,7 @@ const DesktopProductTable: FC<{ products: Product[]; onEdit: (p: Product) => voi
                           )}
                           <span className={isLowStock ? 'text-red-600 font-semibold' : 'text-gray-500'}>{p.quantity}</span>
                           {updateInfo && (
-                              <motion.div
+                              <motion.div 
                                   key={updateInfo.id}
                                   initial={{ y: 10, opacity: 0 }}
                                   animate={{ y: 0, opacity: 1 }}
@@ -202,7 +202,7 @@ const DesktopProductTable: FC<{ products: Product[]; onEdit: (p: Product) => voi
       </div>
 );
 
-// --- [FIXED] RESPONSIVE PRODUCT FORM MODAL ---
+// --- PRODUCT FORM MODAL ---
 type ProductFormData = Omit<Product, 'id'> & { id?: string };
 type ProductFormState = Omit<ProductFormData, 'quantity' | 'buyingPrice' | 'sellingPrice' | 'gstRate' | 'lowStockThreshold'> & {
     quantity: number | '';
@@ -292,30 +292,13 @@ const ProductFormModal: FC<ProductFormModalProps> = ({ product, onSave, onClose 
         };
         onSave(dataToSave, imageFile);
     };
-
+    
     const showCalculation = Number(formData.sellingPrice) > 0 && Number(formData.gstRate) >= 0;
 
     return (
-        <>
-            {/* Backdrop: High z-index to cover everything */}
-            <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                onClick={onClose}
-                className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[99]"
-            />
-
-            {/* Modal Content: Responsive positioning and highest z-index */}
-            <motion.div
-                initial={{ y: "100%", opacity: 0 }}
-                animate={{ y: 0, opacity: 1 }}
-                exit={{ y: "100%", opacity: 0 }}
-                transition={{ type: "spring", damping: 30, stiffness: 300 }}
-                className="fixed bottom-0 left-0 right-0 bg-white rounded-t-2xl shadow-2xl flex flex-col max-h-[90dvh] z-[100] sm:bottom-auto sm:left-1/2 sm:top-1/2 sm:-translate-x-1/2 sm:-translate-y-1/2 sm:rounded-2xl sm:max-w-lg sm:w-full sm:max-h-[90vh]"
-            >
-                {/* Header */}
-                <div className="bg-gradient-to-r from-[#5a4fcf] to-[#7b68ee] px-4 py-3 sm:py-4 flex justify-between items-center flex-shrink-0">
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex justify-center items-center z-50 p-3 animate-in fade-in duration-200">
+            <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ type: "spring", duration: 0.3 }} className="bg-white rounded-2xl w-full max-w-lg shadow-2xl overflow-hidden">
+                <div className="bg-gradient-to-r from-[#5a4fcf] to-[#7b68ee] px-4 py-4 flex justify-between items-center">
                     <div>
                         <h2 className="text-lg font-bold text-white">{product?.id ? 'Edit Product' : 'Add New Product'}</h2>
                         <p className="text-indigo-100 text-xs mt-0.5">{product?.id ? 'Update product information' : 'Fill in the details below'}</p>
@@ -323,8 +306,7 @@ const ProductFormModal: FC<ProductFormModalProps> = ({ product, onSave, onClose 
                     <button onClick={onClose} className="text-white hover:bg-white/20 rounded-full p-1.5 transition-colors"><X className="w-5 h-5" /></button>
                 </div>
 
-                {/* Body (Scrollable) */}
-                <div className="p-4 space-y-3.5 overflow-y-auto flex-1">
+                <div className="p-4 space-y-3.5 max-h-[60vh] sm:max-h-[70vh] overflow-y-auto">
                     {isScannerOpen ? (
                         <div className="space-y-3">
                             <div className="w-full rounded-xl overflow-hidden border-2 border-gray-200 aspect-square">
@@ -334,7 +316,6 @@ const ProductFormModal: FC<ProductFormModalProps> = ({ product, onSave, onClose 
                         </div>
                     ) : (
                         <>
-                            {/* All your original form fields are here and unchanged */}
                             <div className="space-y-1.5">
                                 <label className="text-xs font-medium text-gray-700">Product Image</label>
                                 <div className="w-full h-32 border-2 border-dashed border-gray-300 rounded-xl flex items-center justify-center cursor-pointer hover:border-[#5a4fcf] transition-colors" onClick={() => fileInputRef.current?.click()}>
@@ -363,6 +344,7 @@ const ProductFormModal: FC<ProductFormModalProps> = ({ product, onSave, onClose 
                                     <input type="number" name="lowStockThreshold" placeholder={`Default: ${LOW_STOCK_THRESHOLD}`} className="w-full border-2 border-gray-200 px-3 py-2 rounded-xl focus:border-red-500 focus:ring-2 focus:ring-red-200 transition-all outline-none text-sm" value={formData.lowStockThreshold} onChange={handleInputChange} />
                                 </div>
                             </div>
+                            
                             {isEditing && (
                                 <div className="p-3 bg-indigo-50 rounded-xl border border-indigo-200 space-y-2">
                                     <label className="text-xs font-medium text-indigo-800 block">Stock Adjustment</label>
@@ -379,6 +361,7 @@ const ProductFormModal: FC<ProductFormModalProps> = ({ product, onSave, onClose 
                                     </div>
                                 </div>
                             )}
+
                             <div className={`grid grid-cols-1 ${!isGstInclusive ? 'sm:grid-cols-2' : ''} gap-3`}>
                                <div className="space-y-1.5">
                                     <label className="text-xs font-medium text-gray-700">{isGstInclusive ? 'Total Price (incl. GST)' : 'Selling Price (excl. GST)'}</label>
@@ -392,13 +375,12 @@ const ProductFormModal: FC<ProductFormModalProps> = ({ product, onSave, onClose 
                     )}
                 </div>
 
-                {/* Footer */}
-                <div className="bg-gray-50 px-4 py-3 flex justify-end gap-2.5 border-t flex-shrink-0">
+                <div className="bg-gray-50 px-4 py-3 flex justify-end gap-2.5 border-t">
                     <button onClick={onClose} className="px-5 py-2 bg-white border-2 border-gray-300 text-gray-700 rounded-xl hover:bg-gray-50 font-medium transition-colors text-sm">Cancel</button>
                     <button onClick={handleFormSubmit} className="px-5 py-2 bg-gradient-to-r from-[#5a4fcf] to-[#7b68ee] text-white rounded-xl hover:from-[#4a3fb5] hover:to-[#6b58de] font-medium shadow-lg shadow-[#5a4fcf]/30 transition-all text-sm">{product?.id ? 'Save Changes' : 'Add Product'}</button>
                 </div>
             </motion.div>
-        </>
+        </div>
     );
 };
 
@@ -415,7 +397,7 @@ const Inventory: FC = () => {
     const [isMounted, setIsMounted] = useState(false);
     const [updatedProductInfo, setUpdatedProductInfo] = useState<UpdateInfo | null>(null);
     const [refreshTrigger, setRefreshTrigger] = useState(0);
-
+    
     // Add a function to trigger refresh
     const refreshProducts = useCallback(() => {
         setRefreshTrigger(prev => prev + 1);
@@ -435,7 +417,7 @@ const Inventory: FC = () => {
         const lowercasedQuery = searchQuery.toLowerCase();
         return products.filter(p => p.name.toLowerCase().includes(lowercasedQuery) || (p.sku && p.sku.toLowerCase().includes(lowercasedQuery)));
     }, [products, searchQuery]);
-
+    
     const parentRef = useRef<HTMLDivElement>(null);
     const rowVirtualizer = useVirtualizer({ count: filteredProducts.length, getScrollElement: () => parentRef.current, estimateSize: () => 90, overscan: 5 });
 
@@ -486,27 +468,27 @@ const Inventory: FC = () => {
                     return undefined;
                 };
 
-                const uploaded = rows.map((row) => ({
-                    sku: String(getColumn(row, ["Product ID", "SKU"]) || ""),
-                    name: String(getColumn(row, ["Product Name", "Name"]) || ""),
-                    quantity: Number(getColumn(row, ["Quantity", "Qty"])) || 0,
-                    buyingPrice: Number(getColumn(row, ["Buying Price"])) || 0,
-                    sellingPrice: Number(getColumn(row, ["Selling Price"])) || 0,
-                    gstRate: Number(getColumn(row, ["GST Rate", "GST"])) || 0
+                const uploaded = rows.map((row) => ({ 
+                    sku: String(getColumn(row, ["Product ID", "SKU"]) || ""), 
+                    name: String(getColumn(row, ["Product Name", "Name"]) || ""), 
+                    quantity: Number(getColumn(row, ["Quantity", "Qty"])) || 0, 
+                    buyingPrice: Number(getColumn(row, ["Buying Price"])) || 0, 
+                    sellingPrice: Number(getColumn(row, ["Selling Price"])) || 0, 
+                    gstRate: Number(getColumn(row, ["GST Rate", "GST"])) || 0 
                 }));
-
-                const response = await fetch('/api/products', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(uploaded)
+                
+                const response = await fetch('/api/products', { 
+                    method: 'POST', 
+                    headers: { 'Content-Type': 'application/json' }, 
+                    body: JSON.stringify(uploaded) 
                 });
                 if (!response.ok) throw new Error((await response.json()).message || 'Failed to upload products');
-
+                
                 const allProducts: Product[] = await response.json();
-                if (Array.isArray(allProducts)) {
+                if (Array.isArray(allProducts)) { 
                     // Refresh the product list to ensure consistency
                     refreshProducts();
-                    alert(`${uploaded.length} products processed successfully!`);
+                    alert(`${uploaded.length} products processed successfully!`); 
                 }
             } catch (err: unknown) {
                 alert(`Error: ${err instanceof Error ? err.message : 'Unknown error'}`);
@@ -518,7 +500,7 @@ const Inventory: FC = () => {
     const handleSaveProduct = useCallback(async (productData: ProductFormData, imageFile: File | null) => {
         const isEditing = !!productData.id;
         const originalQuantity = isEditing ? (products.find(p => p.id === productData.id)?.quantity || 0) : 0;
-
+        
         try {
             let imageUrl = productData.image || '';
             if (imageFile) {
@@ -532,18 +514,18 @@ const Inventory: FC = () => {
 
             const url = isEditing ? `/api/products/${productData.id}` : '/api/products';
             const method = isEditing ? 'PUT' : 'POST';
-            const response = await fetch(url, {
-                method,
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ ...productData, image: imageUrl })
+            const response = await fetch(url, { 
+                method, 
+                headers: { 'Content-Type': 'application/json' }, 
+                body: JSON.stringify({ ...productData, image: imageUrl }) 
             });
             if (!response.ok) throw new Error(`Failed to ${isEditing ? 'update' : 'create'} product`);
-
+            
             const savedProduct = await response.json();
-
+            
             // Refresh the product list to ensure consistency
             refreshProducts();
-
+            
             if (isEditing) {
                 const quantityChange = savedProduct.quantity - originalQuantity;
                 if (quantityChange !== 0) setUpdatedProductInfo({ id: savedProduct.id, change: quantityChange });
@@ -565,7 +547,7 @@ const Inventory: FC = () => {
             alert(`Error: ${err instanceof Error ? err.message : 'Could not delete product'}`);
         }
     }, [refreshProducts]);
-
+    
     const renderContent = () => {
         if (!isMounted || sessionStatus === 'loading' || fetchStatus === 'loading') {
             return <div className="flex justify-center items-center h-64"><Loader2 className="w-8 h-8 animate-spin text-[#5a4fcf]" /> <span className="ml-2">Loading Products...</span></div>;
@@ -618,10 +600,8 @@ const Inventory: FC = () => {
                 <label className="w-12 h-12 flex items-center justify-center cursor-pointer bg-green-600 hover:bg-green-700 text-white rounded-full shadow-lg"><Upload className="w-5 h-5" /><input type="file" accept=".xlsx, .xls" onChange={handleExcelUpload} className="hidden" /></label>
                 <button onClick={() => setModalState({ isOpen: true, product: null })} className="w-12 h-12 flex items-center justify-center bg-[#5a4fcf] hover:bg-[#4a3fb5] text-white rounded-full shadow-lg"><Plus className="w-5 h-5" /></button>
             </div>
-            
-            <AnimatePresence>
-              {modalState.isOpen && <ProductFormModal product={modalState.product} onSave={handleSaveProduct} onClose={() => setModalState({ isOpen: false, product: null })} />}
-            </AnimatePresence>
+
+            {modalState.isOpen && <ProductFormModal product={modalState.product} onSave={handleSaveProduct} onClose={() => setModalState({ isOpen: false, product: null })} />}
         </div>
     );
 };
