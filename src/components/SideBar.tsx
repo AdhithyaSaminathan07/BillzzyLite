@@ -15,6 +15,7 @@ import {
   X,
   Clock,
   ShoppingCart,
+  Contact,
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -98,6 +99,13 @@ export function Sidebar({ isMobileOpen, setIsMobileOpen }: SidebarProps) {
             isActive={pathname === '/dashboard'}
           >
             <Home className="h-5 w-5" /><span>Dashboard</span>
+          </NavLink>
+          <NavLink 
+            href="/crm" 
+            setIsMobileOpen={setIsMobileOpen} 
+            isActive={pathname === '/crm'}
+          >
+            <Contact className="h-5 w-5" /><span>CRM</span>
           </NavLink>
           <NavLink 
             href="/inventory" 

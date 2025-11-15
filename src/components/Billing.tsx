@@ -95,6 +95,7 @@ export default function BillingPage() {
   const [merchantUpi, setMerchantUpi] = React.useState('');
   const [merchantName, setMerchantName] = React.useState('Billzzy Lite');
   const [whatsAppNumber, setWhatsAppNumber] = React.useState('');
+  const [customerName, setCustomerName] = React.useState('');
   const [amountGiven, setAmountGiven] = React.useState<number | ''>('');
   const [isMessaging, setIsMessaging] = React.useState(false);
   const [scannerError, setScannerError] = React.useState<string>('');
@@ -393,7 +394,22 @@ export default function BillingPage() {
     setModal({ ...modal, isOpen: false });
   }, [modal]);
 
-  const handleProceedToPayment = React.useCallback(() => {
+  const handleProceedToPayment = React.useCallback(async () => {
+    // Check if WhatsApp number is provided when sharing panel is shown
+    if (showWhatsAppSharePanel && cart.length > 0) {
+      if (!whatsAppNumber.trim()) {
+        alert("Phone number is required for WhatsApp sharing");
+        return;
+      }
+      
+      // Validate phone number format (basic validation for 10-15 digits)
+      const phoneRegex = /^\d{10,15}$/;
+      if (!phoneRegex.test(whatsAppNumber)) {
+        alert("Please enter a valid phone number (10-15 digits)");
+        return;
+      }
+    }
+
     if (cart.length === 0) {
       setModal({ 
         isOpen: true, 
@@ -407,7 +423,7 @@ export default function BillingPage() {
     // Directly show payment options without WhatsApp sharing panel
     setShowWhatsAppSharePanel(false);
     setShowPaymentOptions(true);
-  }, [cart.length]);
+  }, [cart.length, showWhatsAppSharePanel, whatsAppNumber]);
 
   const handlePaymentSuccess = React.useCallback(async () => {
     const updatePromises = cart.filter(item => item.productId).map(item => 
@@ -418,7 +434,7 @@ export default function BillingPage() {
       })
     );
     await Promise.all(updatePromises).catch(err => console.error("Inventory update failed:", err));
-    
+  
     try {
       const response = await fetch('/api/sales', {
         method: 'POST',
@@ -451,7 +467,27 @@ export default function BillingPage() {
       });
       return;
     }
-    
+  
+    // Save customer data to CRM if name and phone number are provided
+    if (customerName.trim() && whatsAppNumber.trim()) {
+      try {
+        const customerResponse = await fetch('/api/customers', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            name: customerName.trim(),
+            phoneNumber: whatsAppNumber.trim()
+          })
+        });
+        
+        // We don't need to handle the response here as it's not critical to the payment flow
+        // The customer will be saved in the background
+      } catch (error) {
+        console.error("Failed to save customer to CRM:", error);
+        // Don't interrupt the payment flow if customer saving fails
+      }
+    }
+  
     let receiptSent = false;
     // Send receipt only if WhatsApp number is provided
     if (whatsAppNumber && whatsAppNumber.trim()) {
@@ -462,7 +498,7 @@ export default function BillingPage() {
         receiptSent = false;
       }
     }
-    
+  
     setModal({
       isOpen: true,
       title: 'Success!',
@@ -473,7 +509,7 @@ export default function BillingPage() {
       onConfirm: handleTransactionDone,
       showCancel: false
     });
-  }, [selectedPayment, totalAmount, cart, handleTransactionDone, whatsAppNumber, sendWhatsAppReceipt]);
+  }, [selectedPayment, totalAmount, cart, handleTransactionDone, whatsAppNumber, sendWhatsAppReceipt, customerName]);
 
   const handleClearBill = React.useCallback(() => {
     if (cart.length === 0) return;
@@ -718,13 +754,26 @@ export default function BillingPage() {
             {showWhatsAppSharePanel && cart.length > 0 && (
               <div className="space-y-2 rounded-xl bg-gradient-to-br from-green-50 to-emerald-50 p-2.5 border-2 border-green-200">
                 <p className="text-xs font-semibold text-gray-700 text-center">Send Bill via WhatsApp (Optional)</p>
-                <input 
-                  type="tel" 
-                  value={whatsAppNumber} 
-                  onChange={(e) => setWhatsAppNumber(e.target.value)} 
-                  placeholder="91XXXXXXXXXX" 
-                  className="w-full rounded-lg border-2 border-green-300 p-2 text-sm outline-none focus:border-green-500 focus:ring-2 focus:ring-green-200" 
-                />
+                <div className="grid grid-cols-2 gap-2">
+                  <div className="col-span-1">
+                    <input 
+                      type="text" 
+                      value={customerName} 
+                      onChange={(e) => setCustomerName(e.target.value)} 
+                      placeholder="Customer Name (Optional)" 
+                      className="w-full rounded-lg border-2 border-green-300 p-2 text-sm outline-none focus:border-green-500 focus:ring-2 focus:ring-green-200" 
+                    />
+                  </div>
+                  <div className="col-span-1">
+                    <input 
+                      type="tel" 
+                      value={whatsAppNumber} 
+                      onChange={(e) => setWhatsAppNumber(e.target.value)} 
+                      placeholder="91XXXXXXXXXX" 
+                      className="w-full rounded-lg border-2 border-green-300 p-2 text-sm outline-none focus:border-green-500 focus:ring-2 focus:ring-green-200" 
+                    />
+                  </div>
+                </div>
                 <button 
                   onClick={handleProceedToPayment} 
                   disabled={isMessaging} 
