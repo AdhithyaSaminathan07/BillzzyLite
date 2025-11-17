@@ -85,7 +85,7 @@ export default function BillingPage() {
   const { data: session, status } = useSession();
   const [cart, setCart] = React.useState<CartItem[]>([]);
   const [productName, setProductName] = React.useState('');
-  const [scanning, setScanning] = React.useState(false);
+  const [scanning, setScanning] = React.useState(true); // Changed from false to true for auto-open
   const [inventory, setInventory] = React.useState<InventoryProduct[]>([]);
   const [suggestions, setSuggestions] = React.useState<InventoryProduct[]>([]);
   const [showSuggestions, setShowSuggestions] = React.useState(false);
@@ -572,6 +572,14 @@ export default function BillingPage() {
                     className="w-full rounded-lg border-2 border-gray-300 p-2.5 text-sm focus:ring-2 focus:ring-[#5a4fcf] focus:border-[#5a4fcf] outline-none transition-all" 
                     value={productName} 
                     onChange={(e) => setProductName(e.target.value)} 
+                    // Added onClick handler to close scanner when search bar is clicked
+                    onClick={() => setScanning(false)}
+                    // Added onKeyPress handler to add item when Enter is pressed
+                    onKeyPress={(e) => {
+                      if (e.key === 'Enter') {
+                        handleManualAdd();
+                      }
+                    }}
                   />
                   {showSuggestions && (
                     <div className="absolute z-10 mt-2 w-full rounded-xl border-2 border-[#5a4fcf] bg-white shadow-xl max-h-48 overflow-y-auto">
@@ -591,12 +599,6 @@ export default function BillingPage() {
                     </div>
                   )}
                 </div>
-                <button 
-                  onClick={handleManualAdd} 
-                  className="flex-shrink-0 rounded-lg bg-[#5a4fcf] text-white font-semibold px-4 py-2.5 text-sm hover:bg-[#4c42b8] transition-colors shadow-md flex items-center gap-1.5"
-                >
-                  <Plus size={16} /> Add
-                </button>
               </div>
               
               {!scanning && (
