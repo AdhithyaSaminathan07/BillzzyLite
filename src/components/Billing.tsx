@@ -102,6 +102,9 @@ export default function BillingPage() {
   const [modal, setModal] = React.useState<{ isOpen: boolean; title: string; message: string | React.ReactNode; onConfirm?: (() => void); confirmText: string; showCancel: boolean; }>({ isOpen: false, title: '', message: '', confirmText: 'OK', showCancel: false });
   const suggestionsRef = React.useRef<HTMLDivElement | null>(null);
   
+  // Add state for settings validation
+  const [settingsComplete, setSettingsComplete] = React.useState(false);
+  
   // --- DISCOUNT state ---
   const [discountInput, setDiscountInput] = React.useState<string>('');
   const [discountType, setDiscountType] = React.useState<'percentage' | 'fixed'>('percentage');
@@ -136,6 +139,34 @@ export default function BillingPage() {
   }, [totalAmount, amountGiven]);
 
   const upiQR = merchantUpi ? `upi://pay?pa=${merchantUpi}&pn=${encodeURIComponent(merchantName)}&am=${totalAmount.toFixed(2)}&cu=INR&tn=Bill%20Payment` : '';
+
+  // Function to check if phone number is filled
+  const checkPhoneNumber = React.useCallback(() => {
+    if (status === 'authenticated' && session?.user?.email) {
+      const savedData = localStorage.getItem(`userSettings-${session.user.email}`);
+      if (savedData) {
+        try {
+          const parsedData = JSON.parse(savedData);
+          const phoneNumber = parsedData.phoneNumber || '';
+          
+          // Check if phone number is provided and valid (10-15 digits)
+          if (phoneNumber && phoneNumber.trim() !== '' && /^\d{10,15}$/.test(phoneNumber)) {
+            setSettingsComplete(true);
+            return true;
+          }
+        } catch (error) {
+          console.error('Error parsing settings data:', error);
+        }
+      }
+      setSettingsComplete(false);
+      return false;
+    }
+    return false;
+  }, [status, session]);
+
+  React.useEffect(() => {
+    checkPhoneNumber();
+  }, [checkPhoneNumber]);
 
   React.useEffect(() => {
     if (status === 'authenticated' && session?.user?.email) {
@@ -215,7 +246,7 @@ export default function BillingPage() {
     // ✅ Choose template and assign parameters (5 total)
     switch (messageType) {
       case 'cashPayment':
-        templateName = 'payment_receipt_cashs';
+        templateName = 'payment_receipt_cashh';
         break;
       case 'qrPayment':
         templateName = 'payment_receipt_upii';
@@ -308,7 +339,7 @@ export default function BillingPage() {
         templateType = 'cashPayment'; 
     }
     return await sendWhatsAppMessage(whatsAppNumber, templateType);
-  }, [whatsAppNumber, sendWhatsAppMessage]);
+  }, [whatsAppNumber, sendWhatsAppMessage, cart, subtotal, discountAmount, merchantName]);
 
   const addToCart = React.useCallback((name: string, price: number, gstRate: number, productId?: string, isEditing = false) => {
     if (!name || price < 0) return;
@@ -535,13 +566,42 @@ export default function BillingPage() {
   return (
     <>
       <div className="h-full flex flex-col bg-gray-50">
+        {/* Settings Incomplete - Full Page Overlay */}
+        {!settingsComplete && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-sm">
+            <div className="w-[90%] max-w-md rounded-2xl bg-white p-5 shadow-2xl border border-gray-200">
+              <div className="flex items-start">
+                <div className="flex-shrink-0 flex items-center justify-center h-10 w-10 rounded-full bg-[#5a4fcf]/10">
+                  <AlertTriangle className="h-5 w-5 text-[#5a4fcf]" />
+                </div>
+                <div className="ml-3 text-left">
+                  <h3 className="text-base font-semibold text-gray-900">Settings Incomplete</h3>
+                  <div className="mt-1.5 text-gray-600 text-sm">
+                    <p>Please fill in your phone number in the settings to proceed with billing.</p>
+                  </div>
+                </div>
+              </div>
+              <div className="mt-4 flex justify-end">
+                <button 
+                  onClick={() => {
+                    // Navigate to settings page
+                    window.location.assign('/settings');
+                  }}
+                  className="rounded-lg bg-[#5a4fcf] px-4 py-1.5 text-sm font-semibold text-white hover:bg-[#4c42b8]"
+                >
+                  Go to Settings
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
         
         {/* Main Content Area - Scrollable with fixed height */}
         <div className="flex-1 min-h-0 overflow-y-auto">
           <div className="p-2 space-y-2">
             
             {/* Scanner Section */}
-            {scanning && (
+            {scanning && settingsComplete && (
               <div className="bg-white rounded-xl p-3 shadow-md border border-indigo-100">
                 <div className="max-w-sm mx-auto">
                   <Scanner
@@ -568,7 +628,7 @@ export default function BillingPage() {
                 <div ref={suggestionsRef} className="relative flex-1">
                   <input 
                     type="text" 
-                    placeholder="Search or add item..." 
+                    placeholder={settingsComplete ? "Search or add item..." : "Settings required to add items"}
                     className="w-full rounded-lg border-2 border-gray-300 p-2.5 text-sm focus:ring-2 focus:ring-[#5a4fcf] focus:border-[#5a4fcf] outline-none transition-all" 
                     value={productName} 
                     onChange={(e) => setProductName(e.target.value)} 
@@ -580,8 +640,9 @@ export default function BillingPage() {
                         handleManualAdd();
                       }
                     }}
+                    disabled={!settingsComplete}
                   />
-                  {showSuggestions && (
+                  {showSuggestions && settingsComplete && (
                     <div className="absolute z-10 mt-2 w-full rounded-xl border-2 border-[#5a4fcf] bg-white shadow-xl max-h-48 overflow-y-auto">
                       {suggestions.map((s) => (
                         <div 
@@ -601,7 +662,7 @@ export default function BillingPage() {
                 </div>
               </div>
               
-              {!scanning && (
+              {!scanning && settingsComplete && (
                 <button 
                   onClick={toggleScanner}
                   className="w-full mt-2 flex items-center justify-center gap-2 bg-indigo-50 text-[#5a4fcf] py-2 rounded-lg text-sm font-semibold hover:bg-indigo-100 transition-colors"
@@ -615,8 +676,10 @@ export default function BillingPage() {
             {cart.length === 0 ? (
               <div className="bg-white rounded-xl p-8 text-center shadow-md border border-gray-200">
                 <div className="text-5xl mb-3">🛒</div>
-                <p className="text-gray-600 font-medium">Cart is Empty</p>
-                <p className="text-xs text-gray-500 mt-1">Add items to get started</p>
+                <p className="text-gray-600 font-medium">{settingsComplete ? "Cart is Empty" : "Settings Required"}</p>
+                <p className="text-xs text-gray-500 mt-1">
+                  {settingsComplete ? "Add items to get started" : "Please complete your settings to start billing"}
+                </p>
               </div>
             ) : (
               <div className="space-y-2">
@@ -636,6 +699,7 @@ export default function BillingPage() {
                                 onChange={(e) => updateCartItem(item.id, { name: e.target.value })} 
                                 className="w-full border-2 border-gray-300 rounded-lg p-2 text-sm focus:ring-2 focus:ring-[#5a4fcf] outline-none" 
                                 placeholder="Item name"
+                                disabled={!settingsComplete}
                               />
                               <div className="grid grid-cols-2 gap-2">
                                 <input 
@@ -644,6 +708,7 @@ export default function BillingPage() {
                                   onChange={(e) => updateCartItem(item.id, { quantity: parseInt(e.target.value, 10) || 1 })} 
                                   className="border-2 border-gray-300 rounded-lg p-2 text-sm focus:ring-2 focus:ring-[#5a4fcf] outline-none" 
                                   placeholder="Qty"
+                                  disabled={!settingsComplete}
                                 />
                                 <input 
                                   type="number" 
@@ -651,6 +716,7 @@ export default function BillingPage() {
                                   onChange={(e) => updateCartItem(item.id, { price: parseFloat(e.target.value) || 0 })} 
                                   className="border-2 border-gray-300 rounded-lg p-2 text-sm focus:ring-2 focus:ring-[#5a4fcf] outline-none" 
                                   placeholder="Price"
+                                  disabled={!settingsComplete}
                                 />
                               </div>
                             </div>
@@ -668,12 +734,14 @@ export default function BillingPage() {
                           <button 
                             onClick={() => toggleEdit(item.id)} 
                             className={`p-1.5 rounded-lg ${item.isEditing ? 'bg-green-100 text-green-600' : 'bg-indigo-50 text-[#5a4fcf]'} hover:opacity-80`}
+                            disabled={!settingsComplete}
                           >
                             {item.isEditing ? <Check size={16} /> : <Edit2 size={16} />}
                           </button>
                           <button 
                             onClick={() => deleteCartItem(item.id)} 
                             className="p-1.5 rounded-lg bg-red-50 text-red-500 hover:bg-red-100"
+                            disabled={!settingsComplete}
                           >
                             <Trash2 size={16} />
                           </button>
@@ -705,13 +773,13 @@ export default function BillingPage() {
                       value={discountInput}
                       onChange={(e) => setDiscountInput(e.target.value)}
                       className="w-full rounded-lg border-2 border-gray-300 p-2 text-sm focus:ring-2 focus:ring-[#5a4fcf] focus:border-[#5a4fcf] outline-none transition-all pr-12"
-                      disabled={cart.length === 0}
+                      disabled={cart.length === 0 || !settingsComplete}
                   />
                   <div className="absolute inset-y-0 right-0 flex items-center">
                       <button
                           onClick={() => setDiscountType(discountType === 'percentage' ? 'fixed' : 'percentage')}
                           className="h-full rounded-r-lg px-3 text-sm font-bold text-white bg-[#5a4fcf] hover:bg-[#4c42b8] transition-colors"
-                          disabled={cart.length === 0}
+                          disabled={cart.length === 0 || !settingsComplete}
                       >
                           {discountType === 'percentage' ? '%' : '₹'}
                       </button>
@@ -746,14 +814,14 @@ export default function BillingPage() {
                   setShowPaymentOptions(false); 
                 }}
                 className="w-full flex items-center justify-center gap-2 rounded-xl bg-[#5a4fcf] py-2.5 font-bold text-white hover:bg-[#4c42b8] disabled:bg-gray-400 transition-colors shadow-lg text-sm"
-                disabled={cart.length === 0}
+                disabled={cart.length === 0 || !settingsComplete}
               >
                 <CreditCard size={16} />
                 <span>Proceed to Payment</span>
               </button>
             )}
 
-            {showWhatsAppSharePanel && cart.length > 0 && (
+            {showWhatsAppSharePanel && cart.length > 0 && settingsComplete && (
               <div className="space-y-2 rounded-xl bg-gradient-to-br from-green-50 to-emerald-50 p-2.5 border-2 border-green-200">
                 <p className="text-xs font-semibold text-gray-700 text-center">Send Bill via WhatsApp (Optional)</p>
                 <div className="grid grid-cols-2 gap-2">
@@ -796,7 +864,7 @@ export default function BillingPage() {
               </div>
             )}
 
-            {showPaymentOptions && cart.length > 0 && (
+            {showPaymentOptions && cart.length > 0 && settingsComplete && (
               <div className="space-y-2">
                 <p className="text-xs font-semibold text-gray-700 text-center">Select Payment Method</p>
                 <div className="grid grid-cols-2 gap-1.5">
