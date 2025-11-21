@@ -1,44 +1,45 @@
 
-// import { LoginForm } from '@/components/forms/loginform'; // Adjust the import path if needed
-// import Link from 'next/link';
+// //src/app/page.tsx
+// import { LoginForm } from '@/components/forms/loginform';
 
-// // This is the default export that Next.js will render for the /login route
+// // This is the default export that Next.js will render for the root route ('/')
 // export default function LoginPage() {
 //   return (
-//     <div className="flex flex-col items-center justify-center min-h-screen bg-gray-50 px-4">
-//       <div className="w-full max-w-md p-8 space-y-6 bg-white rounded-xl shadow-lg">
-        
-//         {/* Header Section */}
-//         <div className="text-center">
-//           <h1 className="text-3xl font-bold text-gray-900">
-//             Sign In to Your Account
-//           </h1>
-//           <p className="mt-2 text-sm text-gray-600">
-//             Or{' '}
-//             <Link href="/sign-up" className="font-medium text-indigo-600 hover:text-indigo-500">
-//               create a new account
-//             </Link>
-//           </p>
-//         </div>
-
-//         {/* The Login Form Component */}
 //         <LoginForm />
-
-//       </div>
-//     </div>
 //   );
 // }
 
-//src/app/page.tsx
-import { LoginForm } from '@/components/forms/loginform';
 
-// This is the default export that Next.js will render for the root route ('/')
-export default function LoginPage() {
+
+
+import HeroSection from "@/components/landing-sections/HeroSection";
+import IntroSection from "@/components/landing-sections/IntroSection";
+import ComparisonSection from "@/components/landing-sections/ComparisonSection";
+import WhyBillzzySection from "@/components/landing-sections/WhyBillzzySection";
+import GoPaperlessSection from "@/components/landing-sections/GoPaperlessSection";
+import UseCasesSection from "@/components/landing-sections/UseCasesSection";
+import PricingSection from "@/components/landing-sections/PricingSection";
+import FAQSection from "@/components/landing-sections/FAQSection";
+import TestimonialsSection from "@/components/landing-sections/TestimonialsSection";
+// import FeaturesSection from "../../components/landing-sections/FeaturesSection";
+import CTASection from "@/components/landing-sections/CTASection";
+import Footer from "@/components/landing-sections/Footer";
+
+export default function LandingPage() {
   return (
-
-       
-        <LoginForm />
-
-
+    <div className="min-h-screen bg-white">
+      <HeroSection />
+      <IntroSection />
+      <ComparisonSection />
+      <WhyBillzzySection />
+      <GoPaperlessSection />
+      <UseCasesSection />
+      <PricingSection />
+      <FAQSection />
+      <TestimonialsSection />
+      {/* <FeaturesSection /> */}
+      <CTASection />
+      <Footer />
+    </div>
   );
 }
