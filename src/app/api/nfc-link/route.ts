@@ -1,7 +1,9 @@
+// This is the NEW, CORRECT code.
+
 import { NextResponse } from 'next/server';
 import connectMongoDB from '@/lib/mongodb';
 import Sale from '@/models/Sales';
-import User from '@/models/User'; // <-- Import the User model
+// We do not need to import the User model anymore
 import { getServerSession } from "next-auth/next"
 import { authOptions } from '@/lib/auth';
 
@@ -19,14 +21,11 @@ export async function POST(request: Request) {
       return NextResponse.json({ success: false, message: 'Unauthorized' }, { status: 401 });
     }
 
-    await connectMongoDB();
+    // --- THIS IS THE FIX ---
+    // We get the user's email from their login session and use it directly.
+    const tenantId = session.user.email;
 
-    // Step 1: Find the logged-in user to get their tenantId
-    const user = await User.findOne({ email: session.user.email });
-    if (!user || !user.tenantId) {
-      return NextResponse.json({ success: false, message: 'User or tenant not found.' }, { status: 404 });
-    }
-    const tenantId = user.tenantId;
+    await connectMongoDB();
 
     const { cart, totalAmount } = await request.json();
 
@@ -34,13 +33,13 @@ export async function POST(request: Request) {
         return NextResponse.json({ success: false, message: 'Invalid or missing bill data' }, { status: 400 });
     }
     
-    // Step 2: Generate a unique billId
-    const billId = `NFC-${Date.now().toString().slice(-8)}`; // Example: NFC-12345678
+    // Generate a unique billId
+    const billId = `NFC-${Date.now().toString().slice(-8)}`;
 
-    // Step 3: Create the new Sale document with all required fields
+    // Create the new Sale with the user's email as the tenantId
     const newSale = await Sale.create({
-      billId: billId,           // <-- FIX: Added required billId
-      tenantId: tenantId,         // <-- FIX: Added required tenantId
+      billId: billId,
+      tenantId: tenantId, // <-- We now use the email here, which will work.
       userEmail: session.user.email,
       items: cart.map((item: CartItemPayload) => ({
           name: item.name,
@@ -48,8 +47,8 @@ export async function POST(request: Request) {
           price: item.price,
       })),
       amount: totalAmount,
-      paymentMethod: 'UPI',       // <-- FIX: Use a valid enum value like 'UPI'
-      status: 'pending',          // Use 'status' to track if it's paid
+      paymentMethod: 'UPI',
+      status: 'pending',
       createdAt: new Date(),
     });
     
