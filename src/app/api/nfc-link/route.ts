@@ -47,7 +47,7 @@ export async function POST(request: Request) {
           price: item.price,
       })),
       amount: totalAmount,
-      paymentMethod: 'UPI',
+      paymentMethod: 'QR/UPI',
       status: 'pending',
       createdAt: new Date(),
     });
