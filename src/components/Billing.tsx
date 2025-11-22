@@ -2559,7 +2559,7 @@ export default function BillingPage() {
       // ⭐ THE FIX: Use "intent://" format
       // This tells Android specifically to find "com.billzzylite.bridge" and open it
       // It passes the URL "billzzylite://send-bill/ORDER_ID" to the app
-      const bridgeUrl = `intent://send-bill/${orderId}#Intent;scheme=billzzylite;package=com.billzzylite.bridge;end`;
+      const bridgeUrl = `billzzylite://send-bill/${orderId}`;
 
       setReadyBridgeUrl(bridgeUrl);
 
