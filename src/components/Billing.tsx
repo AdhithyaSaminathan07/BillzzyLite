@@ -2525,6 +2525,8 @@ export default function BillingPage() {
   }, []);
 
   // --- UPDATED FUNCTION: handleCreateNfcLink (Two-Step Process) ---
+
+  // --- UPDATED FUNCTION: Uses "intent://" to Force Open Android App ---
   const handleCreateNfcLink = async () => {
     if (isCreatingLink) return;
 
@@ -2534,7 +2536,7 @@ export default function BillingPage() {
     }
     
     setIsCreatingLink(true);
-    setReadyBridgeUrl(null); // Reset any previous link
+    setReadyBridgeUrl(null);
 
     try {
       const response = await fetch('/api/nfc-link', {
@@ -2554,13 +2556,11 @@ export default function BillingPage() {
 
       const { orderId } = result;
 
-      // 1. Create the PWA link
-      const customerPaymentUrl = `https://adhithyasaminathan07-testingrepobillzzylite.vercel.app/pay/${orderId}`;
-      
-      // 2. Create the Bridge App link
-      const bridgeUrl = `billzzylite://send-bill?url=${encodeURIComponent(customerPaymentUrl)}`;
+      // ⭐ THE FIX: Use "intent://" format
+      // This tells Android specifically to find "com.billzzylite.bridge" and open it
+      // It passes the URL "billzzylite://send-bill/ORDER_ID" to the app
+      const bridgeUrl = `intent://send-bill/${orderId}#Intent;scheme=billzzylite;package=com.billzzylite.bridge;end`;
 
-      // 3. DO NOT auto-redirect. Set state to show the "Launch" button.
       setReadyBridgeUrl(bridgeUrl);
 
     } catch (error) {
