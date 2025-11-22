@@ -1567,7 +1567,7 @@ export default function BillingPage() {
   }, []);
 
   // --- UPDATED FUNCTION: Uses "intent://" to Force Open Android App ---
-  const handleCreateNfcLink = async () => {
+const handleCreateNfcLink = async () => {
     if (isCreatingLink) return;
 
     if (cart.length === 0) {
@@ -1596,10 +1596,18 @@ export default function BillingPage() {
 
       const { orderId } = result;
       
-      // Intent link structure
-      const bridgeUrl = `billzzylite://nfc/${orderId}`;
+      // 👇👇👇 CRITICAL CHANGE HERE 👇👇👇
+      // OLD: const bridgeUrl = `billzzylite://nfc/${orderId}`;
+      
+      // NEW: Explicit Android Intent (Works on Android 12+)
+      // This tells Chrome: "Don't search. Open package com.billzzylite.bridge"
+      const packageName = "com.billzzylite.bridge";
+      const bridgeUrl = `intent://nfc/${orderId}#Intent;scheme=billzzylite;package=${packageName};end`;
 
       setReadyBridgeUrl(bridgeUrl);
+
+      // Optional: Automatically try to open it so user doesn't have to click "Launch"
+      window.location.href = bridgeUrl;
 
     } catch (error) {
       console.error("Error during NFC Send:", error);
