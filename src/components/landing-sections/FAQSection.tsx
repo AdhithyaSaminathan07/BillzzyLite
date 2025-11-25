@@ -73,24 +73,28 @@ export default function FAQSection() {
 
   const faqs: FAQType[] = [
     {
-      question: "What is Billzzy Lite ?",
+      question: "What on earth is Billzzy Lite ?",
       answer:
-        "Billzzy Lite is a streamlined, paper-free billing and invoicing SaaS solution designed for small businesses, freelancers or merchants who want to simplify their billing process and go digital.",
+        "It’s the “I’m done with paper cuts and Printer nightmares” version of billing. A ridiculously simple, 100% digital invoicing sidekick made for small businesses, freelancers, and merchants who want to look pro without selling their soul to complicated software.",
     },
     {
-      question: "Is it difficult to get started?",
+      question: "Is it harder & How long does it takes for onboarding ?",
       answer:
-        "Not at all! Getting started is easy. You can sign up, create your first bill, and start sharing it with customers in less than 5 minutes. No complex setup or training required.",
+        "Please. You’ll be firing off your first gorgeous bill faster than you can say. Zero tutorial needed.",
     },
     {
-      question: "Is my data safe with Billzzy?",
+      question: "Do I need to buy a fancy new gadget for billing ?",
       answer:
-        "Yes, your data security is our top priority. We use industry-standard encryption protocols and secure servers to ensure your business and customer information is protected 24/7.",
+        "Nope! Your current phone—that one with the cracked screen and 3% battery—works like magic.",
     },
     {
-      question: "Do I need a special device to use Billzzy?",
-      answer:
-        "No. Billzzy Lite works perfectly on your existing smartphone, tablet, or computer. Since it's a mobile-first app, your mobile is the only device you need for billing.",
+       question: "How much does Billzzy Lite cost ?",
+      answer: `₹0.15 per bill – literally cheaper than printing a regular paper bill (paper + ink + your printer's existential crisis = easily ₹0.20–₹0.50).
+
+The glamorous 15-paise breakup:
+
+• 11.5 paise → Meta’s WhatsApp entry fee  
+• 3.5 paise → Keeps our developers alive.`,
     },
   ];
 
