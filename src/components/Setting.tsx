@@ -68,12 +68,29 @@ export default function Settings() {
     shopAddress: '',
     merchantUpiId: '',
   });
+  const [isNewUser, setIsNewUser] = useState<boolean>(false);
 
   // FIX: Wrapped `loadFormData` in `useCallback`.
   // This memoizes the function so it doesn't get recreated on every render,
   // preventing the `useEffect` from re-running unnecessarily and resetting your input.
-  const loadFormData = useCallback(() => {
+  const loadFormData = useCallback(async () => {
     if (session?.user?.email) {
+      // Check if user has any data in the database
+      try {
+        const response = await fetch(`/api/users/check?email=${encodeURIComponent(session.user.email)}`);
+        if (response.ok) {
+          const userData = await response.json();
+          setIsNewUser(!userData.hasData);
+          
+          // If user is new, clear any existing localStorage settings
+          if (!userData.hasData) {
+            localStorage.removeItem(`userSettings-${session.user.email}`);
+          }
+        }
+      } catch (error) {
+        console.error('Error checking user data:', error);
+      }
+      
       const savedData = localStorage.getItem(`userSettings-${session.user.email}`);
       if (savedData) {
         setFormData(JSON.parse(savedData));

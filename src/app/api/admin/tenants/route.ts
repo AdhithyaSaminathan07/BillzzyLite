@@ -8,6 +8,7 @@ import User, { IUser } from '@/models/User';
 import Sale from '@/models/Sales';
 import Product from '@/models/Product';
 import Purchase from '@/models/purchase';
+import Customer from '@/models/Customer';
 
 export async function GET(request: Request) {
   const session = await getServerSession(authOptions);
@@ -82,19 +83,28 @@ export async function DELETE(request: Request) {
       return NextResponse.json({ message: 'Tenant not found' }, { status: 404 });
     }
     
-    // Delete the tenant user
+    // Delete all data associated with this tenant
+    // 1. Delete the tenant user
     await User.deleteOne({ _id: userId });
     
-    // Also delete all sales records associated with this tenant
+    // 2. Delete all sales records associated with this tenant
     await Sale.deleteMany({ tenantId: user.email });
     
-    // Also delete all products associated with this tenant
+    // 3. Delete all products associated with this tenant
     await Product.deleteMany({ tenantId: user.email });
     
-    // Also delete all purchases associated with this tenant
+    // 4. Delete all purchases associated with this tenant
     await Purchase.deleteMany({ tenantId: user.email });
     
-    return NextResponse.json({ message: 'Tenant deleted successfully' });
+    // 5. Delete all customers associated with this tenant
+    await Customer.deleteMany({ tenantId: user.email });
+    
+    // Note: If there are any other collections that store tenant-specific data,
+    // they should also be deleted here to ensure complete data removal
+    
+    return NextResponse.json({ 
+      message: 'Tenant and all associated data deleted successfully. User can now start fresh.' 
+    });
   } catch (error) {
     console.error('Delete Error:', error);
     return NextResponse.json({ message: 'Internal Server Error' }, { status: 500 });
