@@ -84,14 +84,16 @@ export async function POST(request: Request) {
 
     await connectMongoDB();
     
-    // ✅ FIX: Read 'paymentMethod' from the request body
-    const { cart, totalAmount, paymentMethod } = await request.json();
+    // ✅ FIX: Read 'providedToken' from request (Generated on frontend)
+    const { cart, totalAmount, paymentMethod, providedToken } = await request.json();
 
     if (!cart || !Array.isArray(cart) || cart.length === 0) {
         return NextResponse.json({ success: false, message: 'Invalid data' }, { status: 400 });
     }
     
-    const randomToken = crypto.randomBytes(16).toString('hex');
+    // Use provided token OR generate new one
+    const randomToken = providedToken || crypto.randomBytes(16).toString('hex');
+    
     const expiryDate = new Date();
     expiryDate.setHours(expiryDate.getHours() + 24);
 
@@ -104,10 +106,7 @@ export async function POST(request: Request) {
           price: item.price,
       })),
       amount: totalAmount,
-      
-      // ✅ FIX: Use the value sent from frontend (Cash or UPI/QR)
       paymentMethod: paymentMethod || 'UPI / QR', 
-      
       status: 'pending',
       createdAt: new Date(),
       publicToken: randomToken,
