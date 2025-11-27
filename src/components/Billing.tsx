@@ -103,10 +103,6 @@
 //   const [customerName, setCustomerName] = React.useState('');
 //   const [amountGiven, setAmountGiven] = React.useState<number | ''>('');
 //   const [isMessaging, setIsMessaging] = React.useState(false);
-  
-//   // NFC State
-//   const [isCreatingLink, setIsCreatingLink] = React.useState(false);
-
 //   const [scannerError, setScannerError] = React.useState<string>('');
 //   const [modal, setModal] = React.useState<{ isOpen: boolean; title: string; message: string | React.ReactNode; onConfirm?: (() => void); confirmText: string; showCancel: boolean; }>({ isOpen: false, title: '', message: '', confirmText: 'OK', showCancel: false });
 //   const suggestionsRef = React.useRef<HTMLDivElement | null>(null);
@@ -114,6 +110,9 @@
 //   const [settingsComplete, setSettingsComplete] = React.useState(false);
 //   const [discountInput, setDiscountInput] = React.useState<string>('');
 //   const [discountType, setDiscountType] = React.useState<'percentage' | 'fixed'>('percentage');
+  
+//   // NFC Loading State
+//   const [isCreatingLink, setIsCreatingLink] = React.useState(false);
 
 //   const subtotal = React.useMemo(() =>
 //     cart.reduce((sum, item) => {
@@ -201,43 +200,6 @@
 //     document.addEventListener('mousedown', handler);
 //     return () => document.removeEventListener('mousedown', handler);
 //   }, []);
-
-//   // --- NFC FUNCTIONALITY ---
-//   const handleNfcLaunch = async () => {
-//     if (isCreatingLink) return;
-//     if (cart.length === 0) return;
-    
-//     setIsCreatingLink(true); // Start loading
-
-//     try {
-//       const response = await fetch('/api/nfc-link', {
-//         method: 'POST',
-//         headers: { 'Content-Type': 'application/json' },
-//         body: JSON.stringify({
-//           cart: cart,
-//           totalAmount: totalAmount,
-//         }),
-//       });
-
-//       const result = await response.json();
-
-//       if (!result.success || !result.orderId) {
-//         throw new Error(result.message || 'Failed to generate bill token.');
-//       }
-
-//       const token = result.orderId;
-//       const packageName = "com.billzzylite.bridge";
-//       const bridgeUrl = `intent://nfc/${token}#Intent;scheme=billzzylite;package=${packageName};end`;
-
-//       window.location.href = bridgeUrl;
-
-//     } catch (error) {
-//       console.error("Error:", error);
-//       setModal({ isOpen: true, title: 'Error', message: 'Could not launch NFC.', confirmText: 'OK', showCancel: false });
-//     } finally {
-//         setTimeout(() => setIsCreatingLink(false), 2000);
-//     }
-//   };
 
 //   // --- WHATSAPP LOGIC ---
 //   const sendWhatsAppMessage = async (phoneNumber: string, messageType: string) => {
@@ -371,11 +333,27 @@
 //     setShowPaymentOptions(true);
 //   }, [cart.length]);
 
-//   // --- FINAL PAYMENT HANDLER ---
-//   const handlePaymentSuccess = React.useCallback(async () => {
+//   // --- FINAL PAYMENT HANDLER (Unified) ---
+//   const handlePaymentSuccess = React.useCallback(async (useNfc: boolean = false) => {
 //     setIsMessaging(true); // Start Spinner
+//     if (useNfc) setIsCreatingLink(true); // Start NFC Spinner
 
 //     try {
+//       // 1. If using NFC, generate the link FIRST
+//       let nfcToken = '';
+//       if (useNfc) {
+//         const nfcRes = await fetch('/api/nfc-link', {
+//            method: 'POST',
+//            headers: { 'Content-Type': 'application/json' },
+//            body: JSON.stringify({ cart, totalAmount }),
+//         });
+//         const nfcData = await nfcRes.json();
+//         if (nfcData.success && nfcData.orderId) {
+//             nfcToken = nfcData.orderId;
+//         }
+//       }
+
+//       // 2. Update Inventory
 //       const updatePromises = cart.filter(item => item.productId).map(item => 
 //         fetch(`/api/products/${item.productId}`, { 
 //           method: 'PUT', 
@@ -385,6 +363,7 @@
 //       );
 //       await Promise.all(updatePromises).catch(err => console.error("Inventory update failed:", err));
     
+//       // 3. Save Sale DB
 //       const response = await fetch('/api/sales', {
 //         method: 'POST',
 //         headers: { 'Content-Type': 'application/json' },
@@ -393,6 +372,7 @@
       
 //       if (!response.ok) throw new Error('Failed to save sale');
 
+//       // 4. Save Customer DB
 //       if (customerName.trim() && whatsAppNumber.trim()) {
 //         fetch('/api/customers', {
 //           method: 'POST',
@@ -401,11 +381,20 @@
 //         }).catch(err => console.error("Customer save error", err));
 //       }
     
+//       // 5. Send WhatsApp (ONLY IF NOT USING NFC)
 //       let receiptSent = false;
-//       if (whatsAppNumber && whatsAppNumber.trim()) {
+//       if (!useNfc && whatsAppNumber && whatsAppNumber.trim()) {
 //         receiptSent = await sendWhatsAppReceipt(selectedPayment);
 //       }
+
+//       // 6. Launch NFC if requested (No WhatsApp sent)
+//       if (useNfc && nfcToken) {
+//           const packageName = "com.billzzylite.bridge";
+//           const bridgeUrl = `intent://nfc/${nfcToken}#Intent;scheme=billzzylite;package=${packageName};end`;
+//           window.location.href = bridgeUrl;
+//       }
     
+//       // 7. Show Success Modal
 //       setModal({
 //         isOpen: true,
 //         title: 'Success!',
@@ -428,6 +417,7 @@
 //       });
 //     } finally {
 //       setIsMessaging(false);
+//       setIsCreatingLink(false);
 //     }
 //   }, [selectedPayment, totalAmount, cart, handleTransactionDone, whatsAppNumber, sendWhatsAppReceipt, customerName]);
 
@@ -498,7 +488,6 @@
 //                   <div className="col-span-1"><input type="text" value={customerName} onChange={(e) => setCustomerName(e.target.value)} placeholder="Customer Name (Optional)" className="w-full rounded-lg border-2 border-green-300 p-2 text-sm outline-none focus:border-green-500 focus:ring-2 focus:ring-green-200" /></div>
 //                   <div className="col-span-1"><input type="tel" value={whatsAppNumber} onChange={(e) => setWhatsAppNumber(e.target.value)} placeholder="91XXXXXXXXXX" className="w-full rounded-lg border-2 border-green-300 p-2 text-sm outline-none focus:border-green-500 focus:ring-2 focus:ring-green-200" /></div>
 //                 </div>
-//                 {/* Note: Removed NFC button from here as requested */}
 //                 <button onClick={handleProceedToPayment} disabled={isMessaging} className="w-full flex items-center justify-center gap-2 rounded-lg bg-green-600 py-2 font-semibold text-white hover:bg-green-700 disabled:bg-gray-400 transition-colors shadow-md text-sm">
 //                   {isMessaging ? (
 //                     <div className="flex items-center gap-2"><div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent"></div><span className="text-xs">Processing...</span></div>
@@ -518,14 +507,13 @@
 //                   <div className="rounded-xl bg-gradient-to-br from-green-50 to-emerald-50 p-2.5 border-2 border-green-200">
 //                     <p className="text-xs text-center font-medium text-gray-700 mb-2">Cash Payment</p>
 //                     <div className="grid grid-cols-2 gap-2 mb-2"><input type="number" placeholder="Amount Given" value={amountGiven} onChange={(e) => setAmountGiven(e.target.value === '' ? '' : parseFloat(e.target.value))} className="rounded-lg border-2 border-green-300 p-1.5 text-sm focus:ring-2 focus:ring-green-500 outline-none" /><div className="rounded-lg bg-white border-2 border-green-300 p-1.5 flex flex-col items-center justify-center"><span className="text-xs text-gray-500">Balance</span><span className={`font-bold text-sm ${balance < 0 ? 'text-red-600' : 'text-green-600'}`}>{formatCurrency(balance)}</span></div></div>
-//                     {/* BUTTON GROUP FOR CASH */}
 //                     <div className="flex gap-2">
-//                         {/* NFC Button */}
-//                         <button onClick={handleNfcLaunch} disabled={isCreatingLink} className="flex-1 rounded-lg bg-[#5a4fcf] py-2 font-bold text-white hover:bg-[#4c42b8] flex items-center justify-center shadow-md">
-//                             {isCreatingLink ? (<div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent"></div>) : (<Nfc size={20}/>)}
+//                         {/* NFC Button - SAVES + LAUNCHES NFC (NO WHATSAPP) */}
+//                         <button onClick={() => handlePaymentSuccess(true)} disabled={isCreatingLink || isMessaging} className="flex-1 rounded-lg bg-indigo-600 py-2 font-bold text-white hover:bg-indigo-700 flex items-center justify-center shadow-md">
+//                             {isCreatingLink ? (<div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent"></div>) : (<div className="flex items-center gap-1"><Nfc size={18}/><span className="text-[10px]">Tap</span></div>)}
 //                         </button>
-//                         {/* Complete Button */}
-//                         <button onClick={handlePaymentSuccess} disabled={isMessaging} className="flex-[3] flex items-center justify-center gap-2 rounded-lg bg-green-600 py-2 font-bold text-white disabled:bg-gray-400 hover:bg-green-700 transition-colors shadow-md text-xs">
+//                         {/* Complete Button - SAVES + WHATSAPP */}
+//                         <button onClick={() => handlePaymentSuccess(false)} disabled={isMessaging || isCreatingLink} className="flex-[3] flex items-center justify-center gap-2 rounded-lg bg-green-600 py-2 font-bold text-white disabled:bg-gray-400 hover:bg-green-700 transition-colors shadow-md text-xs">
 //                             {isMessaging ? (<div className="flex items-center gap-2"><div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent"></div><span>Processing...</span></div>) : (<><DollarSign size={16} /><span>Confirm Cash Payment</span></>)}
 //                         </button>
 //                     </div>
@@ -535,14 +523,13 @@
 //                 {selectedPayment === 'qr-code' && (
 //                   <div className="rounded-xl bg-gradient-to-br from-blue-50 to-cyan-50 p-2.5 border-2 border-blue-200">
 //                     {upiQR ? (<><p className="text-xs text-center font-medium text-gray-700 mb-2">Scan QR to Pay</p><div className="bg-white p-2 rounded-lg mx-auto max-w-[140px] border-2 border-blue-300"><QRCode value={upiQR} style={{ height: 'auto', width: '100%' }} /></div><p className="mt-1.5 text-xs text-center text-gray-600">Pay to: <span className="font-semibold">{merchantUpi}</span></p>
-//                     {/* BUTTON GROUP FOR UPI */}
 //                     <div className="flex gap-2 mt-2">
-//                         {/* NFC Button */}
-//                         <button onClick={handleNfcLaunch} disabled={isCreatingLink} className="flex-1 rounded-lg bg-[#5a4fcf] py-2 font-bold text-white hover:bg-[#4c42b8] flex items-center justify-center shadow-md">
-//                             {isCreatingLink ? (<div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent"></div>) : (<Nfc size={20}/>)}
+//                         {/* NFC Button - SAVES + LAUNCHES NFC (NO WHATSAPP) */}
+//                         <button onClick={() => handlePaymentSuccess(true)} disabled={isCreatingLink || isMessaging} className="flex-1 rounded-lg bg-indigo-600 py-2 font-bold text-white hover:bg-indigo-700 flex items-center justify-center shadow-md">
+//                             {isCreatingLink ? (<div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent"></div>) : (<div className="flex items-center gap-1"><Nfc size={18}/><span className="text-[10px]">Tap</span></div>)}
 //                         </button>
-//                         {/* Complete Button */}
-//                         <button onClick={handlePaymentSuccess} disabled={isMessaging} className="flex-[3] flex items-center justify-center gap-2 rounded-lg bg-blue-600 py-2 font-bold text-white disabled:bg-gray-400 hover:bg-blue-700 transition-colors shadow-md text-xs">
+//                         {/* Complete Button - SAVES + WHATSAPP */}
+//                         <button onClick={() => handlePaymentSuccess(false)} disabled={isMessaging || isCreatingLink} className="flex-[3] flex items-center justify-center gap-2 rounded-lg bg-blue-600 py-2 font-bold text-white disabled:bg-gray-400 hover:bg-blue-700 transition-colors shadow-md text-xs">
 //                             {isMessaging ? (<div className="flex items-center gap-2"><div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent"></div><span>Processing...</span></div>) : (<><CheckCircle size={16} /><span>Confirm Payment Received</span></>)}
 //                         </button>
 //                     </div>
@@ -559,7 +546,6 @@
 //   );
 // }
 
-
 'use client';
 
 import React from 'react';
@@ -569,8 +555,54 @@ import QRCode from 'react-qr-code';
 import {
   Scan, Trash2, Edit2, Check, X, AlertTriangle,
   CreditCard, CheckCircle, DollarSign, MessageSquare, 
-  Nfc
+  Nfc, Store, User, FileText
 } from 'lucide-react';
+
+// --- ANIMATION COMPONENT ---
+const TransferAnimation = () => {
+  return (
+    <div className="fixed inset-0 z-[200] flex flex-col items-center justify-center bg-black/80 backdrop-blur-sm">
+      <div className="relative w-64 h-32 flex items-center justify-between px-4">
+        <div className="flex flex-col items-center z-10">
+          <div className="w-14 h-14 bg-white rounded-full flex items-center justify-center shadow-[0_0_20px_rgba(90,79,207,0.6)] animate-pulse">
+            <Store size={28} className="text-[#5a4fcf]" />
+          </div>
+          <span className="text-white text-xs mt-2 font-semibold">You</span>
+        </div>
+        <div className="absolute left-0 right-0 top-1/2 -translate-y-1/2 px-12">
+          <div className="w-full h-1 bg-gray-600 rounded-full overflow-hidden">
+            <div className="h-full bg-[#5a4fcf] w-1/2 animate-[progress_1s_infinite_linear]"></div>
+          </div>
+          <div className="absolute top-1/2 left-0 -translate-y-1/2 -translate-x-1/2 animate-[fly_1.5s_infinite_ease-in-out] text-white">
+             <div className="bg-[#5a4fcf] p-2 rounded-lg shadow-lg rotate-12">
+                <FileText size={20} fill="white" className="text-white" />
+             </div>
+          </div>
+        </div>
+        <div className="flex flex-col items-center z-10">
+          <div className="w-14 h-14 bg-gray-800 border-2 border-gray-600 rounded-full flex items-center justify-center">
+            <User size={28} className="text-white" />
+          </div>
+          <span className="text-white text-xs mt-2 font-semibold">Customer</span>
+        </div>
+      </div>
+      <p className="text-white font-bold text-lg mt-8 animate-pulse">Transferring Bill...</p>
+      <style jsx>{`
+        @keyframes fly {
+          0% { left: 20%; opacity: 0; transform: translateY(-50%) scale(0.5) rotate(0deg); }
+          10% { opacity: 1; transform: translateY(-50%) scale(1) rotate(0deg); }
+          90% { opacity: 1; transform: translateY(-50%) scale(1) rotate(0deg); }
+          100% { left: 80%; opacity: 0; transform: translateY(-50%) scale(0.5) rotate(12deg); }
+        }
+        @keyframes progress {
+            0% { width: 0%; margin-left: 0; }
+            50% { width: 100%; margin-left: 0; }
+            100% { width: 0%; margin-left: 100%; }
+        }
+      `}</style>
+    </div>
+  );
+};
 
 // --- HELPER FUNCTIONS ---
 const formatCurrency = (amount: number): string => {
@@ -664,7 +696,11 @@ export default function BillingPage() {
   const [whatsAppNumber, setWhatsAppNumber] = React.useState('');
   const [customerName, setCustomerName] = React.useState('');
   const [amountGiven, setAmountGiven] = React.useState<number | ''>('');
+  
+  // Loading
   const [isMessaging, setIsMessaging] = React.useState(false);
+  const [isCreatingLink, setIsCreatingLink] = React.useState(false);
+  
   const [scannerError, setScannerError] = React.useState<string>('');
   const [modal, setModal] = React.useState<{ isOpen: boolean; title: string; message: string | React.ReactNode; onConfirm?: (() => void); confirmText: string; showCancel: boolean; }>({ isOpen: false, title: '', message: '', confirmText: 'OK', showCancel: false });
   const suggestionsRef = React.useRef<HTMLDivElement | null>(null);
@@ -672,9 +708,6 @@ export default function BillingPage() {
   const [settingsComplete, setSettingsComplete] = React.useState(false);
   const [discountInput, setDiscountInput] = React.useState<string>('');
   const [discountType, setDiscountType] = React.useState<'percentage' | 'fixed'>('percentage');
-  
-  // NFC Loading State
-  const [isCreatingLink, setIsCreatingLink] = React.useState(false);
 
   const subtotal = React.useMemo(() =>
     cart.reduce((sum, item) => {
@@ -718,9 +751,7 @@ export default function BillingPage() {
             setMerchantName(parsedData.shopName || 'Billzzy Lite');
             return true;
           }
-        } catch (error) {
-          console.error('Error parsing settings data:', error);
-        }
+        } catch (error) { console.error('Error parsing settings data:', error); }
       }
       setSettingsComplete(false);
       return false;
@@ -730,7 +761,6 @@ export default function BillingPage() {
 
   React.useEffect(() => { checkPhoneNumber(); }, [checkPhoneNumber]);
 
-  // Inventory Fetch
   React.useEffect(() => {
     if (status !== 'authenticated') return;
     (async () => {
@@ -744,7 +774,6 @@ export default function BillingPage() {
     })();
   }, [status]);
 
-  // Suggestions
   React.useEffect(() => {
     if (!productName.trim()) { setShowSuggestions(false); return; }
     const query = productName.trim().toLowerCase();
@@ -765,9 +794,7 @@ export default function BillingPage() {
 
   // --- WHATSAPP LOGIC ---
   const sendWhatsAppMessage = async (phoneNumber: string, messageType: string) => {
-    if (!phoneNumber.trim() || !/^\d{10,15}$/.test(phoneNumber)) {
-      return false;
-    }
+    if (!phoneNumber.trim() || !/^\d{10,15}$/.test(phoneNumber)) return false;
     try {
       const formattedPhone = phoneNumber.startsWith('91') ? phoneNumber : `91${phoneNumber}`;
       const orderId = `INV-${Date.now().toString().slice(-6)}`;
@@ -783,13 +810,7 @@ export default function BillingPage() {
         default: throw new Error(`Invalid message type: ${messageType}`);
       }
 
-      bodyParameters = [
-        orderId, 
-        merchantName, 
-        `₹${subtotal.toFixed(2)}`, 
-        itemsList, 
-        discountAmount > 0 ? `₹${discountAmount.toFixed(2)}` : '₹0.00',
-      ];
+      bodyParameters = [ orderId, merchantName, `₹${subtotal.toFixed(2)}`, itemsList, discountAmount > 0 ? `₹${discountAmount.toFixed(2)}` : '₹0.00' ];
 
       const messageData = {
         messaging_product: 'whatsapp',
@@ -810,10 +831,7 @@ export default function BillingPage() {
       });
 
       const result = await response.json();
-      if (!response.ok) throw new Error(result.message || 'Failed to send message');
-      if (!result.success) throw new Error(result.message || 'WhatsApp API returned success: false');
-
-      return true;
+      return response.ok && result.success;
     } catch (error) {
       console.error('WhatsApp API error:', error);
       return false;
@@ -835,9 +853,7 @@ export default function BillingPage() {
     if (!name || price < 0) return;
     setCart(prev => {
       const existingItem = productId ? prev.find(item => item.productId === productId) : null;
-      if (existingItem) {
-        return prev.map(item => item.productId === productId ? { ...item, quantity: item.quantity + 1 } : item);
-      }
+      if (existingItem) { return prev.map(item => item.productId === productId ? { ...item, quantity: item.quantity + 1 } : item); }
       return [{ id: Date.now(), productId, name, quantity: 1, price, gstRate, isEditing }, ...prev];
     });
     setProductName('');
@@ -848,66 +864,41 @@ export default function BillingPage() {
     if (results && results[0]) {
       const scannedValue = results[0].rawValue;
       const foundProduct = inventory.find(p => p.id === scannedValue || p.sku?.toLowerCase() === scannedValue.toLowerCase() || p.name.toLowerCase() === scannedValue.toLowerCase());
-      if (foundProduct) {
-        addToCart(foundProduct.name, foundProduct.sellingPrice, foundProduct.gstRate, foundProduct.id);
-        setScanning(false);
-      } else {
-        addToCart(scannedValue, 0, 0, undefined, true);
-        setScanning(false);
-      }
+      if (foundProduct) { addToCart(foundProduct.name, foundProduct.sellingPrice, foundProduct.gstRate, foundProduct.id); setScanning(false); } 
+      else { addToCart(scannedValue, 0, 0, undefined, true); setScanning(false); }
     }
   }, [inventory, addToCart]);
 
-  const handleScanError = React.useCallback((error: unknown) => {
-    setScannerError(error instanceof Error ? error.message : 'Unknown scanner error');
-  }, []);
-
-  const handleManualAdd = React.useCallback(() => {
-    const name = productName.trim();
-    if (!name) { 
-      setModal({ isOpen: true, title: 'Item Name Required', message: 'Please enter a name for the custom item.', showCancel: false, confirmText: 'OK' }); 
-      return; 
-    }
-    addToCart(name, 0, 0, undefined, true);
-  }, [productName, addToCart]);
-
+  const handleScanError = React.useCallback((error: unknown) => { setScannerError(error instanceof Error ? error.message : 'Unknown scanner error'); }, []);
+  const handleManualAdd = React.useCallback(() => { const name = productName.trim(); if (!name) { setModal({ isOpen: true, title: 'Item Name Required', message: 'Please enter a name for the custom item.', showCancel: false, confirmText: 'OK' }); return; } addToCart(name, 0, 0, undefined, true); }, [productName, addToCart]);
   const deleteCartItem = (id: number) => setCart(prev => prev.filter(item => item.id !== id));
   const toggleEdit = (id: number) => setCart(prev => prev.map(item => item.id === id ? { ...item, isEditing: !item.isEditing } : { ...item, isEditing: false }));
   const updateCartItem = (id: number, updatedValues: Partial<CartItem>) => setCart(prev => prev.map(item => item.id === id ? { ...item, ...updatedValues } : item));
+  const handleTransactionDone = React.useCallback(() => { setCart([]); setSelectedPayment(''); setShowWhatsAppSharePanel(false); setShowPaymentOptions(false); setWhatsAppNumber(''); setAmountGiven(''); setDiscountInput(''); setModal({ ...modal, isOpen: false }); }, [modal]);
+  const handleProceedToPayment = React.useCallback(async () => { if (cart.length === 0) { setModal({ isOpen: true, title: 'Cart Empty', message: 'Please add items to the cart before finalizing.', confirmText: 'OK', showCancel: false }); return; } setShowWhatsAppSharePanel(false); setShowPaymentOptions(true); }, [cart.length]);
 
-  const handleTransactionDone = React.useCallback(() => {
-    setCart([]); 
-    setSelectedPayment(''); 
-    setShowWhatsAppSharePanel(false); 
-    setShowPaymentOptions(false); 
-    setWhatsAppNumber(''); 
-    setAmountGiven(''); 
-    setDiscountInput(''); 
-    setModal({ ...modal, isOpen: false });
-  }, [modal]);
-
-  const handleProceedToPayment = React.useCallback(async () => {
-    if (cart.length === 0) {
-      setModal({ isOpen: true, title: 'Cart Empty', message: 'Please add items to the cart before finalizing.', confirmText: 'OK', showCancel: false });
-      return;
-    }
-    setShowWhatsAppSharePanel(false);
-    setShowPaymentOptions(true);
-  }, [cart.length]);
-
-  // --- FINAL PAYMENT HANDLER (Unified) ---
+  // --- FINAL PAYMENT HANDLER (FIXED: Payment Method Handling) ---
   const handlePaymentSuccess = React.useCallback(async (useNfc: boolean = false) => {
-    setIsMessaging(true); // Start Spinner
-    if (useNfc) setIsCreatingLink(true); // Start NFC Spinner
+    setIsMessaging(true); 
+    if (useNfc) setIsCreatingLink(true);
 
     try {
-      // 1. If using NFC, generate the link FIRST
+      // 1. DETERMINE PAYMENT METHOD LABEL
+      // If selectedPayment is 'cash', send 'Cash'. 
+      // If 'qr-code', send 'UPI / QR'.
+      const paymentLabel = selectedPayment === 'cash' ? 'Cash' : 'UPI / QR';
+
+      // 2. NFC Link Generation
       let nfcToken = '';
       if (useNfc) {
         const nfcRes = await fetch('/api/nfc-link', {
            method: 'POST',
            headers: { 'Content-Type': 'application/json' },
-           body: JSON.stringify({ cart, totalAmount }),
+           body: JSON.stringify({ 
+               cart, 
+               totalAmount,
+               paymentMethod: paymentLabel // <--- FIX IS HERE
+           }),
         });
         const nfcData = await nfcRes.json();
         if (nfcData.success && nfcData.orderId) {
@@ -915,7 +906,7 @@ export default function BillingPage() {
         }
       }
 
-      // 2. Update Inventory
+      // 3. Update Inventory
       const updatePromises = cart.filter(item => item.productId).map(item => 
         fetch(`/api/products/${item.productId}`, { 
           method: 'PUT', 
@@ -925,7 +916,7 @@ export default function BillingPage() {
       );
       await Promise.all(updatePromises).catch(err => console.error("Inventory update failed:", err));
     
-      // 3. Save Sale DB
+      // 4. Save Sale DB (Keep raw value for consistency)
       const response = await fetch('/api/sales', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -934,7 +925,7 @@ export default function BillingPage() {
       
       if (!response.ok) throw new Error('Failed to save sale');
 
-      // 4. Save Customer DB
+      // 5. Save Customer DB
       if (customerName.trim() && whatsAppNumber.trim()) {
         fetch('/api/customers', {
           method: 'POST',
@@ -943,20 +934,28 @@ export default function BillingPage() {
         }).catch(err => console.error("Customer save error", err));
       }
     
-      // 5. Send WhatsApp (ONLY IF NOT USING NFC)
+      // 6. Send WhatsApp (ONLY IF NOT USING NFC)
       let receiptSent = false;
       if (!useNfc && whatsAppNumber && whatsAppNumber.trim()) {
         receiptSent = await sendWhatsAppReceipt(selectedPayment);
       }
 
-      // 6. Launch NFC if requested (No WhatsApp sent)
+      // 7. Launch NFC (Using Iframe)
       if (useNfc && nfcToken) {
           const packageName = "com.billzzylite.bridge";
           const bridgeUrl = `intent://nfc/${nfcToken}#Intent;scheme=billzzylite;package=${packageName};end`;
-          window.location.href = bridgeUrl;
+          
+          const iframe = document.createElement('iframe');
+          iframe.style.display = 'none';
+          iframe.src = bridgeUrl;
+          document.body.appendChild(iframe);
+          
+          setTimeout(() => {
+              document.body.removeChild(iframe);
+          }, 2000);
       }
     
-      // 7. Show Success Modal
+      // 8. Success Modal
       setModal({
         isOpen: true,
         title: 'Success!',
@@ -978,8 +977,10 @@ export default function BillingPage() {
           showCancel: false 
       });
     } finally {
-      setIsMessaging(false);
-      setIsCreatingLink(false);
+      setTimeout(() => {
+          setIsMessaging(false);
+          setIsCreatingLink(false);
+      }, 1500);
     }
   }, [selectedPayment, totalAmount, cart, handleTransactionDone, whatsAppNumber, sendWhatsAppReceipt, customerName]);
 
@@ -990,6 +991,9 @@ export default function BillingPage() {
   return (
     <>
       <div className="h-full flex flex-col bg-gray-50">
+        
+        {(isMessaging || isCreatingLink) && <TransferAnimation />}
+
         {!settingsComplete && (
           <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-sm">
             <div className="w-[90%] max-w-md rounded-2xl bg-white p-5 shadow-2xl border border-gray-200">
@@ -1004,11 +1008,9 @@ export default function BillingPage() {
         
         <div className="flex-1 min-h-0 overflow-y-auto">
           <div className="p-2 space-y-2">
-            
             {scanning && settingsComplete && (
               <div className="bg-white rounded-xl p-3 shadow-md border border-indigo-100">
                 <div className="max-w-sm mx-auto"><Scanner constraints={{ facingMode: 'environment' }} onScan={handleScan} onError={handleScanError} scanDelay={300} styles={{ container: { width: '100%', height: 180, borderRadius: '12px', overflow: 'hidden' } }} /></div>
-                {scannerError && <p className="text-center text-xs text-red-500 mt-2">{scannerError}</p>}
                 <button onClick={toggleScanner} className="w-full mt-3 flex items-center justify-center gap-2 bg-red-50 text-red-600 py-2 rounded-lg text-sm font-semibold hover:bg-red-100"><X size={16} /> Close Scanner</button>
               </div>
             )}
@@ -1035,14 +1037,12 @@ export default function BillingPage() {
         
         <div className="flex-shrink-0 bg-white shadow-[0_-4px_10px_rgba(0,0,0,0.1)] border-t-2 border-gray-200">
           <div className="p-2.5 space-y-2 max-h-[45vh] overflow-y-auto">
-            
             <div className="space-y-2"><div className="relative"><input type="number" placeholder="Discount" value={discountInput} onChange={(e) => setDiscountInput(e.target.value)} className="w-full rounded-lg border-2 border-gray-300 p-2 text-sm focus:ring-2 focus:ring-[#5a4fcf] focus:border-[#5a4fcf] outline-none transition-all pr-12" disabled={cart.length === 0 || !settingsComplete} /><div className="absolute inset-y-0 right-0 flex items-center"><button onClick={() => setDiscountType(discountType === 'percentage' ? 'fixed' : 'percentage')} className="h-full rounded-r-lg px-3 text-sm font-bold text-white bg-[#5a4fcf] hover:bg-[#4c42b8] transition-colors" disabled={cart.length === 0 || !settingsComplete}>{discountType === 'percentage' ? '%' : '₹'}</button></div></div><div className="space-y-1 text-sm rounded-lg bg-gray-50 p-2 border"><div className="flex justify-between items-center text-gray-600"><span>Subtotal</span><span>{formatCurrency(subtotal)}</span></div>{discountAmount > 0 && (<div className="flex justify-between items-center text-green-600"><span>Discount</span><span>- {formatCurrency(discountAmount)}</span></div>)}<div className="flex justify-between items-center text-gray-900 font-bold border-t pt-1 mt-1"><span className="text-base">Total</span><span className="text-xl">{formatCurrency(totalAmount)}</span></div></div></div>
 
             {!showWhatsAppSharePanel && !showPaymentOptions && (
               <button onClick={() => { if (cart.length === 0) { setModal({ isOpen: true, title: 'Cart Empty', message: 'Please add items to the cart before finalizing.', confirmText: 'OK', showCancel: false }); return; } setShowWhatsAppSharePanel(true); setShowPaymentOptions(false); }} className="w-full flex items-center justify-center gap-2 rounded-xl bg-[#5a4fcf] py-2.5 font-bold text-white hover:bg-[#4c42b8] disabled:bg-gray-400 transition-colors shadow-lg text-sm" disabled={cart.length === 0 || !settingsComplete}><CreditCard size={16} /><span>Proceed to Payment</span></button>
             )}
 
-            {/* --- CUSTOMER PANEL --- */}
             {showWhatsAppSharePanel && cart.length > 0 && settingsComplete && (
               <div className="space-y-2 rounded-xl bg-gradient-to-br from-green-50 to-emerald-50 p-2.5 border-2 border-green-200">
                 <p className="text-xs font-semibold text-gray-700 text-center">Customer Details & Sharing</p>
@@ -1070,11 +1070,9 @@ export default function BillingPage() {
                     <p className="text-xs text-center font-medium text-gray-700 mb-2">Cash Payment</p>
                     <div className="grid grid-cols-2 gap-2 mb-2"><input type="number" placeholder="Amount Given" value={amountGiven} onChange={(e) => setAmountGiven(e.target.value === '' ? '' : parseFloat(e.target.value))} className="rounded-lg border-2 border-green-300 p-1.5 text-sm focus:ring-2 focus:ring-green-500 outline-none" /><div className="rounded-lg bg-white border-2 border-green-300 p-1.5 flex flex-col items-center justify-center"><span className="text-xs text-gray-500">Balance</span><span className={`font-bold text-sm ${balance < 0 ? 'text-red-600' : 'text-green-600'}`}>{formatCurrency(balance)}</span></div></div>
                     <div className="flex gap-2">
-                        {/* NFC Button - SAVES + LAUNCHES NFC (NO WHATSAPP) */}
                         <button onClick={() => handlePaymentSuccess(true)} disabled={isCreatingLink || isMessaging} className="flex-1 rounded-lg bg-indigo-600 py-2 font-bold text-white hover:bg-indigo-700 flex items-center justify-center shadow-md">
                             {isCreatingLink ? (<div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent"></div>) : (<div className="flex items-center gap-1"><Nfc size={18}/><span className="text-[10px]">Tap</span></div>)}
                         </button>
-                        {/* Complete Button - SAVES + WHATSAPP */}
                         <button onClick={() => handlePaymentSuccess(false)} disabled={isMessaging || isCreatingLink} className="flex-[3] flex items-center justify-center gap-2 rounded-lg bg-green-600 py-2 font-bold text-white disabled:bg-gray-400 hover:bg-green-700 transition-colors shadow-md text-xs">
                             {isMessaging ? (<div className="flex items-center gap-2"><div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent"></div><span>Processing...</span></div>) : (<><DollarSign size={16} /><span>Confirm Cash Payment</span></>)}
                         </button>
@@ -1086,11 +1084,9 @@ export default function BillingPage() {
                   <div className="rounded-xl bg-gradient-to-br from-blue-50 to-cyan-50 p-2.5 border-2 border-blue-200">
                     {upiQR ? (<><p className="text-xs text-center font-medium text-gray-700 mb-2">Scan QR to Pay</p><div className="bg-white p-2 rounded-lg mx-auto max-w-[140px] border-2 border-blue-300"><QRCode value={upiQR} style={{ height: 'auto', width: '100%' }} /></div><p className="mt-1.5 text-xs text-center text-gray-600">Pay to: <span className="font-semibold">{merchantUpi}</span></p>
                     <div className="flex gap-2 mt-2">
-                        {/* NFC Button - SAVES + LAUNCHES NFC (NO WHATSAPP) */}
                         <button onClick={() => handlePaymentSuccess(true)} disabled={isCreatingLink || isMessaging} className="flex-1 rounded-lg bg-indigo-600 py-2 font-bold text-white hover:bg-indigo-700 flex items-center justify-center shadow-md">
                             {isCreatingLink ? (<div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent"></div>) : (<div className="flex items-center gap-1"><Nfc size={18}/><span className="text-[10px]">Tap</span></div>)}
                         </button>
-                        {/* Complete Button - SAVES + WHATSAPP */}
                         <button onClick={() => handlePaymentSuccess(false)} disabled={isMessaging || isCreatingLink} className="flex-[3] flex items-center justify-center gap-2 rounded-lg bg-blue-600 py-2 font-bold text-white disabled:bg-gray-400 hover:bg-blue-700 transition-colors shadow-md text-xs">
                             {isMessaging ? (<div className="flex items-center gap-2"><div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent"></div><span>Processing...</span></div>) : (<><CheckCircle size={16} /><span>Confirm Payment Received</span></>)}
                         </button>
