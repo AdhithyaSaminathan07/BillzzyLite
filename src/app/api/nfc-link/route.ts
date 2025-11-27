@@ -84,7 +84,7 @@ export async function POST(request: Request) {
 
     await connectMongoDB();
     
-    // ✅ FIX: Read 'providedToken' from request (Generated on frontend)
+    // Receive paymentMethod here
     const { cart, totalAmount, paymentMethod, providedToken } = await request.json();
 
     if (!cart || !Array.isArray(cart) || cart.length === 0) {
@@ -106,6 +106,7 @@ export async function POST(request: Request) {
           price: item.price,
       })),
       amount: totalAmount,
+      // Fallback only if missing
       paymentMethod: paymentMethod || 'UPI / QR', 
       status: 'pending',
       createdAt: new Date(),

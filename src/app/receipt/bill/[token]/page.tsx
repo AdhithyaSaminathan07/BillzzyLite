@@ -231,7 +231,7 @@ export default async function PublicBillPage(props: PageProps) {
     return new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 2 }).format(amount);
   };
 
-  // ✅ Helper to display Cash or UPI correctly
+  // Helper to display Cash or UPI correctly
   const getPaymentLabel = (method: string) => {
     if (!method) return 'UPI / QR';
     const m = method.toLowerCase();
@@ -277,7 +277,7 @@ export default async function PublicBillPage(props: PageProps) {
           <div className="bg-gray-50 p-4 rounded-lg space-y-2 border border-gray-100">
             <div className="flex justify-between items-center text-gray-600 text-sm">
               <span>Payment Method</span>
-              {/* ✅ Display correct label */}
+              {/* Correctly displays 'Cash' or 'UPI / QR' */}
               <span className="font-bold text-gray-800 uppercase">{getPaymentLabel(sale.paymentMethod)}</span>
             </div>
             <div className="border-t border-gray-200 my-2"></div>

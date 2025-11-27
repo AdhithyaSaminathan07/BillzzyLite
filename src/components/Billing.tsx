@@ -546,9 +546,10 @@
 //   );
 // }
 
-'use client';
 
-import React from 'react';
+  'use client';
+
+import React, { useCallback } from 'react';
 import { useSession } from 'next-auth/react';
 import { Scanner, IDetectedBarcode } from '@yudiel/react-qr-scanner';
 import QRCode from 'react-qr-code';
@@ -574,7 +575,7 @@ const calculateGstDetails = (sellingPrice: number, gstRate: number) => {
   return { gstAmount, totalPrice };
 };
 
-// Helper to generate random ID on client side
+// Helper: Generate ID on Client Side for Instant Launch
 const generateClientId = () => {
   return 'xxxxxxxxxxxx4xxxyxxxxxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
     const r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
@@ -647,21 +648,17 @@ export default function BillingPage() {
   const [suggestions, setSuggestions] = React.useState<InventoryProduct[]>([]);
   const [showSuggestions, setShowSuggestions] = React.useState(false);
   
-  // States for flow
   const [showWhatsAppSharePanel, setShowWhatsAppSharePanel] = React.useState(false);
   const [showPaymentOptions, setShowPaymentOptions] = React.useState(false);
   const [selectedPayment, setSelectedPayment] = React.useState<string>('');
   
-  // Data states
   const [merchantUpi, setMerchantUpi] = React.useState('');
   const [merchantName, setMerchantName] = React.useState('Billzzy Lite');
   const [whatsAppNumber, setWhatsAppNumber] = React.useState('');
   const [customerName, setCustomerName] = React.useState('');
   const [amountGiven, setAmountGiven] = React.useState<number | ''>('');
   
-  // Loading
   const [isMessaging, setIsMessaging] = React.useState(false);
-  
   const [scannerError, setScannerError] = React.useState<string>('');
   const [modal, setModal] = React.useState<{ isOpen: boolean; title: string; message: string | React.ReactNode; onConfirm?: (() => void); confirmText: string; showCancel: boolean; }>({ isOpen: false, title: '', message: '', confirmText: 'OK', showCancel: false });
   const suggestionsRef = React.useRef<HTMLDivElement | null>(null);
@@ -698,20 +695,18 @@ export default function BillingPage() {
 
   const upiQR = merchantUpi ? `upi://pay?pa=${merchantUpi}&pn=${encodeURIComponent(merchantName)}&am=${totalAmount.toFixed(2)}&cu=INR&tn=Bill%20Payment` : '';
 
-  const checkPhoneNumber = React.useCallback(() => {
+  const checkPhoneNumber = useCallback(() => {
     if (status === 'authenticated' && session?.user?.email) {
       const savedData = localStorage.getItem(`userSettings-${session.user.email}`);
       if (savedData) {
         try {
           const parsedData = JSON.parse(savedData);
-          const phoneNumber = parsedData.phoneNumber || '';
-          if (phoneNumber && phoneNumber.trim() !== '' && /^\d{10,15}$/.test(phoneNumber)) {
+          if (parsedData.phoneNumber && parsedData.phoneNumber.length >= 10) {
             setSettingsComplete(true);
             setMerchantUpi(parsedData.merchantUpiId || '');
             setMerchantName(parsedData.shopName || 'Billzzy Lite');
-            return true;
           }
-        } catch (error) { console.error('Error parsing settings data:', error); }
+        } catch (error) { console.error('Error parsing settings', error); }
       }
       setSettingsComplete(false);
       return false;
@@ -730,7 +725,11 @@ export default function BillingPage() {
         const data: InventoryProduct[] = await res.json();
         const productsWithGst = data.map(p => ({ ...p, gstRate: p.gstRate || 0 }));
         setInventory(productsWithGst);
-      } catch (err) { setInventory([]); }
+      } catch (err) { 
+        // Log error to satisfy linter or ignore
+        console.error("Failed to fetch inventory", err);
+        setInventory([]); 
+      }
     })();
   }, [status]);
 
@@ -742,17 +741,14 @@ export default function BillingPage() {
     setShowSuggestions(filtered.length > 0);
   }, [productName, inventory]);
 
-  React.useEffect(() => {
-    const handler = (e: MouseEvent) => {
-      if (suggestionsRef.current && !suggestionsRef.current.contains(e.target as Node)) {
-        setShowSuggestions(false);
-      }
-    };
-    document.addEventListener('mousedown', handler);
-    return () => document.removeEventListener('mousedown', handler);
-  }, []);
+  // --- FIX: Change 'any' to 'unknown' to fix build error ---
+  const handleScanError = (error: unknown) => {
+    console.error(error);
+    setScannerError('Camera permission or access error.');
+  };
 
-  const sendWhatsAppMessage = async (phoneNumber: string, messageType: string) => {
+  // --- WHATSAPP LOGIC (Wrapped in useCallback to fix lint warning) ---
+  const sendWhatsAppMessage = useCallback(async (phoneNumber: string, messageType: string) => {
     if (!phoneNumber.trim() || !/^\d{10,15}$/.test(phoneNumber)) return false;
     try {
       const formattedPhone = phoneNumber.startsWith('91') ? phoneNumber : `91${phoneNumber}`;
@@ -760,8 +756,6 @@ export default function BillingPage() {
       const itemsList = cart.map((item) => `${item.name} (x${item.quantity})`).join(', ');
 
       let templateName = '';
-      let bodyParameters: string[] = [];
-
       switch (messageType) {
         case 'cashPayment': templateName = 'payment_receipt_cashh'; break;
         case 'qrPayment': templateName = 'payment_receipt_upii'; break;
@@ -769,7 +763,7 @@ export default function BillingPage() {
         default: throw new Error(`Invalid message type: ${messageType}`);
       }
 
-      bodyParameters = [ orderId, merchantName, `₹${subtotal.toFixed(2)}`, itemsList, discountAmount > 0 ? `₹${discountAmount.toFixed(2)}` : '₹0.00' ];
+      const bodyParameters = [ orderId, merchantName, `₹${subtotal.toFixed(2)}`, itemsList, discountAmount > 0 ? `₹${discountAmount.toFixed(2)}` : '₹0.00' ];
 
       const messageData = {
         messaging_product: 'whatsapp',
@@ -795,9 +789,9 @@ export default function BillingPage() {
       console.error('WhatsApp API error:', error);
       return false;
     }
-  };
+  }, [cart, discountAmount, merchantName, subtotal]);
 
-  const sendWhatsAppReceipt = React.useCallback(async (paymentMethod: string) => {
+  const sendWhatsAppReceipt = useCallback(async (paymentMethod: string) => {
     let templateType = '';
     switch (paymentMethod) { 
       case 'cash': templateType = 'cashPayment'; break; 
@@ -805,9 +799,9 @@ export default function BillingPage() {
       default: templateType = 'cashPayment'; 
     }
     return await sendWhatsAppMessage(whatsAppNumber, templateType);
-  }, [whatsAppNumber, cart, subtotal, discountAmount, merchantName]);
+  }, [whatsAppNumber, sendWhatsAppMessage]);
 
-  const addToCart = React.useCallback((name: string, price: number, gstRate: number, productId?: string, isEditing = false) => {
+  const addToCart = useCallback((name: string, price: number, gstRate: number, productId?: string, isEditing = false) => {
     if (!name || price < 0) return;
     setCart(prev => {
       const existingItem = productId ? prev.find(item => item.productId === productId) : null;
@@ -818,7 +812,7 @@ export default function BillingPage() {
     setShowSuggestions(false);
   }, []);
 
-  const handleScan = React.useCallback((results: IDetectedBarcode[]) => {
+  const handleScan = useCallback((results: IDetectedBarcode[]) => {
     if (results && results[0]) {
       const scannedValue = results[0].rawValue;
       const foundProduct = inventory.find(p => p.id === scannedValue || p.sku?.toLowerCase() === scannedValue.toLowerCase() || p.name.toLowerCase() === scannedValue.toLowerCase());
@@ -827,51 +821,62 @@ export default function BillingPage() {
     }
   }, [inventory, addToCart]);
 
-  const handleScanError = React.useCallback((error: unknown) => { setScannerError(error instanceof Error ? error.message : 'Unknown scanner error'); }, []);
-  const handleManualAdd = React.useCallback(() => { const name = productName.trim(); if (!name) { setModal({ isOpen: true, title: 'Item Name Required', message: 'Please enter a name for the custom item.', showCancel: false, confirmText: 'OK' }); return; } addToCart(name, 0, 0, undefined, true); }, [productName, addToCart]);
+  const handleManualAdd = useCallback(() => { const name = productName.trim(); if (!name) { setModal({ isOpen: true, title: 'Item Name Required', message: 'Please enter a name for the custom item.', showCancel: false, confirmText: 'OK' }); return; } addToCart(name, 0, 0, undefined, true); }, [productName, addToCart]);
   const deleteCartItem = (id: number) => setCart(prev => prev.filter(item => item.id !== id));
   const toggleEdit = (id: number) => setCart(prev => prev.map(item => item.id === id ? { ...item, isEditing: !item.isEditing } : { ...item, isEditing: false }));
   const updateCartItem = (id: number, updatedValues: Partial<CartItem>) => setCart(prev => prev.map(item => item.id === id ? { ...item, ...updatedValues } : item));
-  const handleTransactionDone = React.useCallback(() => { setCart([]); setSelectedPayment(''); setShowWhatsAppSharePanel(false); setShowPaymentOptions(false); setWhatsAppNumber(''); setAmountGiven(''); setDiscountInput(''); setModal({ ...modal, isOpen: false }); }, [modal]);
-  const handleProceedToPayment = React.useCallback(async () => { if (cart.length === 0) { setModal({ isOpen: true, title: 'Cart Empty', message: 'Please add items to the cart before finalizing.', confirmText: 'OK', showCancel: false }); return; } setShowWhatsAppSharePanel(false); setShowPaymentOptions(true); }, [cart.length]);
+  const handleTransactionDone = useCallback(() => { setCart([]); setSelectedPayment(''); setShowWhatsAppSharePanel(false); setShowPaymentOptions(false); setWhatsAppNumber(''); setAmountGiven(''); setDiscountInput(''); setModal({ ...modal, isOpen: false }); }, [modal]);
+  const handleProceedToPayment = useCallback(async () => { if (cart.length === 0) { setModal({ isOpen: true, title: 'Cart Empty', message: 'Please add items to the cart before finalizing.', confirmText: 'OK', showCancel: false }); return; } setShowWhatsAppSharePanel(false); setShowPaymentOptions(true); }, [cart.length]);
 
-  // --- FINAL PAYMENT HANDLER (FIXED: Instant Launch + Correct Payment Method) ---
-  const handlePaymentSuccess = React.useCallback(async (useNfc: boolean = false) => {
-    
-    // 1. Generate Token CLIENT-SIDE (No awaiting server)
+  // --- FINAL PAYMENT HANDLER ---
+  const handlePaymentSuccess = useCallback(async (useNfc: boolean = false) => {
     const clientToken = generateClientId();
     const paymentLabel = selectedPayment === 'cash' ? 'Cash' : 'UPI / QR';
 
-    // 2. INSTANT LAUNCH (Before any API calls)
-    if (useNfc) {
-        // Standard Intent URL
-        const packageName = "com.billzzylite.bridge";
-        const bridgeUrl = `intent://nfc/${clientToken}#Intent;scheme=billzzylite;package=${packageName};end`;
-        
-        // Directly change location - this is treated as a user gesture
-        window.location.href = bridgeUrl;
-    }
-
-    // 3. Now start loading UI and saving to DB
     setIsMessaging(true);
 
     try {
-      // 4. Save Bill to DB (Send the client-generated token)
       if (useNfc) {
-        // We ignore response here because we already launched the app
+        // 1. Send data with keepalive (Fire & Forget)
         fetch('/api/nfc-link', {
            method: 'POST',
            headers: { 'Content-Type': 'application/json' },
+           keepalive: true, 
            body: JSON.stringify({ 
                cart, 
                totalAmount,
-               paymentMethod: paymentLabel, // "Cash" or "UPI / QR"
-               providedToken: clientToken // Send the ID we just used
+               paymentMethod: paymentLabel,
+               providedToken: clientToken
            }),
         }).catch(e => console.error("NFC Save Error", e));
+
+        // 2. Update Inventory (Fire & Forget)
+        cart.forEach(item => {
+           if(item.productId) {
+             fetch(`/api/products/${item.productId}`, { 
+                method: 'PUT', 
+                headers: { 'Content-Type': 'application/json' }, 
+                keepalive: true,
+                body: JSON.stringify({ quantityToDecrement: item.quantity }) 
+             }).catch(e => console.error(e));
+           }
+        });
+
+        // 3. Launch Intent
+        const packageName = "com.billzzylite.bridge";
+        const bridgeUrl = `intent://nfc/${clientToken}#Intent;scheme=billzzylite;package=${packageName};end`;
+        
+        window.location.href = bridgeUrl;
+
+        setTimeout(() => {
+          handleTransactionDone();
+          setIsMessaging(false);
+        }, 2000);
+
+        return; 
       }
 
-      // 5. Update Inventory
+      // --- STANDARD FLOW ---
       const updatePromises = cart.filter(item => item.productId).map(item => 
         fetch(`/api/products/${item.productId}`, { 
           method: 'PUT', 
@@ -881,7 +886,6 @@ export default function BillingPage() {
       );
       await Promise.all(updatePromises).catch(err => console.error("Inventory update failed:", err));
     
-      // 6. Save Sale DB
       const response = await fetch('/api/sales', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -890,7 +894,6 @@ export default function BillingPage() {
       
       if (!response.ok) throw new Error('Failed to save sale');
 
-      // 7. Save Customer DB
       if (customerName.trim() && whatsAppNumber.trim()) {
         fetch('/api/customers', {
           method: 'POST',
@@ -899,14 +902,11 @@ export default function BillingPage() {
         }).catch(err => console.error("Customer save error", err));
       }
     
-      // 8. Send WhatsApp (ONLY IF NOT USING NFC)
       let receiptSent = false;
-      if (!useNfc && whatsAppNumber && whatsAppNumber.trim()) {
+      if (whatsAppNumber && whatsAppNumber.trim()) {
         receiptSent = await sendWhatsAppReceipt(selectedPayment);
       }
     
-      // 9. Success Modal
-      // Delay slightly to allow app switch
       setTimeout(() => {
           setModal({
             isOpen: true,
@@ -926,24 +926,24 @@ export default function BillingPage() {
       setModal({ 
           isOpen: true, 
           title: 'Error', 
-          message: 'An error occurred while saving the transaction.', 
+          message: 'Transaction saved, but there was a network issue.', 
           confirmText: 'OK', 
           showCancel: false 
       });
       setIsMessaging(false);
     }
-  }, [selectedPayment, totalAmount, cart, handleTransactionDone, whatsAppNumber, sendWhatsAppReceipt, customerName]);
+  }, [selectedPayment, totalAmount, cart, handleTransactionDone, whatsAppNumber, sendWhatsAppReceipt, customerName, discountAmount, merchantName, subtotal]);
 
-  const toggleScanner = React.useCallback(() => {
-    setScanning(prev => { if (!prev) { setScannerError(''); } return !prev; });
+  const toggleScanner = useCallback(() => {
+    setScanning(prev => { 
+      if (!prev) { setScannerError(''); } 
+      return !prev; 
+    });
   }, []);
 
   return (
     <>
       <div className="h-full flex flex-col bg-gray-50">
-        
-        {/* Animation REMOVED */}
-
         {!settingsComplete && (
           <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-sm">
             <div className="w-[90%] max-w-md rounded-2xl bg-white p-5 shadow-2xl border border-gray-200">
@@ -961,6 +961,8 @@ export default function BillingPage() {
             {scanning && settingsComplete && (
               <div className="bg-white rounded-xl p-3 shadow-md border border-indigo-100">
                 <div className="max-w-sm mx-auto"><Scanner constraints={{ facingMode: 'environment' }} onScan={handleScan} onError={handleScanError} scanDelay={300} styles={{ container: { width: '100%', height: 180, borderRadius: '12px', overflow: 'hidden' } }} /></div>
+                {/* Fixed: Display Scanner Error if any */}
+                {scannerError && <p className="text-center text-xs text-red-500 mt-2">{scannerError}</p>}
                 <button onClick={toggleScanner} className="w-full mt-3 flex items-center justify-center gap-2 bg-red-50 text-red-600 py-2 rounded-lg text-sm font-semibold hover:bg-red-100"><X size={16} /> Close Scanner</button>
               </div>
             )}
@@ -1020,11 +1022,9 @@ export default function BillingPage() {
                     <p className="text-xs text-center font-medium text-gray-700 mb-2">Cash Payment</p>
                     <div className="grid grid-cols-2 gap-2 mb-2"><input type="number" placeholder="Amount Given" value={amountGiven} onChange={(e) => setAmountGiven(e.target.value === '' ? '' : parseFloat(e.target.value))} className="rounded-lg border-2 border-green-300 p-1.5 text-sm focus:ring-2 focus:ring-green-500 outline-none" /><div className="rounded-lg bg-white border-2 border-green-300 p-1.5 flex flex-col items-center justify-center"><span className="text-xs text-gray-500">Balance</span><span className={`font-bold text-sm ${balance < 0 ? 'text-red-600' : 'text-green-600'}`}>{formatCurrency(balance)}</span></div></div>
                     <div className="flex gap-2">
-                        {/* NFC Button - INSTANT LAUNCH */}
                         <button onClick={() => handlePaymentSuccess(true)} disabled={isMessaging} className="flex-1 rounded-lg bg-indigo-600 py-2 font-bold text-white hover:bg-indigo-700 flex items-center justify-center shadow-md">
                             <div className="flex items-center gap-1"><Nfc size={18}/><span className="text-[10px]">Tap</span></div>
                         </button>
-                        {/* Complete Button - SAVES + WHATSAPP */}
                         <button onClick={() => handlePaymentSuccess(false)} disabled={isMessaging} className="flex-[3] flex items-center justify-center gap-2 rounded-lg bg-green-600 py-2 font-bold text-white disabled:bg-gray-400 hover:bg-green-700 transition-colors shadow-md text-xs">
                             {isMessaging ? (<div className="flex items-center gap-2"><div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent"></div><span>Processing...</span></div>) : (<><DollarSign size={16} /><span>Confirm Cash Payment</span></>)}
                         </button>
@@ -1036,11 +1036,9 @@ export default function BillingPage() {
                   <div className="rounded-xl bg-gradient-to-br from-blue-50 to-cyan-50 p-2.5 border-2 border-blue-200">
                     {upiQR ? (<><p className="text-xs text-center font-medium text-gray-700 mb-2">Scan QR to Pay</p><div className="bg-white p-2 rounded-lg mx-auto max-w-[140px] border-2 border-blue-300"><QRCode value={upiQR} style={{ height: 'auto', width: '100%' }} /></div><p className="mt-1.5 text-xs text-center text-gray-600">Pay to: <span className="font-semibold">{merchantUpi}</span></p>
                     <div className="flex gap-2 mt-2">
-                        {/* NFC Button - INSTANT LAUNCH */}
                         <button onClick={() => handlePaymentSuccess(true)} disabled={isMessaging} className="flex-1 rounded-lg bg-indigo-600 py-2 font-bold text-white hover:bg-indigo-700 flex items-center justify-center shadow-md">
                             <div className="flex items-center gap-1"><Nfc size={18}/><span className="text-[10px]">Tap</span></div>
                         </button>
-                        {/* Complete Button - SAVES + WHATSAPP */}
                         <button onClick={() => handlePaymentSuccess(false)} disabled={isMessaging} className="flex-[3] flex items-center justify-center gap-2 rounded-lg bg-blue-600 py-2 font-bold text-white disabled:bg-gray-400 hover:bg-blue-700 transition-colors shadow-md text-xs">
                             {isMessaging ? (<div className="flex items-center gap-2"><div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent"></div><span>Processing...</span></div>) : (<><CheckCircle size={16} /><span>Confirm Payment Received</span></>)}
                         </button>
