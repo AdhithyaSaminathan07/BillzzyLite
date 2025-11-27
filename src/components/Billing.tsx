@@ -549,7 +549,7 @@
 
   'use client';
 
-import React, { useCallback } from 'react';
+import React, { useCallback, useEffect, useRef } from 'react';
 import { useSession } from 'next-auth/react';
 import { Scanner, IDetectedBarcode } from '@yudiel/react-qr-scanner';
 import QRCode from 'react-qr-code';
@@ -575,7 +575,6 @@ const calculateGstDetails = (sellingPrice: number, gstRate: number) => {
   return { gstAmount, totalPrice };
 };
 
-// Helper: Generate ID on Client Side for Instant Launch
 const generateClientId = () => {
   return 'xxxxxxxxxxxx4xxxyxxxxxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
     const r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
@@ -661,11 +660,32 @@ export default function BillingPage() {
   const [isMessaging, setIsMessaging] = React.useState(false);
   const [scannerError, setScannerError] = React.useState<string>('');
   const [modal, setModal] = React.useState<{ isOpen: boolean; title: string; message: string | React.ReactNode; onConfirm?: (() => void); confirmText: string; showCancel: boolean; }>({ isOpen: false, title: '', message: '', confirmText: 'OK', showCancel: false });
-  const suggestionsRef = React.useRef<HTMLDivElement | null>(null);
+  const suggestionsRef = useRef<HTMLDivElement | null>(null);
   
   const [settingsComplete, setSettingsComplete] = React.useState(false);
   const [discountInput, setDiscountInput] = React.useState<string>('');
   const [discountType, setDiscountType] = React.useState<'percentage' | 'fixed'>('percentage');
+
+  // --- UNFREEZE LOGIC: Detect when user comes back to the app ---
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      // If the app becomes visible again and we are stuck in loading state, reset it
+      if (document.visibilityState === 'visible' && isMessaging) {
+        console.log("App visible again, clearing loading state...");
+        setIsMessaging(false);
+        // Optional: If you want to clear the cart immediately upon return:
+        setCart([]);
+        setSelectedPayment('');
+        setShowWhatsAppSharePanel(false);
+        setShowPaymentOptions(false);
+      }
+    };
+
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    return () => {
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+    };
+  }, [isMessaging]);
 
   const subtotal = React.useMemo(() =>
     cart.reduce((sum, item) => {
@@ -726,8 +746,7 @@ export default function BillingPage() {
         const productsWithGst = data.map(p => ({ ...p, gstRate: p.gstRate || 0 }));
         setInventory(productsWithGst);
       } catch (err) { 
-        // Log error to satisfy linter or ignore
-        console.error("Failed to fetch inventory", err);
+        console.error(err);
         setInventory([]); 
       }
     })();
@@ -741,13 +760,11 @@ export default function BillingPage() {
     setShowSuggestions(filtered.length > 0);
   }, [productName, inventory]);
 
-  // --- FIX: Change 'any' to 'unknown' to fix build error ---
   const handleScanError = (error: unknown) => {
     console.error(error);
-    setScannerError('Camera permission or access error.');
+    setScannerError('Camera permission error.');
   };
 
-  // --- WHATSAPP LOGIC (Wrapped in useCallback to fix lint warning) ---
   const sendWhatsAppMessage = useCallback(async (phoneNumber: string, messageType: string) => {
     if (!phoneNumber.trim() || !/^\d{10,15}$/.test(phoneNumber)) return false;
     try {
@@ -828,16 +845,18 @@ export default function BillingPage() {
   const handleTransactionDone = useCallback(() => { setCart([]); setSelectedPayment(''); setShowWhatsAppSharePanel(false); setShowPaymentOptions(false); setWhatsAppNumber(''); setAmountGiven(''); setDiscountInput(''); setModal({ ...modal, isOpen: false }); }, [modal]);
   const handleProceedToPayment = useCallback(async () => { if (cart.length === 0) { setModal({ isOpen: true, title: 'Cart Empty', message: 'Please add items to the cart before finalizing.', confirmText: 'OK', showCancel: false }); return; } setShowWhatsAppSharePanel(false); setShowPaymentOptions(true); }, [cart.length]);
 
-  // --- FINAL PAYMENT HANDLER ---
+  // --- FINAL PAYMENT HANDLER (Fixed for Freezing Issue) ---
   const handlePaymentSuccess = useCallback(async (useNfc: boolean = false) => {
     const clientToken = generateClientId();
     const paymentLabel = selectedPayment === 'cash' ? 'Cash' : 'UPI / QR';
 
+    // Set UI to loading ("Processing...")
     setIsMessaging(true);
 
     try {
       if (useNfc) {
-        // 1. Send data with keepalive (Fire & Forget)
+        // --- 1. FIRE AND FORGET NETWORK REQUESTS ---
+        // Use keepalive:true so these survive even if the app switches immediately
         fetch('/api/nfc-link', {
            method: 'POST',
            headers: { 'Content-Type': 'application/json' },
@@ -850,7 +869,6 @@ export default function BillingPage() {
            }),
         }).catch(e => console.error("NFC Save Error", e));
 
-        // 2. Update Inventory (Fire & Forget)
         cart.forEach(item => {
            if(item.productId) {
              fetch(`/api/products/${item.productId}`, { 
@@ -862,21 +880,24 @@ export default function BillingPage() {
            }
         });
 
-        // 3. Launch Intent
-        const packageName = "com.billzzylite.bridge";
-        const bridgeUrl = `intent://nfc/${clientToken}#Intent;scheme=billzzylite;package=${packageName};end`;
-        
-        window.location.href = bridgeUrl;
-
+        // --- 2. DELAYED LAUNCH (THE FIX) ---
+        // We delay slightly to allow React to render the loading state
+        // and allow the browser to queue the fetch request.
         setTimeout(() => {
-          handleTransactionDone();
-          setIsMessaging(false);
-        }, 2000);
+          const packageName = "com.billzzylite.bridge";
+          const bridgeUrl = `intent://nfc/${clientToken}#Intent;scheme=billzzylite;package=${packageName};end`;
+          
+          window.location.href = bridgeUrl;
+          
+          // Note: We do NOT turn off setIsMessaging(false) here. 
+          // It will be turned off by the 'visibilitychange' useEffect 
+          // when the user comes back to the app.
+        }, 100); 
 
         return; 
       }
 
-      // --- STANDARD FLOW ---
+      // --- STANDARD FLOW (No NFC) ---
       const updatePromises = cart.filter(item => item.productId).map(item => 
         fetch(`/api/products/${item.productId}`, { 
           method: 'PUT', 
@@ -961,7 +982,6 @@ export default function BillingPage() {
             {scanning && settingsComplete && (
               <div className="bg-white rounded-xl p-3 shadow-md border border-indigo-100">
                 <div className="max-w-sm mx-auto"><Scanner constraints={{ facingMode: 'environment' }} onScan={handleScan} onError={handleScanError} scanDelay={300} styles={{ container: { width: '100%', height: 180, borderRadius: '12px', overflow: 'hidden' } }} /></div>
-                {/* Fixed: Display Scanner Error if any */}
                 {scannerError && <p className="text-center text-xs text-red-500 mt-2">{scannerError}</p>}
                 <button onClick={toggleScanner} className="w-full mt-3 flex items-center justify-center gap-2 bg-red-50 text-red-600 py-2 rounded-lg text-sm font-semibold hover:bg-red-100"><X size={16} /> Close Scanner</button>
               </div>
