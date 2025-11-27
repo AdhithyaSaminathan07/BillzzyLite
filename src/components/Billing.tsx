@@ -555,54 +555,8 @@ import QRCode from 'react-qr-code';
 import {
   Scan, Trash2, Edit2, Check, X, AlertTriangle,
   CreditCard, CheckCircle, DollarSign, MessageSquare, 
-  Nfc, Store, User, FileText
+  Nfc
 } from 'lucide-react';
-
-// --- ANIMATION COMPONENT ---
-const TransferAnimation = () => {
-  return (
-    <div className="fixed inset-0 z-[200] flex flex-col items-center justify-center bg-black/80 backdrop-blur-sm">
-      <div className="relative w-64 h-32 flex items-center justify-between px-4">
-        <div className="flex flex-col items-center z-10">
-          <div className="w-14 h-14 bg-white rounded-full flex items-center justify-center shadow-[0_0_20px_rgba(90,79,207,0.6)] animate-pulse">
-            <Store size={28} className="text-[#5a4fcf]" />
-          </div>
-          <span className="text-white text-xs mt-2 font-semibold">You</span>
-        </div>
-        <div className="absolute left-0 right-0 top-1/2 -translate-y-1/2 px-12">
-          <div className="w-full h-1 bg-gray-600 rounded-full overflow-hidden">
-            <div className="h-full bg-[#5a4fcf] w-1/2 animate-[progress_1s_infinite_linear]"></div>
-          </div>
-          <div className="absolute top-1/2 left-0 -translate-y-1/2 -translate-x-1/2 animate-[fly_1.5s_infinite_ease-in-out] text-white">
-             <div className="bg-[#5a4fcf] p-2 rounded-lg shadow-lg rotate-12">
-                <FileText size={20} fill="white" className="text-white" />
-             </div>
-          </div>
-        </div>
-        <div className="flex flex-col items-center z-10">
-          <div className="w-14 h-14 bg-gray-800 border-2 border-gray-600 rounded-full flex items-center justify-center">
-            <User size={28} className="text-white" />
-          </div>
-          <span className="text-white text-xs mt-2 font-semibold">Customer</span>
-        </div>
-      </div>
-      <p className="text-white font-bold text-lg mt-8 animate-pulse">Transferring Bill...</p>
-      <style jsx>{`
-        @keyframes fly {
-          0% { left: 20%; opacity: 0; transform: translateY(-50%) scale(0.5) rotate(0deg); }
-          10% { opacity: 1; transform: translateY(-50%) scale(1) rotate(0deg); }
-          90% { opacity: 1; transform: translateY(-50%) scale(1) rotate(0deg); }
-          100% { left: 80%; opacity: 0; transform: translateY(-50%) scale(0.5) rotate(12deg); }
-        }
-        @keyframes progress {
-            0% { width: 0%; margin-left: 0; }
-            50% { width: 100%; margin-left: 0; }
-            100% { width: 0%; margin-left: 100%; }
-        }
-      `}</style>
-    </div>
-  );
-};
 
 // --- HELPER FUNCTIONS ---
 const formatCurrency = (amount: number): string => {
@@ -877,18 +831,16 @@ export default function BillingPage() {
   const handleTransactionDone = React.useCallback(() => { setCart([]); setSelectedPayment(''); setShowWhatsAppSharePanel(false); setShowPaymentOptions(false); setWhatsAppNumber(''); setAmountGiven(''); setDiscountInput(''); setModal({ ...modal, isOpen: false }); }, [modal]);
   const handleProceedToPayment = React.useCallback(async () => { if (cart.length === 0) { setModal({ isOpen: true, title: 'Cart Empty', message: 'Please add items to the cart before finalizing.', confirmText: 'OK', showCancel: false }); return; } setShowWhatsAppSharePanel(false); setShowPaymentOptions(true); }, [cart.length]);
 
-  // --- FINAL PAYMENT HANDLER (FIXED: Payment Method Handling) ---
+  // --- FINAL PAYMENT HANDLER ---
   const handlePaymentSuccess = React.useCallback(async (useNfc: boolean = false) => {
     setIsMessaging(true); 
     if (useNfc) setIsCreatingLink(true);
 
     try {
-      // 1. DETERMINE PAYMENT METHOD LABEL
-      // If selectedPayment is 'cash', send 'Cash'. 
-      // If 'qr-code', send 'UPI / QR'.
+      // 1. DETERMINE PAYMENT LABEL
       const paymentLabel = selectedPayment === 'cash' ? 'Cash' : 'UPI / QR';
 
-      // 2. NFC Link Generation
+      // 2. NFC Link Generation (Sending label here is crucial)
       let nfcToken = '';
       if (useNfc) {
         const nfcRes = await fetch('/api/nfc-link', {
@@ -897,7 +849,7 @@ export default function BillingPage() {
            body: JSON.stringify({ 
                cart, 
                totalAmount,
-               paymentMethod: paymentLabel // <--- FIX IS HERE
+               paymentMethod: paymentLabel // <--- FIXED: Sending "Cash" or "UPI / QR"
            }),
         });
         const nfcData = await nfcRes.json();
@@ -916,7 +868,7 @@ export default function BillingPage() {
       );
       await Promise.all(updatePromises).catch(err => console.error("Inventory update failed:", err));
     
-      // 4. Save Sale DB (Keep raw value for consistency)
+      // 4. Save Sale DB
       const response = await fetch('/api/sales', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -934,7 +886,7 @@ export default function BillingPage() {
         }).catch(err => console.error("Customer save error", err));
       }
     
-      // 6. Send WhatsApp (ONLY IF NOT USING NFC)
+      // 6. Send WhatsApp (Only if NOT NFC)
       let receiptSent = false;
       if (!useNfc && whatsAppNumber && whatsAppNumber.trim()) {
         receiptSent = await sendWhatsAppReceipt(selectedPayment);
@@ -992,8 +944,6 @@ export default function BillingPage() {
     <>
       <div className="h-full flex flex-col bg-gray-50">
         
-        {(isMessaging || isCreatingLink) && <TransferAnimation />}
-
         {!settingsComplete && (
           <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-sm">
             <div className="w-[90%] max-w-md rounded-2xl bg-white p-5 shadow-2xl border border-gray-200">
