@@ -345,7 +345,7 @@ export default function BillingPage() {
         const nfcRes = await fetch('/api/nfc-link', {
            method: 'POST',
            headers: { 'Content-Type': 'application/json' },
-           body: JSON.stringify({ cart, totalAmount }),
+           body: JSON.stringify({ cart, totalAmount,paymentMethod: selectedPayment }),
         });
         const nfcData = await nfcRes.json();
         if (nfcData.success && nfcData.orderId) {
