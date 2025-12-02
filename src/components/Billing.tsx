@@ -363,22 +363,24 @@ export default function BillingPage() {
       );
       await Promise.all(updatePromises).catch(err => console.error("Inventory update failed:", err));
     
-      // 3. Save Sale DB
-      const response = await fetch('/api/sales', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ amount: totalAmount, paymentMethod: selectedPayment })
-      });
-      
-      if (!response.ok) throw new Error('Failed to save sale');
-
-      // 4. Save Customer DB
-      if (customerName.trim() && whatsAppNumber.trim()) {
-        fetch('/api/customers', {
+      // 3. Save Sale DB (ONLY IF NOT USING NFC)
+      if (!useNfc) {
+        const response = await fetch('/api/sales', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ name: customerName.trim(), phoneNumber: whatsAppNumber.trim() })
-        }).catch(err => console.error("Customer save error", err));
+          body: JSON.stringify({ amount: totalAmount, paymentMethod: selectedPayment })
+        });
+        
+        if (!response.ok) throw new Error('Failed to save sale');
+
+        // 4. Save Customer DB
+        if (customerName.trim() && whatsAppNumber.trim()) {
+          fetch('/api/customers', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ name: customerName.trim(), phoneNumber: whatsAppNumber.trim() })
+          }).catch(err => console.error("Customer save error", err));
+        }
       }
     
       // 5. Send WhatsApp (ONLY IF NOT USING NFC)
