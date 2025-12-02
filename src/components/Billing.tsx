@@ -94,6 +94,8 @@
 //   // States for flow
 //   const [showWhatsAppSharePanel, setShowWhatsAppSharePanel] = React.useState(false);
 //   const [showPaymentOptions, setShowPaymentOptions] = React.useState(false);
+  
+//   // This state holds 'cash' or 'qr-code' based on the tab selected
 //   const [selectedPayment, setSelectedPayment] = React.useState<string>('');
 
 //   // Data states
@@ -102,7 +104,11 @@
 //   const [whatsAppNumber, setWhatsAppNumber] = React.useState('');
 //   const [customerName, setCustomerName] = React.useState('');
 //   const [amountGiven, setAmountGiven] = React.useState<number | ''>('');
-//   const [isMessaging, setIsMessaging] = React.useState(false);
+  
+//   // Loading states
+//   const [isMessaging, setIsMessaging] = React.useState(false); // For WhatsApp/DB Save
+//   const [isCreatingLink, setIsCreatingLink] = React.useState(false); // For NFC
+  
 //   const [scannerError, setScannerError] = React.useState<string>('');
 //   const [modal, setModal] = React.useState<{ isOpen: boolean; title: string; message: string | React.ReactNode; onConfirm?: (() => void); confirmText: string; showCancel: boolean; }>({ isOpen: false, title: '', message: '', confirmText: 'OK', showCancel: false });
 //   const suggestionsRef = React.useRef<HTMLDivElement | null>(null);
@@ -110,9 +116,6 @@
 //   const [settingsComplete, setSettingsComplete] = React.useState(false);
 //   const [discountInput, setDiscountInput] = React.useState<string>('');
 //   const [discountType, setDiscountType] = React.useState<'percentage' | 'fixed'>('percentage');
-
-//   // NFC Loading State
-//   const [isCreatingLink, setIsCreatingLink] = React.useState(false);
 
 //   const subtotal = React.useMemo(() =>
 //     cart.reduce((sum, item) => {
@@ -202,7 +205,7 @@
 //   }, []);
 
 //   // --- WHATSAPP LOGIC ---
-//   const sendWhatsAppMessage = async (phoneNumber: string, messageType: string) => {
+//   const sendWhatsAppMessage = React.useCallback(async (phoneNumber: string, messageType: string) => {
 //     if (!phoneNumber.trim() || !/^\d{10,15}$/.test(phoneNumber)) {
 //       setModal({
 //         isOpen: true,
@@ -210,7 +213,6 @@
 //         message: 'Please enter a valid WhatsApp number including the country code (e.g., 919876543210).',
 //         showCancel: false,
 //         confirmText: 'Got it',
-//         onConfirm: undefined,
 //       });
 //       return false;
 //     }
@@ -269,11 +271,10 @@
 //         message: `Failed to send WhatsApp message: ${error instanceof Error ? error.message : 'Unknown error'}.`,
 //         showCancel: false,
 //         confirmText: 'OK',
-//         onConfirm: undefined,
 //       });
 //       return false;
 //     }
-//   };
+//   }, [cart, subtotal, discountAmount, merchantName]);
 
 //   const sendWhatsAppReceipt = React.useCallback(async (paymentMethod: string) => {
 //     let templateType = '';
@@ -283,7 +284,7 @@
 //       default: templateType = 'cashPayment';
 //     }
 //     return await sendWhatsAppMessage(whatsAppNumber, templateType);
-//   }, [whatsAppNumber, cart, subtotal, discountAmount, merchantName]);
+//   }, [whatsAppNumber, sendWhatsAppMessage]);
 
 //   // --- CART ACTIONS ---
 //   const addToCart = React.useCallback((name: string, price: number, gstRate: number, productId?: string, isEditing = false) => {
@@ -342,23 +343,38 @@
 //   }, [modal]);
 
 //   const handleProceedToPayment = React.useCallback(async () => {
+//     if (showWhatsAppSharePanel && cart.length > 0) {
+//         if (whatsAppNumber.trim() !== '') {
+//              const phoneRegex = /^\d{10,15}$/;
+//              if (!phoneRegex.test(whatsAppNumber)) {
+//                alert("Please enter a valid phone number (10-15 digits)");
+//                return;
+//              }
+//         }
+//     }
+
 //     if (cart.length === 0) {
 //       setModal({ isOpen: true, title: 'Cart Empty', message: 'Please add items to the cart before finalizing.', confirmText: 'OK', showCancel: false });
 //       return;
 //     }
 //     setShowWhatsAppSharePanel(false);
 //     setShowPaymentOptions(true);
-//   }, [cart.length]);
+//   }, [cart.length, showWhatsAppSharePanel, whatsAppNumber]);
 
-//   // --- FINAL PAYMENT HANDLER (Unified) ---
+//   // --- FINAL PAYMENT HANDLER ---
 //   const handlePaymentSuccess = React.useCallback(async (useNfc: boolean = false) => {
-//     setIsMessaging(true); // Start Spinner
-//     if (useNfc) setIsCreatingLink(true); // Start NFC Spinner
+//     // 1. Set Loading UI
+//     if (useNfc) {
+//       setIsCreatingLink(true);
+//     } else {
+//       setIsMessaging(true);
+//     }
 
 //     try {
-//       // 1. If using NFC, generate the link FIRST
+//       // 2. If using NFC, generate the link FIRST (Background)
 //       let nfcToken = '';
 //       if (useNfc) {
+//         // NOTE: selectedPayment here is 'cash' or 'qr-code' depending on which tab is open
 //         const nfcRes = await fetch('/api/nfc-link', {
 //           method: 'POST',
 //           headers: { 'Content-Type': 'application/json' },
@@ -370,7 +386,7 @@
 //         }
 //       }
 
-//       // 2. Update Inventory
+//       // 3. Update Inventory (ALWAYS)
 //       const updatePromises = cart.filter(item => item.productId).map(item =>
 //         fetch(`/api/products/${item.productId}`, {
 //           method: 'PUT',
@@ -380,46 +396,49 @@
 //       );
 //       await Promise.all(updatePromises).catch(err => console.error("Inventory update failed:", err));
 
-//       // 3. Save Sale DB (ONLY IF NOT USING NFC)
-//       if (!useNfc) {
-//         const response = await fetch('/api/sales', {
-//           method: 'POST',
-//           headers: { 'Content-Type': 'application/json' },
-//           body: JSON.stringify({ amount: totalAmount, paymentMethod: selectedPayment })
-//         });
+//       // 4. Save Sale to DB (ALWAYS)
+//       // NOTE: selectedPayment determines if it's saved as Cash or QR
+//       const response = await fetch('/api/sales', {
+//         method: 'POST',
+//         headers: { 'Content-Type': 'application/json' },
+//         body: JSON.stringify({ amount: totalAmount, paymentMethod: selectedPayment })
+//       });
 
-//         if (!response.ok) throw new Error('Failed to save sale');
-
-//         // 4. Save Customer DB
-//         if (customerName.trim() && whatsAppNumber.trim()) {
-//           fetch('/api/customers', {
-//             method: 'POST',
-//             headers: { 'Content-Type': 'application/json' },
-//             body: JSON.stringify({ name: customerName.trim(), phoneNumber: whatsAppNumber.trim() })
-//           }).catch(err => console.error("Customer save error", err));
-//         }
+//       if (!response.ok) {
+//            const errorData = await response.json();
+//            console.error("Failed to create sale:", errorData);
+//            throw new Error(errorData.message || 'Failed to save sale');
 //       }
 
-//       // 5. Send WhatsApp (ONLY IF NOT USING NFC)
+//       // 5. Save Customer to DB (ALWAYS)
+//       if (customerName.trim() && whatsAppNumber.trim()) {
+//         fetch('/api/customers', {
+//           method: 'POST',
+//           headers: { 'Content-Type': 'application/json' },
+//           body: JSON.stringify({ name: customerName.trim(), phoneNumber: whatsAppNumber.trim() })
+//         }).catch(err => console.error("Customer save error", err));
+//       }
+
+//       // 6. Send WhatsApp (ONLY if NOT NFC)
 //       let receiptSent = false;
 //       if (!useNfc && whatsAppNumber && whatsAppNumber.trim()) {
 //         receiptSent = await sendWhatsAppReceipt(selectedPayment);
 //       }
 
-//       // 6. Launch NFC if requested (No WhatsApp sent)
+//       // 7. Launch NFC App (ONLY if NFC)
 //       if (useNfc && nfcToken) {
 //         const packageName = "com.billzzylite.bridge";
 //         const bridgeUrl = `intent://nfc/${nfcToken}#Intent;scheme=billzzylite;package=${packageName};end`;
 //         window.location.href = bridgeUrl;
 //       }
 
-//       // 7. Show Success Modal
+//       // 8. Show Success Modal
 //       setModal({
 //         isOpen: true,
 //         title: 'Success!',
 //         message: receiptSent
 //           ? 'Transaction completed! Receipt sent to customer via WhatsApp.'
-//           : 'Transaction completed. Ready for a new bill.',
+//           : 'Transaction completed & Saved.',
 //         confirmText: 'New Bill',
 //         onConfirm: handleTransactionDone,
 //         showCancel: false
@@ -435,8 +454,8 @@
 //         showCancel: false
 //       });
 //     } finally {
-//       setIsMessaging(false);
 //       setIsCreatingLink(false);
+//       setIsMessaging(false);
 //     }
 //   }, [selectedPayment, totalAmount, cart, handleTransactionDone, whatsAppNumber, sendWhatsAppReceipt, customerName]);
 
@@ -527,11 +546,11 @@
 //                     <p className="text-xs text-center font-medium text-gray-700 mb-2">Cash Payment</p>
 //                     <div className="grid grid-cols-2 gap-2 mb-2"><input type="number" placeholder="Amount Given" value={amountGiven} onChange={(e) => setAmountGiven(e.target.value === '' ? '' : parseFloat(e.target.value))} className="rounded-lg border-2 border-green-300 p-1.5 text-sm focus:ring-2 focus:ring-green-500 outline-none" /><div className="rounded-lg bg-white border-2 border-green-300 p-1.5 flex flex-col items-center justify-center"><span className="text-xs text-gray-500">Balance</span><span className={`font-bold text-sm ${balance < 0 ? 'text-red-600' : 'text-green-600'}`}>{formatCurrency(balance)}</span></div></div>
 //                     <div className="flex gap-2">
-//                       {/* NFC Button - SAVES + LAUNCHES NFC (NO WHATSAPP) */}
+//                       {/* NFC Button - SAVES as CASH */}
 //                       <button onClick={() => handlePaymentSuccess(true)} disabled={isCreatingLink || isMessaging} className="flex-1 rounded-lg bg-indigo-600 py-2 font-bold text-white hover:bg-indigo-700 flex items-center justify-center shadow-md">
 //                         {isCreatingLink ? (<div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent"></div>) : (<div className="flex items-center gap-1"><Nfc size={18} /><span className="text-[10px]">Tap</span></div>)}
 //                       </button>
-//                       {/* Complete Button - SAVES + WHATSAPP */}
+//                       {/* Complete Button - SAVES as CASH */}
 //                       <button onClick={() => handlePaymentSuccess(false)} disabled={isMessaging || isCreatingLink} className="flex-[3] flex items-center justify-center gap-2 rounded-lg bg-green-600 py-2 font-bold text-white disabled:bg-gray-400 hover:bg-green-700 transition-colors shadow-md text-xs">
 //                         {isMessaging ? (<div className="flex items-center gap-2"><div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent"></div><span>Processing...</span></div>) : (<><DollarSign size={16} /><span>Confirm Cash Payment</span></>)}
 //                       </button>
@@ -543,11 +562,11 @@
 //                   <div className="rounded-xl bg-gradient-to-br from-blue-50 to-cyan-50 p-2.5 border-2 border-blue-200">
 //                     {upiQR ? (<><p className="text-xs text-center font-medium text-gray-700 mb-2">Scan QR to Pay</p><div className="bg-white p-2 rounded-lg mx-auto max-w-[140px] border-2 border-blue-300"><QRCode value={upiQR} style={{ height: 'auto', width: '100%' }} /></div><p className="mt-1.5 text-xs text-center text-gray-600">Pay to: <span className="font-semibold">{merchantUpi}</span></p>
 //                       <div className="flex gap-2 mt-2">
-//                         {/* NFC Button - SAVES + LAUNCHES NFC (NO WHATSAPP) */}
+//                         {/* NFC Button - SAVES as QR/UPI */}
 //                         <button onClick={() => handlePaymentSuccess(true)} disabled={isCreatingLink || isMessaging} className="flex-1 rounded-lg bg-indigo-600 py-2 font-bold text-white hover:bg-indigo-700 flex items-center justify-center shadow-md">
 //                           {isCreatingLink ? (<div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent"></div>) : (<div className="flex items-center gap-1"><Nfc size={18} /><span className="text-[10px]">Tap</span></div>)}
 //                         </button>
-//                         {/* Complete Button - SAVES + WHATSAPP */}
+//                         {/* Complete Button - SAVES as QR/UPI */}
 //                         <button onClick={() => handlePaymentSuccess(false)} disabled={isMessaging || isCreatingLink} className="flex-[3] flex items-center justify-center gap-2 rounded-lg bg-blue-600 py-2 font-bold text-white disabled:bg-gray-400 hover:bg-blue-700 transition-colors shadow-md text-xs">
 //                           {isMessaging ? (<div className="flex items-center gap-2"><div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent"></div><span>Processing...</span></div>) : (<><CheckCircle size={16} /><span>Confirm Payment Received</span></>)}
 //                         </button>
@@ -664,7 +683,7 @@ export default function BillingPage() {
   const [showWhatsAppSharePanel, setShowWhatsAppSharePanel] = React.useState(false);
   const [showPaymentOptions, setShowPaymentOptions] = React.useState(false);
   
-  // This state holds 'cash' or 'qr-code' based on the tab selected
+  // This state holds 'cash' or 'qr-code' depending on which tab is open
   const [selectedPayment, setSelectedPayment] = React.useState<string>('');
 
   // Data states
@@ -932,7 +951,7 @@ export default function BillingPage() {
 
   // --- FINAL PAYMENT HANDLER ---
   const handlePaymentSuccess = React.useCallback(async (useNfc: boolean = false) => {
-    // 1. Set Loading UI
+    // 1. Set Loading UI based on action
     if (useNfc) {
       setIsCreatingLink(true);
     } else {
@@ -940,22 +959,10 @@ export default function BillingPage() {
     }
 
     try {
-      // 2. If using NFC, generate the link FIRST (Background)
+      // 2. Prepare Variables
       let nfcToken = '';
-      if (useNfc) {
-        // NOTE: selectedPayment here is 'cash' or 'qr-code' depending on which tab is open
-        const nfcRes = await fetch('/api/nfc-link', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ cart, totalAmount, paymentMethod: selectedPayment }),
-        });
-        const nfcData = await nfcRes.json();
-        if (nfcData.success && nfcData.orderId) {
-          nfcToken = nfcData.orderId;
-        }
-      }
-
-      // 3. Update Inventory (ALWAYS)
+      
+      // 3. Update Inventory (ALWAYS run this for both)
       const updatePromises = cart.filter(item => item.productId).map(item =>
         fetch(`/api/products/${item.productId}`, {
           method: 'PUT',
@@ -965,21 +972,7 @@ export default function BillingPage() {
       );
       await Promise.all(updatePromises).catch(err => console.error("Inventory update failed:", err));
 
-      // 4. Save Sale to DB (ALWAYS)
-      // NOTE: selectedPayment determines if it's saved as Cash or QR
-      const response = await fetch('/api/sales', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ amount: totalAmount, paymentMethod: selectedPayment })
-      });
-
-      if (!response.ok) {
-           const errorData = await response.json();
-           console.error("Failed to create sale:", errorData);
-           throw new Error(errorData.message || 'Failed to save sale');
-      }
-
-      // 5. Save Customer to DB (ALWAYS)
+      // 4. Save Customer DB (ALWAYS run this for both if name exists)
       if (customerName.trim() && whatsAppNumber.trim()) {
         fetch('/api/customers', {
           method: 'POST',
@@ -988,26 +981,59 @@ export default function BillingPage() {
         }).catch(err => console.error("Customer save error", err));
       }
 
-      // 6. Send WhatsApp (ONLY if NOT NFC)
-      let receiptSent = false;
-      if (!useNfc && whatsAppNumber && whatsAppNumber.trim()) {
-        receiptSent = await sendWhatsAppReceipt(selectedPayment);
+      // 5. HANDLE PAYMENT & SALE CREATION
+      if (useNfc) {
+        // === NFC FLOW ===
+        // Calling /api/nfc-link creates the Order/Sale in the backend AND returns the ID
+        // The 'paymentMethod' (Cash vs QR) is passed here, so the backend saves it correctly.
+        const nfcRes = await fetch('/api/nfc-link', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ cart, totalAmount, paymentMethod: selectedPayment }),
+        });
+        const nfcData = await nfcRes.json();
+        
+        if (nfcData.success && nfcData.orderId) {
+          nfcToken = nfcData.orderId;
+        } else {
+          throw new Error(nfcData.message || 'Failed to generate NFC link');
+        }
+        // NOTE: We do NOT call /api/sales here to avoid Double Bill.
+
+      } else {
+        // === REGULAR CONFIRM FLOW (CASH / QR) ===
+        // Manually create the sale record
+        const response = await fetch('/api/sales', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ amount: totalAmount, paymentMethod: selectedPayment })
+        });
+
+        if (!response.ok) {
+           const errorData = await response.json();
+           throw new Error(errorData.message || 'Failed to save sale');
+        }
+        
+        // Send WhatsApp only for Manual Confirm
+        if (whatsAppNumber && whatsAppNumber.trim()) {
+          await sendWhatsAppReceipt(selectedPayment);
+        }
       }
 
-      // 7. Launch NFC App (ONLY if NFC)
+      // 6. Launch NFC App (Only for NFC Flow)
       if (useNfc && nfcToken) {
         const packageName = "com.billzzylite.bridge";
         const bridgeUrl = `intent://nfc/${nfcToken}#Intent;scheme=billzzylite;package=${packageName};end`;
         window.location.href = bridgeUrl;
       }
 
-      // 8. Show Success Modal
+      // 7. Show Success Modal
       setModal({
         isOpen: true,
         title: 'Success!',
-        message: receiptSent
-          ? 'Transaction completed! Receipt sent to customer via WhatsApp.'
-          : 'Transaction completed & Saved.',
+        message: useNfc 
+          ? 'Inventory updated. Tap your card to finish.' 
+          : 'Transaction completed! Receipt sent via WhatsApp.',
         confirmText: 'New Bill',
         onConfirm: handleTransactionDone,
         showCancel: false
