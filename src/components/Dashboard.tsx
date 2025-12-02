@@ -89,31 +89,31 @@ export default function Dashboard() {
     }
 
     const fetchInventorySummary = async () => {
-        setIsSummaryLoading(true);
-        setSummaryError(null);
-        try {
-            const res = await fetch('/api/products');
-            if (!res.ok) throw new Error('Failed to fetch product data');
-            
-            const products: Product[] = await res.json();
-            const summary: InventorySummary = products.reduce((acc, product) => {
-                const threshold = product.lowStockThreshold ?? LOW_STOCK_THRESHOLD;
-                if (product.quantity === 0) {
-                    acc.outOfStock++;
-                } else if (product.quantity <= threshold) {
-                    acc.lowStock++;
-                } else {
-                    acc.inStock++;
-                }
-                return acc;
-            }, { inStock: 0, lowStock: 0, outOfStock: 0 });
-            setInventorySummary(summary);
-        } catch (err) {
-            console.error("Failed to load inventory summary:", err);
-            setSummaryError("Could not load data.");
-        } finally {
-            setIsSummaryLoading(false);
-        }
+      setIsSummaryLoading(true);
+      setSummaryError(null);
+      try {
+        const res = await fetch('/api/products');
+        if (!res.ok) throw new Error('Failed to fetch product data');
+
+        const products: Product[] = await res.json();
+        const summary: InventorySummary = products.reduce((acc, product) => {
+          const threshold = product.lowStockThreshold ?? LOW_STOCK_THRESHOLD;
+          if (product.quantity === 0) {
+            acc.outOfStock++;
+          } else if (product.quantity <= threshold) {
+            acc.lowStock++;
+          } else {
+            acc.inStock++;
+          }
+          return acc;
+        }, { inStock: 0, lowStock: 0, outOfStock: 0 });
+        setInventorySummary(summary);
+      } catch (err) {
+        console.error("Failed to load inventory summary:", err);
+        setSummaryError("Could not load data.");
+      } finally {
+        setIsSummaryLoading(false);
+      }
     };
 
     fetchInventorySummary();
@@ -127,7 +127,7 @@ export default function Dashboard() {
   return (
     <div className="h-full bg-gray-50 overflow-y-auto p-2.5 pb-20">
       <div className="max-w-2xl mx-auto space-y-2.5">
-        
+
         {/* Sales Card */}
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-3.5">
           <div className="flex items-center justify-between mb-2.5">
@@ -150,11 +150,10 @@ export default function Dashboard() {
               <button
                 key={tab}
                 onClick={() => setActivePeriod(tab)}
-                className={`flex-1 py-1.5 text-xs font-semibold rounded-md transition-all ${
-                  activePeriod === tab
+                className={`flex-1 py-1.5 text-xs font-semibold rounded-md transition-all ${activePeriod === tab
                     ? "bg-[#5a4fcf] text-white"
                     : "text-gray-600"
-                }`}
+                  }`}
               >
                 {tab}
               </button>
@@ -163,12 +162,12 @@ export default function Dashboard() {
 
           {isSalesLoading ? (
             <div className="py-6 flex flex-col items-center justify-center text-gray-400">
-              <Loader2 className="w-5 h-5 animate-spin mb-1.5 text-[#5a4fcf]" /> 
+              <Loader2 className="w-5 h-5 animate-spin mb-1.5 text-[#5a4fcf]" />
               <span className="text-xs">Loading...</span>
             </div>
           ) : salesError ? (
             <div className="py-6 flex flex-col items-center justify-center text-red-500">
-              <AlertTriangle className="w-5 h-5 mb-1.5" /> 
+              <AlertTriangle className="w-5 h-5 mb-1.5" />
               <span className="text-xs">{salesError}</span>
             </div>
           ) : (
@@ -185,7 +184,7 @@ export default function Dashboard() {
                   </div>
                 </div>
               </div>
-              
+
               {/* Payment Methods */}
               <div className="grid grid-cols-2 gap-2">
                 <div className="bg-gradient-to-br from-green-50 to-green-100 rounded-lg p-2.5 border border-green-200">
@@ -195,7 +194,7 @@ export default function Dashboard() {
                   </div>
                   <p className="text-lg font-bold text-green-800">₹{salesData.cash.toLocaleString()}</p>
                 </div>
-                
+
                 <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-lg p-2.5 border border-blue-200">
                   <div className="flex items-center gap-1.5 mb-1">
                     <CreditCard className="w-3.5 h-3.5 text-blue-600" />
@@ -208,7 +207,11 @@ export default function Dashboard() {
               {/* Footer */}
               <div className="flex justify-between items-center pt-1.5 border-t border-gray-200">
                 <span className="text-xs font-medium text-gray-700">{salesData.bills} Bills</span>
-                <span className="text-xs text-gray-500">{salesData.lastUpdated}</span>
+                <span className="text-xs text-gray-500">
+                  {salesData.lastUpdated
+                    ? new Date(salesData.lastUpdated).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+                    : ''}
+                </span>
               </div>
             </div>
           )}
@@ -228,12 +231,12 @@ export default function Dashboard() {
 
           {isSummaryLoading ? (
             <div className="py-6 flex flex-col items-center justify-center text-gray-400">
-              <Loader2 className="w-5 h-5 animate-spin mb-1.5 text-[#5a4fcf]" /> 
+              <Loader2 className="w-5 h-5 animate-spin mb-1.5 text-[#5a4fcf]" />
               <span className="text-xs">Loading...</span>
             </div>
           ) : summaryError ? (
             <div className="py-6 flex flex-col items-center justify-center text-red-500">
-              <AlertTriangle className="w-5 h-5 mb-1.5" /> 
+              <AlertTriangle className="w-5 h-5 mb-1.5" />
               <span className="text-xs">{summaryError}</span>
             </div>
           ) : (

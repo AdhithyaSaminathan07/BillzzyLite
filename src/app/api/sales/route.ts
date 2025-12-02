@@ -33,7 +33,7 @@ export async function GET(request: Request) {
         const firstDayOfWeek = now.getDate() - now.getDay();
         startDate = new Date(now.setDate(firstDayOfWeek));
         startDate.setHours(0, 0, 0, 0);
-        
+
         endDate = new Date(startDate);
         endDate.setDate(endDate.getDate() + 6);
         endDate.setHours(23, 59, 59, 999);
@@ -41,7 +41,7 @@ export async function GET(request: Request) {
       case 'monthly':
         startDate = new Date(now.getFullYear(), now.getMonth(), 1);
         startDate.setHours(0, 0, 0, 0);
-        
+
         endDate = new Date(now.getFullYear(), now.getMonth() + 1, 0);
         endDate.setHours(23, 59, 59, 999);
         break;
@@ -78,7 +78,7 @@ export async function GET(request: Request) {
       qr: qrSales,
       card: cardSales,
       bills: billsCount,
-      lastUpdated: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+      lastUpdated: new Date().toISOString(),
     };
 
     return NextResponse.json(result);
