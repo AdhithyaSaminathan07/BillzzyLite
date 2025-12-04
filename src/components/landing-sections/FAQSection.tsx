@@ -21,9 +21,8 @@ const FAQItem: React.FC<FAQItemProps> = ({
 }) => {
   return (
     <div
-      className={`mb-4 rounded-xl shadow-sm overflow-hidden transition-all duration-300 ease-in-out ${
-        isOpen ? "bg-white border-2" : "bg-white border-b-2 border-gray-100"
-      }`}
+      className={`mb-4 rounded-xl shadow-sm overflow-hidden transition-all duration-300 ease-in-out ${isOpen ? "bg-white border-2" : "bg-white border-b-2 border-gray-100"
+        }`}
       style={{ borderColor: isOpen ? primaryColor : "transparent" }}
     >
       <button
@@ -52,9 +51,8 @@ const FAQItem: React.FC<FAQItemProps> = ({
       </button>
 
       <div
-        className={`px-4 pt-0 pb-4 text-gray-600 transition-all duration-300 ease-in-out ${
-          isOpen ? "max-h-96 opacity-100" : "max-h-0 opacity-0"
-        }`}
+        className={`px-4 pt-0 pb-4 text-gray-600 transition-all duration-300 ease-in-out ${isOpen ? "max-h-96 opacity-100" : "max-h-0 opacity-0"
+          }`}
       >
         <p>{answer}</p>
       </div>
@@ -88,7 +86,7 @@ export default function FAQSection() {
         "Nope! Your current phone—that one with the cracked screen and 3% battery—works like magic.",
     },
     {
-       question: "How much does Billzzy Lite cost ?",
+      question: "How much does Billzzy Lite cost ?",
       answer: `₹0.15 per bill – literally cheaper than printing a regular paper bill (paper + ink + your printer's existential crisis = easily ₹0.20–₹0.50).
 
 The glamorous 15-paise breakup:
@@ -110,7 +108,7 @@ The glamorous 15-paise breakup:
           <span style={{ color: primaryColor }}>questions</span>
         </h2>
         <p className="mt-4 text-gray-600 text-lg leading-relaxed">
-          Can't find what you need? Don't worry, we're here to help. Our
+          Can&apos;t find what you need? Don&apos;t worry, we&apos;re here to help. Our
           friendly support team is always ready to guide you and make things
           easier.
         </p>

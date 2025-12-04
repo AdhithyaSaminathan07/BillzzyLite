@@ -11,7 +11,7 @@ export default function CTASection() {
   return (
     <section className="w-full py-14 px-4 text-center bg-white relative">
       <h2 className="text-3xl md:text-4xl font-bold text-black mb-6">
-        Let's connect there!
+        Let&apos;s connect there!
       </h2>
 
       {/* Button */}
