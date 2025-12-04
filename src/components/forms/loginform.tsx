@@ -122,18 +122,7 @@ export function LoginForm() {
             </div>
           </div>
         </div>
-          {/* Footer with the Tech Vaseegarh IMAGE */}
-        {/* <p className="flex items-center justify-center text-center text-sm text-gray-600 mt-6 space-x-1.5">
-          <span>© 2025 Billzzy Lite. All rights reserved by</span>
-          <Image
-            src={TECH_LOGO_URL}
-            alt="Tech Vaseegarh Logo"
-            width={130} // Adjusted width for better fit
-            height={60} // Adjusted height
-            className="h-auto"
-          />
-          <span>.</span>
-        </p> */}
+       
       </div>
     </div>
   );
