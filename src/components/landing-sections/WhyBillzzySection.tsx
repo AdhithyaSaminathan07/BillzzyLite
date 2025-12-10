@@ -125,56 +125,80 @@ export default function WhyBillzzySection() {
   };
 
   // --- RESPONSIVE CARD DESIGN ---
-  const FeatureCard = ({ icon: Icon, text }: { icon: React.ElementType, text: string }) => (
-    <div
-      className="group relative h-full p-5 md:p-6 rounded-2xl border bg-white transition-all duration-300 hover:shadow-xl hover:-translate-y-1 overflow-hidden"
+  // --- RESPONSIVE CARD DESIGN ---
+  const FeatureCard = ({ icon: Icon, text }: { icon: React.ElementType; text: string }) => (
+    <motion.div
+      className="group relative h-full p-6 md:p-8 rounded-3xl border bg-white overflow-hidden shadow-lg hover:shadow-2xl transition-shadow duration-500 cursor-pointer"
+      initial="initial"
+      whileHover="hover"
       style={{
-        borderColor: "#e5e7eb",
-        // Default shadow that looks good on white
-        boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03)"
+        borderColor: "rgba(255, 255, 255, 0.6)",
+        // Glassmorphism base
+        backdropFilter: "blur(10px)",
       }}
     >
-      {/* Hover Fill Effect (Desktop Only) */}
-      <div
-        className="absolute inset-0 opacity-0 md:group-hover:opacity-100 transition-opacity duration-300"
-        style={{ backgroundColor: primaryColor }}
+      {/* 1. LIQUID LAYER (Purple Water) */}
+      <motion.div
+        className="absolute inset-0 z-0 bg-[#5a4fcf]"
+        variants={{
+          initial: { y: "100%", borderRadius: "100% 100% 0 0" },
+          hover: { y: "0%", borderRadius: "0% 0% 0 0" },
+        }}
+        transition={{ type: "spring", stiffness: 100, damping: 20, mass: 1 }}
+        style={{ transformOrigin: "bottom" }}
       />
 
-      {/* 
-         LAYOUT SWITCH:
-         flex-row = Horizontal (Mobile)
-         md:flex-col = Vertical (Desktop)
-      */}
-      <div className="relative z-10 flex flex-row md:flex-col items-center h-full">
+      {/* 2. GLASS RIPPLE / SHINE (Light Refraction) */}
+      <motion.div
+        className="absolute inset-0 z-0 pointer-events-none opacity-0 group-hover:opacity-100 mix-blend-overlay"
+        style={{
+          background:
+            "linear-gradient(105deg, transparent 20%, rgba(255,255,255,0.4) 40%, rgba(255,255,255,0.4) 60%, transparent 80%)",
+        }}
+        variants={{
+          initial: { x: "-100%" },
+          hover: { x: "100%" },
+        }}
+        transition={{ duration: 0.8, ease: "easeInOut" }}
+      />
 
+      {/* 3. FLUID DISTORTION / BLUR (Subtle noise/texture overlay optional) */}
+      <div className="absolute inset-0 z-0 bg-noise opacity-[0.03] mix-blend-overlay pointer-events-none" />
+
+      {/* 4. CONTENT */}
+      <div className="relative z-10 flex flex-col items-center justify-center h-full text-center">
         {/* ICON CONTAINER */}
-        <div
-          className="flex-shrink-0 flex items-center justify-center rounded-full transition-all duration-300
-                     w-14 h-14 mr-4              /* Mobile: Smaller, Margin Right */
-                     md:w-20 md:h-20 md:mr-0 md:mb-4 /* Desktop: Larger, Margin Bottom */
-                     shadow-sm md:group-hover:shadow-md md:group-hover:scale-110"
-          style={{
-            backgroundColor: primaryColor, // Solid Purple background (Matches your image)
-            color: "white"                 // White Icon
-          }}
-        >
-          {/* Icon Wrapper: On Desktop Hover, it turns white with purple icon */}
-          <div className="w-full h-full rounded-full flex items-center justify-center transition-colors duration-300 md:group-hover:bg-white md:group-hover:text-[#5a4fcf]">
-            <Icon size={28} className="md:w-9 md:h-9" />
-          </div>
+        <div className="relative mb-6">
+          {/* Background Circle */}
+          <motion.div
+            className="w-20 h-20 rounded-full flex items-center justify-center shadow-md"
+            variants={{
+              initial: { backgroundColor: "#5a4fcf", color: "#ffffff", scale: 1 },
+              hover: { backgroundColor: "#ffffff", color: "#5a4fcf", scale: 1.1, rotate: -5 },
+            }}
+            transition={{ duration: 0.4 }}
+          >
+            <Icon size={32} />
+          </motion.div>
         </div>
 
         {/* TEXT */}
-        <p className="text-lg font-bold text-gray-800 transition-colors duration-300 md:group-hover:text-white
-                      text-left md:text-center w-full">
+        <motion.p
+          className="text-xl font-bold"
+          variants={{
+            initial: { color: "#1f2937" }, // text-gray-800
+            hover: { color: "#ffffff" },
+          }}
+          transition={{ duration: 0.3 }}
+        >
           {text}
-        </p>
+        </motion.p>
       </div>
-    </div>
+    </motion.div>
   );
 
   return (
-    <section className={`py-16 md:py-20 bg-white ${poppins.className}`}>
+    <section id="features" className={`py-16 md:py-20 bg-white ${poppins.className}`}>
       <div className="max-w-7xl mx-auto px-6">
 
         {/* Header */}

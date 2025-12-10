@@ -25,9 +25,12 @@ import TestimonialsSection from "@/components/landing-sections/TestimonialsSecti
 import CTASection from "@/components/landing-sections/CTASection";
 import Footer from "@/components/landing-sections/Footer";
 
+import Navbar from "@/components/landing-sections/Navbar";
+
 export default function LandingPage() {
   return (
     <div className="min-h-screen bg-white">
+      <Navbar />
       <HeroSection />
       <IntroSection />
       <ComparisonSection />

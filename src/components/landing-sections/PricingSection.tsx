@@ -116,7 +116,7 @@ export default function PricingSection() {
   ];
 
   return (
-    <section className="relative w-full py-16 md:py-32 px-4 overflow-hidden bg-white">
+    <section id="pricing" className="relative w-full py-16 md:py-32 px-4 overflow-hidden bg-white">
 
       {/* 1. CSS Animations */}
       <style>{`
@@ -147,13 +147,7 @@ export default function PricingSection() {
         }
       `}</style>
 
-      {/* 2. Background Flow (Gradients) */}
-      <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none">
-        {/* Purple Blob */}
-        <div className="absolute top-0 right-0 md:top-[-10%] md:right-[-5%] w-64 h-64 md:w-[500px] md:h-[500px] bg-[#5a4fcf]/20 rounded-full blur-3xl opacity-60 mix-blend-multiply animate-blob"></div>
-        {/* Blue Blob */}
-        <div className="absolute bottom-0 left-0 md:bottom-[-10%] md:left-[-10%] w-72 h-72 md:w-[600px] md:h-[600px] bg-blue-200/40 rounded-full blur-3xl opacity-60 mix-blend-multiply animate-blob animation-delay-2000"></div>
-      </div>
+
 
       <div className="max-w-7xl mx-auto flex flex-col lg:flex-row items-center justify-between gap-10 lg:gap-16 relative z-10">
 
@@ -197,13 +191,13 @@ export default function PricingSection() {
         <div className="w-full lg:w-1/2 flex justify-center lg:justify-end px-2 md:px-0">
 
           {/* Floating Animation Wrapper */}
-          <div className="relative group w-full max-w-md md:animate-float">
+          <div className="relative group w-full max-w-sm md:animate-float">
 
             {/* Outer Glow (Color Flow Behind Card) */}
             <div className="absolute -inset-1 bg-gradient-to-r from-[#5a4fcf] via-[#7d73e6] to-blue-400 rounded-3xl blur opacity-30 group-hover:opacity-60 transition duration-1000 group-hover:duration-200"></div>
 
             {/* The White Card */}
-            <div className="relative bg-white rounded-3xl p-6 md:p-10 border border-[#5a4fcf]/10 shadow-2xl flex flex-col h-full">
+            <div className="relative bg-white rounded-3xl p-6 md:p-8 border border-[#5a4fcf]/10 shadow-2xl flex flex-col h-full">
 
               {/* Header */}
               <div className="flex justify-between items-start mb-6">

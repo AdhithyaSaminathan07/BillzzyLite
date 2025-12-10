@@ -71,7 +71,7 @@ export default function HeroPage() {
       {/* ==========================================================
           DESKTOP VIEW (REFINED SIZING)
       ========================================================== */}
-      <section className="hidden md:flex flex-row items-center w-full min-h-[85vh] relative bg-white overflow-hidden pb-10 pt-2">
+      <section className="hidden md:flex flex-row items-center w-full min-h-[85vh] relative bg-white overflow-hidden pb-10 pt-24">
 
         {/* --- DECORATIVE ELEMENTS --- */}
 

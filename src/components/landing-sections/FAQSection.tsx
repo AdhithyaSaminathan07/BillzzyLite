@@ -236,7 +236,7 @@ The glamorous 15-paise breakup:
   };
 
   return (
-    <section className="w-full py-16 md:py-24 px-4 bg-white">
+    <section id="faq" className="w-full py-16 md:py-24 px-4 bg-white">
       <div className="max-w-7xl mx-auto flex flex-col lg:flex-row items-start justify-between gap-12 lg:gap-20">
 
         {/* Left Side: Text Content */}

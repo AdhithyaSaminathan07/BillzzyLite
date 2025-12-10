@@ -322,7 +322,7 @@ export default function ComparisonSection() {
   ];
 
   return (
-    <section className={`py-16 px-4 bg-white ${poppins.className}`}>
+    <section id="comparison" className={`py-16 px-4 bg-white ${poppins.className}`}>
       <div className="w-full max-w-5xl mx-auto bg-white rounded-2xl shadow-xl overflow-hidden border border-gray-100">
 
         {/* --- TITLE HEADER --- */}

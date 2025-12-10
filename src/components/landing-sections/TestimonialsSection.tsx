@@ -225,7 +225,7 @@ export default function TestimonialsSection() {
   };
 
   return (
-    <section className="w-full py-16 bg-white overflow-hidden">
+    <section id="testimonials" className="w-full py-16 bg-white overflow-hidden">
       <div className="max-w-7xl mx-auto px-4 md:px-8">
         {/* Header */}
         <div className="text-center mb-16">
