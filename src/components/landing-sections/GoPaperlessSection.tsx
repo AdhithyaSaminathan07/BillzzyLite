@@ -28,7 +28,7 @@
 //             src="/images/paper-lesss.png"
 //             alt="Go Paperless"
 //             className="w-[100%] md:w-[75%] h-auto object-contain -mt-2 -mb-1" 
-            
+
 //           />
 //         </div>
 
@@ -73,7 +73,7 @@ const poppins = Poppins({
 export default function GoPaperlessSection() {
   return (
     <section className={`w-full py-12 md:py-24 px-4 md:px-8 relative overflow-hidden bg-white ${poppins.className}`}>
-      
+
       {/* Animation Styles */}
       <style>{`
         @keyframes float {
@@ -95,7 +95,7 @@ export default function GoPaperlessSection() {
             1. TEXT CONTENT (Left on Desktop, Top on Mobile)
            ========================== */}
         <div className="w-full md:w-1/2 text-center md:text-left order-2 md:order-1 relative z-10">
-          
+
           {/* Badge */}
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-green-50 text-green-600 text-xs md:text-sm font-bold uppercase tracking-wide mb-4 border border-green-100">
             <Leaf className="w-3 h-3 md:w-4 md:h-4" /> Eco-Friendly Choice
@@ -110,7 +110,7 @@ export default function GoPaperlessSection() {
           </h2>
 
           {/* Description */}
-          <p className="text-gray-600 text-[16px] md:text-lg leading-relaxed mb-8 px-2 md:px-0 max-w-lg mx-auto md:mx-0">
+          <p className="text-gray-600 text-[16px] md:text-lg leading-relaxed mb-8 px-2 md:px-0 max-w-lg mx-auto md:mx-0 text-justify">
             Go green with Billzzy. Switch to WhatsApp billing to reduce paper
             waste, deliver instant receipts, and present your business as modern,
             eco-friendly, and tech-savvy.
@@ -134,7 +134,7 @@ export default function GoPaperlessSection() {
         <div className="w-full md:w-1/2 flex justify-center md:justify-end order-1 md:order-2 relative">
           {/* Blob behind image on desktop */}
           <div className="hidden md:block absolute inset-0 bg-[#5a4fcf]/5 rounded-full blur-3xl transform scale-90 translate-x-10"></div>
-          
+
           <img
             src="/images/paper-lesss.png"
             alt="Go Paperless"

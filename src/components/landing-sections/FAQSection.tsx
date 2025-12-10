@@ -153,8 +153,8 @@ const FAQItem: React.FC<FAQItemProps> = ({
     <div
       className={`
         mb-4 rounded-xl transition-all duration-300 ease-in-out border
-        ${isOpen 
-          ? "bg-white border-gray-100 shadow-[0_4px_20px_rgb(0,0,0,0.03)]" 
+        ${isOpen
+          ? "bg-white border-gray-100 shadow-[0_4px_20px_rgb(0,0,0,0.03)]"
           : "bg-gray-50 border-transparent hover:bg-gray-100"
         }
       `}
@@ -170,9 +170,8 @@ const FAQItem: React.FC<FAQItemProps> = ({
         {/* Chevron Icon */}
         <span className="flex-shrink-0 mt-1 md:mt-0">
           <svg
-            className={`w-5 h-5 text-[#5a4fcf] transform transition-transform duration-300 ${
-              isOpen ? "rotate-180" : "rotate-0"
-            }`}
+            className={`w-5 h-5 text-[#5a4fcf] transform transition-transform duration-300 ${isOpen ? "rotate-180" : "rotate-0"
+              }`}
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"
@@ -239,14 +238,14 @@ The glamorous 15-paise breakup:
   return (
     <section className="w-full py-16 md:py-24 px-4 bg-white">
       <div className="max-w-7xl mx-auto flex flex-col lg:flex-row items-start justify-between gap-12 lg:gap-20">
-        
+
         {/* Left Side: Text Content */}
         <div className="w-full lg:w-1/3 lg:sticky lg:top-24">
           <h2 className="text-3xl md:text-5xl font-bold mb-6 leading-tight text-gray-900">
             Frequently asked <br />
             <span className="text-[#5a4fcf]">questions</span>
           </h2>
-          <p className="text-gray-500 text-lg leading-relaxed">
+          <p className="text-gray-500 text-lg leading-relaxed text-justify">
             Can&apos;t find what you need? Don&apos;t worry, we&apos;re here to help. Our
             friendly support team is always ready to guide you and make things
             easier.

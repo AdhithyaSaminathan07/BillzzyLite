@@ -183,7 +183,7 @@
 //   return (
 //     <section className={`py-16 px-4 bg-gray-50 ${poppins.className}`}>
 //       <div className="w-full max-w-5xl mx-auto bg-white rounded-2xl shadow-xl overflow-hidden border border-gray-100">
-        
+
 //         {/* --- TITLE HEADER --- */}
 //         <div className="text-center py-8 px-4 border-b bg-white">
 //           <motion.h3 
@@ -322,9 +322,9 @@ export default function ComparisonSection() {
   ];
 
   return (
-    <section className={`py-16 px-4 bg-gray-50 ${poppins.className}`}>
+    <section className={`py-16 px-4 bg-white ${poppins.className}`}>
       <div className="w-full max-w-5xl mx-auto bg-white rounded-2xl shadow-xl overflow-hidden border border-gray-100">
-        
+
         {/* --- TITLE HEADER --- */}
         <div className="text-center py-8 px-4 border-b bg-white">
           <h3 className="text-3xl md:text-4xl font-bold mb-3">
@@ -374,14 +374,14 @@ export default function ComparisonSection() {
                   <td className={`py-4 px-4 md:px-6 text-center text-sm md:text-base font-semibold border-l border-red-100
                     bg-red-50 text-red-800
                     ${item.isTotal ? "text-lg font-bold border-t border-red-200" : ""}`}>
-                     {item.paper}
+                    {item.paper}
                   </td>
 
                   {/* 3. Billzzy Bill (Green Background Column) */}
                   <td className={`py-4 px-4 md:px-6 text-center text-sm md:text-base font-semibold border-l border-emerald-100
                     bg-emerald-50 text-emerald-700
                     ${item.isTotal ? "text-lg font-bold border-t border-emerald-200" : ""}`}>
-                     {item.billzzy}
+                    {item.billzzy}
                   </td>
                 </tr>
               ))}

@@ -175,32 +175,32 @@ export default function TestimonialsSection() {
     {
       id: 1,
       quote:
-        "Our attendance management has never been this smooth! The face recognition system is fast, accurate, and secure.",
-      author: "Khesav Raj",
-      title: "Co-founder of Jhonsans",
+        "I was able to start billing immediately without buying any expensive hardware. Running my entire shop from just my mobile phone is incredibly convenient and cost-effective.",
+      author: "Rajesh Kumar",
+      title: "Grocery Store Owner",
       rating: 5,
     },
     {
       id: 2,
       quote:
-        "Billzzy Lite has transformed how we handle invoices. Very intuitive and saves us so much time.",
-      author: "Jane Doe",
-      title: "Small Business Owner",
+        "My customers love receiving their bills directly on WhatsApp! It saves paper and keeps the transaction fast. No more waiting for thermal printers or dealing with ink.",
+      author: "Sneha Reddy",
+      title: "Home Baker",
       rating: 4,
     },
     {
       id: 3,
       quote:
-        "The instant bill transfer feature is a game-changer. Everything is digital and super smooth!",
-      author: "John Smith",
-      title: "Freelance Consultant",
+        "The NFC feature is a game-changer for rush hours. A simple tap to transfer the bill details has cut our checkout time in half. It feels very modern and professional.",
+      author: "Sam Wilson",
+      title: "Cafe Manager",
       rating: 5,
     },
     {
       id: 4,
       quote:
-        "Using Billzzy cut our transaction time by 50%. The analytics dashboard is extremely useful.",
-      author: "Sarah Connor",
+        "We completely removed our bulky billing counter. This app handles everything from inventory to invoicing, and the digital records make accounting so much easier.",
+      author: "Arun Vijay",
       title: "Retail Manager",
       rating: 5,
     },
@@ -212,9 +212,8 @@ export default function TestimonialsSection() {
         {[...Array(5)].map((_, i) => (
           <svg
             key={i}
-            className={`w-5 h-5 ${
-              i < rating ? "text-yellow-400" : "text-gray-300"
-            }`}
+            className={`w-5 h-5 ${i < rating ? "text-yellow-400" : "text-gray-300"
+              }`}
             fill="currentColor"
             viewBox="0 0 20 20"
           >

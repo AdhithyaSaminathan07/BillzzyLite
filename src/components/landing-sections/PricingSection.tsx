@@ -117,7 +117,7 @@ export default function PricingSection() {
 
   return (
     <section className="relative w-full py-16 md:py-32 px-4 overflow-hidden bg-white">
-      
+
       {/* 1. CSS Animations */}
       <style>{`
         @keyframes blob {
@@ -156,10 +156,10 @@ export default function PricingSection() {
       </div>
 
       <div className="max-w-7xl mx-auto flex flex-col lg:flex-row items-center justify-between gap-10 lg:gap-16 relative z-10">
-        
+
         {/* LEFT SIDE: Text Content */}
         <div className="w-full lg:w-1/2 text-center lg:text-left">
-          
+
           {/* Badge */}
           <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-purple-50 border border-purple-100 text-[#5a4fcf] font-semibold text-xs uppercase tracking-wide mb-4 md:mb-6 shadow-sm">
             <span className="w-2 h-2 rounded-full bg-[#5a4fcf] animate-pulse"></span>
@@ -173,10 +173,10 @@ export default function PricingSection() {
               Transparent Pricing
             </span>
           </h2>
-          
+
           <p className="text-gray-600 text-base md:text-xl mb-6 md:mb-8 leading-relaxed max-w-md mx-auto lg:mx-0">
-            Stop paying monthly fees for software you barely use. 
-            With BillzzyLite, you only pay when you make a sale. 
+            Stop paying monthly fees for software you barely use.
+            With BillzzyLite, you only pay when you make a sale.
             <span className="block mt-2 font-medium text-gray-900">It&apos;s cheaper than paper and ink.</span>
           </p>
 
@@ -195,16 +195,16 @@ export default function PricingSection() {
 
         {/* RIGHT SIDE: The Card */}
         <div className="w-full lg:w-1/2 flex justify-center lg:justify-end px-2 md:px-0">
-          
+
           {/* Floating Animation Wrapper */}
           <div className="relative group w-full max-w-md md:animate-float">
-            
+
             {/* Outer Glow (Color Flow Behind Card) */}
             <div className="absolute -inset-1 bg-gradient-to-r from-[#5a4fcf] via-[#7d73e6] to-blue-400 rounded-3xl blur opacity-30 group-hover:opacity-60 transition duration-1000 group-hover:duration-200"></div>
-            
+
             {/* The White Card */}
             <div className="relative bg-white rounded-3xl p-6 md:p-10 border border-[#5a4fcf]/10 shadow-2xl flex flex-col h-full">
-              
+
               {/* Header */}
               <div className="flex justify-between items-start mb-6">
                 <div>
@@ -235,12 +235,12 @@ export default function PricingSection() {
               <ul className="space-y-3 md:space-y-4 mb-8 md:mb-10 flex-grow">
                 {benefits.map((benefit, index) => (
                   <li key={index} className="flex items-start gap-3">
-                    
+
                     {/* 3. Gradient Checkmark Icons */}
                     <div className="mt-1 flex-shrink-0 w-5 h-5 md:w-6 md:h-6 rounded-full bg-gradient-to-br from-[#5a4fcf] to-[#8c82fc] flex items-center justify-center shadow-sm">
                       <FaCheck className="text-white text-[9px] md:text-[10px]" />
                     </div>
-                    
+
                     {/* Text is now dark and legible for all */}
                     <span className="text-sm md:text-base leading-snug text-gray-800 font-medium">
                       {benefit}
@@ -263,7 +263,7 @@ export default function PricingSection() {
               >
                 {/* Shine Effect */}
                 <div className="absolute inset-0 w-full h-full bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:animate-shine" />
-                
+
                 <span className="relative z-10 flex items-center gap-2">
                   Start Billing Now <FaArrowRight className="text-xs md:text-sm" />
                 </span>

@@ -116,9 +116,9 @@ export default function WhyBillzzySection() {
 
   const itemVariants: Variants = {
     hidden: { opacity: 0, scale: 0.9, y: 20 },
-    visible: { 
-      opacity: 1, 
-      scale: 1, 
+    visible: {
+      opacity: 1,
+      scale: 1,
       y: 0,
       transition: { type: "spring", stiffness: 100, damping: 15 }
     },
@@ -128,14 +128,14 @@ export default function WhyBillzzySection() {
   const FeatureCard = ({ icon: Icon, text }: { icon: React.ElementType, text: string }) => (
     <div
       className="group relative h-full p-5 md:p-6 rounded-2xl border bg-white transition-all duration-300 hover:shadow-xl hover:-translate-y-1 overflow-hidden"
-      style={{ 
+      style={{
         borderColor: "#e5e7eb",
         // Default shadow that looks good on white
         boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03)"
       }}
     >
       {/* Hover Fill Effect (Desktop Only) */}
-      <div 
+      <div
         className="absolute inset-0 opacity-0 md:group-hover:opacity-100 transition-opacity duration-300"
         style={{ backgroundColor: primaryColor }}
       />
@@ -146,21 +146,21 @@ export default function WhyBillzzySection() {
          md:flex-col = Vertical (Desktop)
       */}
       <div className="relative z-10 flex flex-row md:flex-col items-center h-full">
-        
+
         {/* ICON CONTAINER */}
         <div
           className="flex-shrink-0 flex items-center justify-center rounded-full transition-all duration-300
                      w-14 h-14 mr-4              /* Mobile: Smaller, Margin Right */
                      md:w-20 md:h-20 md:mr-0 md:mb-4 /* Desktop: Larger, Margin Bottom */
                      shadow-sm md:group-hover:shadow-md md:group-hover:scale-110"
-          style={{ 
+          style={{
             backgroundColor: primaryColor, // Solid Purple background (Matches your image)
             color: "white"                 // White Icon
           }}
         >
           {/* Icon Wrapper: On Desktop Hover, it turns white with purple icon */}
           <div className="w-full h-full rounded-full flex items-center justify-center transition-colors duration-300 md:group-hover:bg-white md:group-hover:text-[#5a4fcf]">
-             <Icon size={28} className="md:w-9 md:h-9" />
+            <Icon size={28} className="md:w-9 md:h-9" />
           </div>
         </div>
 
@@ -174,12 +174,12 @@ export default function WhyBillzzySection() {
   );
 
   return (
-    <section className={`py-16 md:py-20 bg-gray-50 ${poppins.className}`}>
+    <section className={`py-16 md:py-20 bg-white ${poppins.className}`}>
       <div className="max-w-7xl mx-auto px-6">
-        
+
         {/* Header */}
         <div className="text-center mb-12 md:mb-16">
-          <motion.h2 
+          <motion.h2
             initial={{ opacity: 0, y: -20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
@@ -188,7 +188,7 @@ export default function WhyBillzzySection() {
             <span className="text-black">Why </span>
             <span style={{ color: primaryColor }}>Billzzy Lite?</span>
           </motion.h2>
-          <div 
+          <div
             className="h-1.5 w-24 mx-auto mt-4 rounded-full"
             style={{ backgroundColor: primaryColor }}
           />
@@ -206,8 +206,8 @@ export default function WhyBillzzySection() {
             className="pb-10 px-1" // Padding ensures shadow isn't cut off
           >
             {features.map((feature, index) => (
-              <SwiperSlide key={index} className="pb-2"> 
-                 <FeatureCard icon={feature.icon} text={feature.text} />
+              <SwiperSlide key={index} className="pb-2">
+                <FeatureCard icon={feature.icon} text={feature.text} />
               </SwiperSlide>
             ))}
           </Swiper>
@@ -215,7 +215,7 @@ export default function WhyBillzzySection() {
 
         {/* --- DESKTOP (Grid) --- */}
         {/* Vertical Layout Cards with Animation */}
-        <motion.div 
+        <motion.div
           className="hidden md:grid grid-cols-2 lg:grid-cols-4 gap-8"
           variants={containerVariants}
           initial="hidden"
