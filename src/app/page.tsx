@@ -1,17 +1,4 @@
 
-// //src/app/page.tsx
-// import { LoginForm } from '@/components/forms/loginform';
-
-// // This is the default export that Next.js will render for the root route ('/')
-// export default function LoginPage() {
-//   return (
-//         <LoginForm />
-//   );
-// }
-
-
-
-
 import HeroSection from "@/components/landing-sections/HeroSection";
 import IntroSection from "@/components/landing-sections/IntroSection";
 import ComparisonSection from "@/components/landing-sections/ComparisonSection";
