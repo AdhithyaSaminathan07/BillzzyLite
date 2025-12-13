@@ -30,8 +30,10 @@ export async function GET(request: Request) {
 
     // Get bill count for each user with optional date filtering
     const usersWithBillCount = await Promise.all(users.map(async (user: IUser) => {
-      // Build the query for sales
-      const saleQuery: { tenantId: string; createdAt?: { $gte?: Date; $lte?: Date } } = { tenantId: user.email };
+      // Build the query for sales - use regex for case-insensitive matching
+      const saleQuery: { tenantId: { $regex: RegExp }; createdAt?: { $gte?: Date; $lte?: Date } } = {
+        tenantId: { $regex: new RegExp(`^${user.email}$`, 'i') }
+      };
 
       // Add date filters if provided
       if (startDate || endDate) {

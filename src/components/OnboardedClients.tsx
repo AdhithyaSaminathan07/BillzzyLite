@@ -24,7 +24,7 @@ export default function OnboardedClients() {
   const [searchTerm, setSearchTerm] = useState('');
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
-  const [deletingId, setDeletingId] = useState<string | null>(null);
+
 
   // Create a separate function for fetching users with date filters
   const fetchUsers = async (start: string = '', end: string = '') => {
@@ -100,30 +100,7 @@ export default function OnboardedClients() {
 
 
   // Add the delete tenant function
-  const handleDeleteTenant = async (userId: string, userName: string) => {
-    // Confirm before deleting
-    if (!confirm(`Are you sure you want to delete tenant "${userName}"? This action cannot be undone.`)) {
-      return;
-    }
 
-    try {
-      setDeletingId(userId);
-      const res = await fetch(`/api/admin/tenants?userId=${userId}`, {
-        method: 'DELETE',
-      });
-
-      if (!res.ok) {
-        throw new Error('Failed to delete tenant');
-      }
-
-      // Refresh the user list
-      fetchUsers();
-    } catch (err) {
-      setError((err as Error).message);
-    } finally {
-      setDeletingId(null);
-    }
-  };
 
   const handleLogout = async () => {
     await signOut({ redirect: false });
@@ -259,6 +236,7 @@ export default function OnboardedClients() {
                   <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
                   <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Mobile</th>
                   <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Bill Count</th>
+                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Amount (₹)</th>
                   <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
                 </tr>
               </thead>
@@ -282,22 +260,17 @@ export default function OnboardedClients() {
                         {user.billCount || 0}
                       </span>
                     </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="text-sm text-gray-900 font-semibold">
+                        ₹{((user.billCount || 0) * 0.15).toFixed(2)}
+                      </div>
+                    </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium flex gap-2">
                       <button
                         onClick={() => handleOffboard(user._id, user.name)}
                         className="px-3 py-1 rounded-md text-white text-sm bg-yellow-600 hover:bg-yellow-700"
                       >
                         Offboard
-                      </button>
-                      <button
-                        onClick={() => handleDeleteTenant(user._id, user.name)}
-                        disabled={deletingId === user._id}
-                        className={`px-3 py-1 rounded-md text-white text-sm ${deletingId === user._id
-                          ? 'bg-red-400 cursor-not-allowed'
-                          : 'bg-red-600 hover:bg-red-700'
-                          }`}
-                      >
-                        {deletingId === user._id ? 'Deleting...' : 'Delete'}
                       </button>
                     </td>
                   </tr>

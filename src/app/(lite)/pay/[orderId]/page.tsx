@@ -93,7 +93,7 @@
 //       if (customerPhone) {
 //         const whatsappPhone = formattedPhone.startsWith('91') ? formattedPhone : `91${formattedPhone}`;
 //         const templateName = method === 'upi' ? 'payment_receipt_upiii' : 'payment_receipt_card';
-        
+
 //         const whatsappResponse = await fetch('/api/whatsapp/send', {
 //           method: 'POST',
 //           headers: { 'Content-Type': 'application/json' },
@@ -391,7 +391,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
 import QRCode from 'react-qr-code';
-import { CheckCircle, Loader2, AlertCircle, User } from 'lucide-react';
+import { CheckCircle, Loader2, AlertCircle } from 'lucide-react';
 
 // Define types for our data
 type CartItem = {
@@ -421,7 +421,7 @@ export default function PaymentPage() {
   // --- IMPORTANT: ENTER YOUR UPI ID HERE FOR TESTING ---
   // Since the customer cannot access your phone's settings, 
   // we hardcode it here for this test.
-  const merchantUpi = "dhanushrajendran19@okaxis"; 
+  const merchantUpi = "dhanushrajendran19@okaxis";
   // ----------------------------------------------------
 
   useEffect(() => {
@@ -440,7 +440,7 @@ export default function PaymentPage() {
         } else {
           setError(data.message || 'Bill not found');
         }
-      } catch (err) {
+      } catch (err: any) {
         setError('Failed to load bill details');
       } finally {
         setLoading(false);
@@ -457,7 +457,7 @@ export default function PaymentPage() {
       if (res.ok) {
         setPaymentSuccess(true);
       }
-    } catch (err) {
+    } catch (err: any) {
       alert("Could not update payment status");
     }
   };
@@ -472,7 +472,7 @@ export default function PaymentPage() {
   return (
     <div className="min-h-screen bg-gray-100 py-8 px-4">
       <div className="max-w-md mx-auto bg-white rounded-2xl shadow-xl overflow-hidden">
-        
+
         {/* Header */}
         <div className="bg-[#5a4fcf] p-6 text-center text-white">
           <h1 className="text-2xl font-bold">{merchantName}</h1>
@@ -509,12 +509,12 @@ export default function PaymentPage() {
             {/* QR Code Area */}
             <div className="flex flex-col items-center gap-4 p-4 bg-gray-50 rounded-xl border">
               <div className="bg-white p-2 rounded-lg shadow-sm">
-                 <QRCode value={upiLink} size={160} />
+                <QRCode value={upiLink} size={160} />
               </div>
               <p className="text-xs text-gray-500">Scan to pay via UPI</p>
-              
+
               {/* Button to open UPI App directly */}
-              <a 
+              <a
                 href={upiLink}
                 className="w-full bg-[#5a4fcf] text-white font-bold py-3 rounded-xl text-center shadow-md hover:bg-[#483ebd] transition"
               >
@@ -523,7 +523,7 @@ export default function PaymentPage() {
             </div>
 
             {/* Manual Confirm Button */}
-            <button 
+            <button
               onClick={handleConfirmPayment}
               className="w-full bg-white border border-gray-300 text-gray-700 font-semibold py-3 rounded-xl hover:bg-gray-50 transition"
             >

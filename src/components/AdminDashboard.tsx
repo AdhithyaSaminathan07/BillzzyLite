@@ -70,7 +70,7 @@ export default function AdminDashboard() {
     fetchUsers();
   };
 
-  const handleOnboard = async (userId: string, userName: string) => {
+  const handleOnboard = async (userId: string) => {
     try {
       setLoading(true);
       const res = await fetch('/api/admin/tenants', {
@@ -251,6 +251,7 @@ export default function AdminDashboard() {
                   <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tenant</th>
                   <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
                   <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Mobile</th>
+                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Bill Count</th>
                   <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
                 </tr>
               </thead>
@@ -269,9 +270,14 @@ export default function AdminDashboard() {
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm text-gray-500">{user.phoneNumber || '-'}</div>
                     </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                        {user.billCount || 0}
+                      </span>
+                    </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium flex gap-2">
                       <button
-                        onClick={() => handleOnboard(user._id, user.name)}
+                        onClick={() => handleOnboard(user._id)}
                         className="px-3 py-1 rounded-md text-white text-sm bg-green-600 hover:bg-green-700"
                       >
                         Onboard
