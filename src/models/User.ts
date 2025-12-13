@@ -7,22 +7,23 @@ export interface IUser extends Document {
   role: 'user' | 'admin' | 'tenant'; // Added 'tenant' role
   tenantId: Types.ObjectId; // A reference to the Tenant this user belongs to
   phoneNumber?: string; // Added phone number field
+  onboarded?: boolean; // Track onboarding status
 }
 
 const UserSchema: Schema = new Schema({
-  name: { 
-    type: String, 
+  name: {
+    type: String,
     required: true,
   },
-  email: { 
-    type: String, 
-    required: true, 
+  email: {
+    type: String,
+    required: true,
     unique: true,
     trim: true,
     lowercase: true,
   },
-  password: { 
-    type: String, 
+  password: {
+    type: String,
     required: false, // Not required for OAuth users
     select: false, // Password will not be returned in queries by default
   },
@@ -41,7 +42,11 @@ const UserSchema: Schema = new Schema({
     type: String,
     required: false,
   },
-}, { 
+  onboarded: {
+    type: Boolean,
+    default: false,
+  },
+}, {
   timestamps: true,
   collection: 'users' // Explicitly specify collection name
 });

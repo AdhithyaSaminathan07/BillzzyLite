@@ -16,7 +16,7 @@ interface User {
   onboarded?: boolean;
 }
 
-export default function AdminDashboard() {
+export default function OnboardedClients() {
   const router = useRouter();
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
@@ -70,7 +70,12 @@ export default function AdminDashboard() {
     fetchUsers();
   };
 
-  const handleOnboard = async (userId: string, userName: string) => {
+
+  const handleOffboard = async (userId: string, userName: string) => {
+    if (!confirm(`Are you sure you want to offboard "${userName}"? They will be moved back to Pending.`)) {
+      return;
+    }
+
     try {
       setLoading(true);
       const res = await fetch('/api/admin/tenants', {
@@ -78,11 +83,11 @@ export default function AdminDashboard() {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ userId, onboarded: true }),
+        body: JSON.stringify({ userId, onboarded: false }),
       });
 
       if (!res.ok) {
-        throw new Error('Failed to onboard tenant');
+        throw new Error('Failed to offboard tenant');
       }
 
       await fetchUsers();
@@ -92,6 +97,7 @@ export default function AdminDashboard() {
       setLoading(false);
     }
   };
+
 
   // Add the delete tenant function
   const handleDeleteTenant = async (userId: string, userName: string) => {
@@ -126,13 +132,14 @@ export default function AdminDashboard() {
     }, 500);
   };
 
-  const pendingUsers = users.filter((user: User) =>
-    (!user.onboarded) &&
+
+
+  const onboardedUsers = users.filter((user: User) =>
+    (user.onboarded) &&
     (user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
       (user.phoneNumber && user.phoneNumber.includes(searchTerm)))
   );
-
 
   if (loading) {
     return <div className="p-4 text-center text-gray-500">Loading user data...</div>;
@@ -148,15 +155,15 @@ export default function AdminDashboard() {
         {/* Header */}
         <div className="px-6 py-4 border-b border-gray-200 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div>
-            <h2 className="text-lg font-semibold text-gray-800">Tenant Management</h2>
-            <p className="text-sm text-gray-500">View tenant bill counts with date filtering</p>
+            <h2 className="text-lg font-semibold text-gray-800">Onboarded Clients</h2>
+            <p className="text-sm text-gray-500">View and manage clients who have been onboarded</p>
           </div>
           <div className="flex gap-2">
             <button
-              onClick={() => router.push('/admin/onboard')}
-              className="px-3 py-1.5 text-sm font-medium text-white bg-green-600 rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2"
+              onClick={() => router.push('/admin/dashboard')}
+              className="px-3 py-1.5 text-sm font-medium text-indigo-600 bg-indigo-50 rounded-md hover:bg-indigo-100 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
             >
-              View Onboarded Clients
+              Back to Dashboard
             </button>
             <button
               onClick={handleLogout}
@@ -233,14 +240,14 @@ export default function AdminDashboard() {
         </div>
 
         {/* Table */}
-        <div className="overflow-x-auto pb-8">
-          <div className="px-6 py-4 bg-yellow-50 border-b border-yellow-200">
-            <h3 className="text-md font-semibold text-yellow-800">Pending Onboarding</h3>
+        <div className="overflow-x-auto">
+          <div className="px-6 py-4 bg-green-50 border-b border-green-200">
+            <h3 className="text-md font-semibold text-green-800">Onboarded Clients</h3>
           </div>
-          {pendingUsers.length === 0 ? (
+          {onboardedUsers.length === 0 ? (
             <div className="text-center py-8">
               <p className="text-gray-500">
-                {searchTerm ? 'No pending tenants match your search.' : 'No pending tenants found.'}
+                {searchTerm ? 'No onboarded tenants match your search.' : 'No onboarded tenants found.'}
               </p>
             </div>
           ) : (
@@ -251,11 +258,12 @@ export default function AdminDashboard() {
                   <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tenant</th>
                   <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
                   <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Mobile</th>
+                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Bill Count</th>
                   <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
-                {pendingUsers.map((user, index) => (
+                {onboardedUsers.map((user, index) => (
                   <tr key={user._id} className="hover:bg-gray-50">
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                       {index + 1}
@@ -269,12 +277,17 @@ export default function AdminDashboard() {
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm text-gray-500">{user.phoneNumber || '-'}</div>
                     </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                        {user.billCount || 0}
+                      </span>
+                    </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium flex gap-2">
                       <button
-                        onClick={() => handleOnboard(user._id, user.name)}
-                        className="px-3 py-1 rounded-md text-white text-sm bg-green-600 hover:bg-green-700"
+                        onClick={() => handleOffboard(user._id, user.name)}
+                        className="px-3 py-1 rounded-md text-white text-sm bg-yellow-600 hover:bg-yellow-700"
                       >
-                        Onboard
+                        Offboard
                       </button>
                       <button
                         onClick={() => handleDeleteTenant(user._id, user.name)}
@@ -293,9 +306,7 @@ export default function AdminDashboard() {
             </table>
           )}
         </div>
-
       </div>
     </div>
-
   );
 }
