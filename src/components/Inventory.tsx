@@ -555,7 +555,7 @@ const Inventory: FC = () => {
                 const uploadResponse = await fetch('/api/upload', { method: 'POST', body: formData });
                 const uploadData = await uploadResponse.json();
                 if (!uploadResponse.ok) throw new Error(uploadData.message || 'Image upload failed');
-                imageUrl = uploadData.path;
+                imageUrl = uploadData.url;
             }
 
             const url = isEditing ? `/api/products/${productData.id}` : '/api/products';

@@ -8,6 +8,15 @@
     
     // Handle images properly for all environments
     images: {
+      // 1. Add Cloudinary here (Required for the Image component to work with uploads)
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: 'res.cloudinary.com',
+        port: '',
+      },
+    ],
+    // 2. Keep your existing domains
       domains: ['localhost', 'your-netlify-site.netlify.app'], // Add your domains here
     },
     
