@@ -54,7 +54,6 @@
 import { NextResponse } from "next/server";
 import { v2 as cloudinary, UploadApiResponse } from "cloudinary";
 
-// Configure Cloudinary
 cloudinary.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
   api_key: process.env.CLOUDINARY_API_KEY,
@@ -70,17 +69,19 @@ export async function POST(req: Request) {
       return NextResponse.json({ success: false, error: "No file provided." }, { status: 400 });
     }
 
-    // Convert file to buffer
     const arrayBuffer = await file.arrayBuffer();
     const buffer = Buffer.from(arrayBuffer);
 
-    // Upload to Cloudinary with compression and type safety
     const uploadResult = await new Promise<UploadApiResponse>((resolve, reject) => {
       const uploadStream = cloudinary.uploader.upload_stream(
         {
-          folder: "billzzy-inventory", // Your folder name
-          quality: "auto",             // Auto-compress image size
-          fetch_format: "auto",        // Convert to WebP/AVIF automatically
+          folder: "billzzy-inventory",
+          // 👇 NEW SETTINGS TO FORCE SMALLER SIZE 👇
+          transformation: [
+            { width: 800, crop: "limit" }, // Resize: Never wider than 800px
+            { quality: "auto:eco" },       // Quality: "Economical" (smaller file size)
+            { fetch_format: "auto" }       // Format: Use WebP/AVIF if possible
+          ]
         },
         (error, result) => {
           if (error) {
@@ -95,7 +96,6 @@ export async function POST(req: Request) {
       uploadStream.end(buffer);
     });
 
-    // Return the secure Cloudinary URL
     return NextResponse.json({ 
       success: true, 
       url: uploadResult.secure_url 
