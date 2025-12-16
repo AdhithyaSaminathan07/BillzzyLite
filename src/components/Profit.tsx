@@ -47,109 +47,108 @@ export default function ProfitSection() {
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat("en-IN", {
       style: "currency",
-      currency: "INR"
+      currency: "INR",
+      maximumFractionDigits: 0
     }).format(amount);
   };
 
   return (
-    <div className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden w-full">
+    <div className="w-full max-w-xs mx-auto">
+      {/* Clean Modern Card */}
+      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
 
-      {/* Header */}
-      <div className="p-4 md:p-6 flex items-center gap-3 border-b border-gray-200">
-        <div className="shrink-0 w-10 h-10 rounded-lg flex items-center justify-center" style={{ backgroundColor: '#5a4fcf' }}>
-          <TrendingUp className="w-5 h-5 text-white" />
-        </div>
-        <div>
-          <h2 className="text-lg md:text-xl font-bold text-gray-900 leading-tight">Profit Overview</h2>
-          <p className="text-xs md:text-sm text-gray-500">Track your earnings & growth</p>
-        </div>
-      </div>
+        {/* Header Section */}
+        <div className="px-4 py-3 flex items-center justify-between bg-gray-50/50 border-b border-gray-100">
+          <div className="flex items-center gap-2">
+            <div className="w-7 h-7 rounded-full bg-[#5a4fcf]/10 flex items-center justify-center text-[#5a4fcf]">
+              <TrendingUp className="w-3.5 h-3.5" />
+            </div>
+            <span className="text-sm font-semibold text-gray-800">Profit</span>
+          </div>
 
-      {/* Tab Navigation - Optimized for Mobile */}
-      <div className="bg-gray-50 p-3 md:p-4">
-        {/* Using Grid to keep tabs equal width on all screens */}
-        <div className="grid grid-cols-4 gap-2">
-          {['daily', 'weekly', 'monthly', 'custom'].map((tab) => (
+          {/* Compact Tab Switcher */}
+          <div className="flex bg-gray-100 rounded-lg p-0.5">
+            {['daily', 'weekly', 'monthly'].map((tab) => (
+              <button
+                key={tab}
+                onClick={() => setActiveTab(tab)}
+                className={`
+                  px-2 py-0.5 rounded text-[10px] font-medium transition-all
+                  ${activeTab === tab
+                    ? 'bg-white text-gray-900 shadow-sm ring-1 ring-black/5'
+                    : 'text-gray-500 hover:text-gray-700'}
+                `}
+              >
+                {tab === 'daily' ? 'Day' : tab === 'weekly' ? 'Week' : 'Month'}
+              </button>
+            ))}
             <button
-              key={tab}
-              onClick={() => setActiveTab(tab)}
+              onClick={() => setActiveTab('custom')}
               className={`
-                flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-2 
-                py-2 sm:py-3 px-1 sm:px-4 rounded-lg 
-                text-xs sm:text-sm font-semibold transition-all duration-200
-                ${activeTab === tab
-                  ? 'text-white shadow-md transform scale-[1.02]'
-                  : 'text-gray-600 bg-white hover:bg-gray-200 border border-gray-100'}
-              `}
-              style={activeTab === tab ? { backgroundColor: '#5a4fcf' } : {}}
+                  px-2 py-0.5 rounded text-[10px] font-medium transition-all
+                  ${activeTab === 'custom'
+                  ? 'bg-white text-gray-900 shadow-sm ring-1 ring-black/5'
+                  : 'text-gray-500 hover:text-gray-700'}
+                `}
             >
-              <Calendar className="w-3 h-3 sm:w-4 sm:h-4" />
-              <span className="capitalize">{tab}</span>
+              Custom
             </button>
-          ))}
+          </div>
         </div>
 
-        {/* Custom Date Inputs */}
+        {/* Custom Date Inputs (Conditional) */}
         {activeTab === 'custom' && (
-          <div className="mt-3 grid grid-cols-2 gap-3 animate-in fade-in slide-in-from-top-2">
-            <div>
-              <label className="text-xs font-medium text-gray-700 block mb-1">From Date</label>
-              <input
-                type="date"
-                value={customStart}
-                onChange={(e) => setCustomStart(e.target.value)}
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-[#5a4fcf] focus:border-[#5a4fcf] outline-none"
-              />
-            </div>
-            <div>
-              <label className="text-xs font-medium text-gray-700 block mb-1">To Date</label>
-              <input
-                type="date"
-                value={customEnd}
-                onChange={(e) => setCustomEnd(e.target.value)}
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-[#5a4fcf] focus:border-[#5a4fcf] outline-none"
-              />
-            </div>
+          <div className="px-4 py-2 bg-gray-50/30 border-b border-gray-100 grid grid-cols-2 gap-2 animate-in fade-in slide-in-from-top-1">
+            <input
+              type="date"
+              value={customStart}
+              onChange={(e) => setCustomStart(e.target.value)}
+              className="w-full text-[10px] bg-white border border-gray-200 rounded px-2 py-1 text-gray-600 focus:border-[#5a4fcf] focus:ring-1 focus:ring-[#5a4fcf] outline-none"
+            />
+            <input
+              type="date"
+              value={customEnd}
+              onChange={(e) => setCustomEnd(e.target.value)}
+              className="w-full text-[10px] bg-white border border-gray-200 rounded px-2 py-1 text-gray-600 focus:border-[#5a4fcf] focus:ring-1 focus:ring-[#5a4fcf] outline-none"
+            />
           </div>
         )}
-      </div>
 
-      {/* Content Area - Static Height Container for stability */}
-      <div className="p-4 md:p-6">
-        {loading ? (
-          <div className="min-h-[250px] flex flex-col items-center justify-center text-center py-8 md:py-12 bg-gray-50 rounded-xl">
-            <Loader2 className="w-8 h-8 animate-spin text-[#5a4fcf] mb-2" />
-            <p className="text-sm text-gray-500">Calculating profit...</p>
-          </div>
-        ) : error ? (
-          <div className="min-h-[250px] flex flex-col items-center justify-center text-center py-8 md:py-12 bg-red-50 rounded-xl border border-red-100">
-            <AlertCircle className="w-8 h-8 text-red-500 mb-2" />
-            <p className="text-sm text-red-600">{error}</p>
-            <button onClick={() => setActiveTab(activeTab)} className="mt-2 text-xs text-red-700 underline">Retry</button>
-          </div>
-        ) : (
-          <div className="min-h-[250px] flex flex-col items-center justify-center text-center py-8 md:py-12 bg-gradient-to-br from-green-50 to-emerald-50 rounded-xl border border-green-100 relative overflow-hidden">
-            {/* Background Decoration */}
-            <div className="absolute top-0 right-0 w-32 h-32 bg-green-200/20 rounded-full blur-3xl -mr-16 -mt-16"></div>
-            <div className="absolute bottom-0 left-0 w-32 h-32 bg-[#5a4fcf]/10 rounded-full blur-3xl -ml-16 -mb-16"></div>
-
-            <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center mb-4 shadow-sm z-10">
-              <TrendingUp className="w-8 h-8 text-green-600" />
+        {/* Main Content */}
+        <div className="p-5 flex flex-col items-center justify-center min-h-[100px]">
+          {loading ? (
+            <div className="flex flex-col items-center gap-1 text-gray-400">
+              <Loader2 className="w-5 h-5 animate-spin text-[#5a4fcf]" />
+              <span className="text-[10px]">Calculating...</span>
             </div>
-
-            <h3 className="text-base md:text-lg font-semibold text-gray-800 mb-1 z-10">
-              Total {activeTab.charAt(0).toUpperCase() + activeTab.slice(1)} Profit
-            </h3>
-
-            <div className="text-3xl md:text-4xl font-bold text-green-700 my-2 z-10">
-              {formatCurrency(profitData || 0)}
+          ) : error ? (
+            <div className="text-center">
+              <AlertCircle className="w-5 h-5 text-red-500 mx-auto mb-1" />
+              <p className="text-xs text-red-500">{error}</p>
             </div>
+          ) : (
+            <div className="text-center relative z-10">
+              <p className="text-[10px] font-medium text-gray-400 uppercase tracking-wider mb-0.5">
+                Net Earnings
+              </p>
+              <h1 className="text-3xl font-bold text-gray-900 leading-none tracking-tight">
+                {formatCurrency(profitData || 0)}
+              </h1>
+              <div className="mt-1.5 flex items-center justify-center gap-1">
+                <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-green-50 text-green-700 border border-green-100">
+                  <TrendingUp className="w-3 h-3 mr-1" />
+                  +100%
+                </span>
+                <span className="text-[10px] text-gray-400">
+                  vs yesterday
+                </span>
+              </div>
+            </div>
+          )}
 
-            <p className="text-xs md:text-sm text-gray-500 z-10">
-              Net profit from sales {activeTab === 'custom' ? 'for selected range' : `this ${activeTab === 'daily' ? 'day' : activeTab === 'weekly' ? 'week' : 'month'}`}
-            </p>
-          </div>
-        )}
+          {/* Decorative background blob */}
+          <div className="absolute bottom-0 right-0 w-24 h-24 bg-gradient-to-t from-gray-50 to-transparent rounded-full -mr-8 -mb-8 pointer-events-none opacity-50"></div>
+        </div>
       </div>
     </div>
   );
