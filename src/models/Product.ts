@@ -10,6 +10,7 @@ export interface IProduct extends Document {
   gstRate: number;
   image?: string;
   lowStockThreshold?: number;
+  profitPerUnit?: number;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -57,6 +58,11 @@ const ProductSchema = new Schema<IProduct>({
   lowStockThreshold: {
     type: Number,
     required: false,
+  },
+  profitPerUnit: {
+    type: Number,
+    required: false,
+    default: 0,
   },
 }, {
   timestamps: true,

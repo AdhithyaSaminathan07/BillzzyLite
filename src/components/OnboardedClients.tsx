@@ -5,6 +5,7 @@
 import { useState, useEffect } from 'react';
 import { signOut } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
+import { Edit2, Check, X } from 'lucide-react'; // Import icons
 
 // The shape of the user data
 interface User {
@@ -14,6 +15,7 @@ interface User {
   phoneNumber?: string;
   billCount?: number;
   onboarded?: boolean;
+  pin?: string;
 }
 
 export default function OnboardedClients() {
@@ -24,6 +26,10 @@ export default function OnboardedClients() {
   const [searchTerm, setSearchTerm] = useState('');
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
+
+  // State for PIN editing
+  const [editingPinUserId, setEditingPinUserId] = useState<string | null>(null);
+  const [tempPin, setTempPin] = useState('');
 
 
   // Create a separate function for fetching users with date filters
@@ -95,6 +101,47 @@ export default function OnboardedClients() {
       setError((err as Error).message);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const startEditingPin = (user: User) => {
+    setEditingPinUserId(user._id);
+    setTempPin(user.pin || '');
+  };
+
+  const cancelEditingPin = () => {
+    setEditingPinUserId(null);
+    setTempPin('');
+  };
+
+  const handleSavePin = async (userId: string) => {
+    try {
+      // Basic validation: PIN should be 4-6 digits, but let's just checking length for now.
+      if (tempPin.length < 4) {
+        alert("PIN must be at least 4 characters.");
+        return;
+      }
+
+      // Optimistic update (optional, but let's just reload)
+      const res = await fetch('/api/admin/tenants', {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ userId, pin: tempPin }),
+      });
+
+      if (!res.ok) {
+        throw new Error('Failed to update PIN');
+      }
+
+      // Update local state directly so we don't flash loading
+      setUsers(users.map(u => u._id === userId ? { ...u, pin: tempPin } : u));
+      setEditingPinUserId(null);
+      setTempPin('');
+
+    } catch (err) {
+      alert((err as Error).message);
     }
   };
 
@@ -234,7 +281,7 @@ export default function OnboardedClients() {
                   <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">S.No</th>
                   <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tenant</th>
                   <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
-                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Mobile</th>
+                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">PIN</th>
                   <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Bill Count</th>
                   <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Amount (₹)</th>
                   <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
@@ -253,7 +300,26 @@ export default function OnboardedClients() {
                       <div className="text-sm text-gray-500">{user.email}</div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-500">{user.phoneNumber || '-'}</div>
+                      {editingPinUserId === user._id ? (
+                        <div className="flex items-center gap-2">
+                          <input
+                            type="text"
+                            className="w-20 border border-gray-300 rounded px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                            value={tempPin}
+                            onChange={(e) => setTempPin(e.target.value)}
+                            maxLength={6}
+                          />
+                          <button onClick={() => handleSavePin(user._id)} className="text-green-600 hover:text-green-800"><Check size={18} /></button>
+                          <button onClick={cancelEditingPin} className="text-red-600 hover:text-red-800"><X size={18} /></button>
+                        </div>
+                      ) : (
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm text-gray-700 font-mono">{user.pin || 'N/A'}</span>
+                          <button onClick={() => startEditingPin(user)} className="text-gray-400 hover:text-indigo-600">
+                            <Edit2 size={16} />
+                          </button>
+                        </div>
+                      )}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">

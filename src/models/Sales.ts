@@ -46,6 +46,7 @@ export interface ISale extends Document {
   billId: string;
   amount: number;
   paymentMethod: "cash" | "qr-code" | "card";
+  profit?: number;
   // ✅ ADDED THESE FIELDS
   status: string;
   items: { name: string; quantity: number; price: number }[];
@@ -63,8 +64,9 @@ const SaleSchema = new Schema<ISale>({
     enum: ["cash", "qr-code", "card"],
     required: true,
   },
+  profit: { type: Number, default: 0 },
   status: { type: String, default: "pending" },
-  
+
   // ✅ ADDED: To store the cart items
   items: [{
     name: String,
@@ -73,15 +75,15 @@ const SaleSchema = new Schema<ISale>({
   }],
 
   // ✅ ADDED: Random Token for the link
-  publicToken: { 
-    type: String, 
-    unique: true, 
-    sparse: true 
+  publicToken: {
+    type: String,
+    unique: true,
+    sparse: true
   },
 
   // ✅ ADDED: Expiration Date
-  expiresAt: { 
-    type: Date 
+  expiresAt: {
+    type: Date
   },
 
   createdAt: { type: Date, default: Date.now },

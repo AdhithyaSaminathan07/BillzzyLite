@@ -26,7 +26,7 @@ export async function GET(request: Request) {
     const endDate = searchParams.get('endDate');
 
     // Find all users where the role is NOT 'admin'
-    const users = await User.find({ role: { $ne: 'admin' } }).select('name email createdAt phoneNumber onboarded');
+    const users = await User.find({ role: { $ne: 'admin' } }).select('name email createdAt phoneNumber onboarded pin');
 
     // Get bill count for each user with optional date filtering
     const usersWithBillCount = await Promise.all(users.map(async (user: IUser) => {
@@ -70,14 +70,17 @@ export async function PATCH(request: Request) {
 
   try {
     await dbConnect();
-    const { userId, onboarded } = await request.json();
+    const { userId, onboarded, pin } = await request.json();
 
-    if (!userId || typeof onboarded !== 'boolean') {
-      return NextResponse.json({ message: 'Invalid Input' }, { status: 400 });
+    if (!userId) {
+      return NextResponse.json({ message: 'User ID is required' }, { status: 400 });
     }
 
-    const startUpdate = Date.now();
-    const user = await User.findByIdAndUpdate(userId, { onboarded }, { new: true });
+    const updateData: { onboarded?: boolean; pin?: string } = {};
+    if (typeof onboarded === 'boolean') updateData.onboarded = onboarded;
+    if (pin !== undefined) updateData.pin = pin;
+
+    const user = await User.findByIdAndUpdate(userId, updateData, { new: true });
 
     if (!user) {
       return NextResponse.json({ message: 'User not found' }, { status: 404 });

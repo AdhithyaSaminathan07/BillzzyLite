@@ -8,6 +8,7 @@ export interface IUser extends Document {
   tenantId: Types.ObjectId; // A reference to the Tenant this user belongs to
   phoneNumber?: string; // Added phone number field
   onboarded?: boolean; // Track onboarding status
+  pin?: string; // unique PIN for client report access
 }
 
 const UserSchema: Schema = new Schema({
@@ -45,6 +46,11 @@ const UserSchema: Schema = new Schema({
   onboarded: {
     type: Boolean,
     default: false,
+  },
+  pin: {
+    type: String,
+    required: false,
+    default: null,
   },
 }, {
   timestamps: true,

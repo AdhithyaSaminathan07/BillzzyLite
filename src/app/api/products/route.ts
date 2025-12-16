@@ -10,6 +10,7 @@ import { NextRequest, NextResponse } from 'next/server';
 interface IProductInput {
   sku: string;
   name: string;
+  profitPerUnit?: number;
   [key: string]: unknown;
 }
 
@@ -22,8 +23,8 @@ interface IProductFromDB extends IProductInput {
 }
 
 interface MongoDuplicateKeyError {
-    code: number;
-    message: string;
+  code: number;
+  message: string;
 }
 
 const transformProduct = (product: IProductFromDB) => {
@@ -76,6 +77,7 @@ export async function POST(request: NextRequest) {
   try {
     await dbConnect();
     const body: IProductInput | IProductInput[] = await request.json();
+    console.log("Received Product Data:", JSON.stringify(body, null, 2));
 
     if (Array.isArray(body)) {
       const productsWithTenant = body.map(product => ({
@@ -92,23 +94,23 @@ export async function POST(request: NextRequest) {
       const productWithTenant = { ...body, tenantId: tenantId }; // Assign tenantId from the user's session
       await Product.create(productWithTenant);
     }
-    
+
     const allProductsFromDb = await Product.find({ tenantId: tenantId })
       .sort({ createdAt: -1 })
       .lean<IProductFromDB[]>();
-      
+
     const allProducts = allProductsFromDb.map(transformProduct);
-    
+
     return NextResponse.json(allProducts, { status: 201 });
 
   } catch (error: unknown) {
     const isMongoDuplicateKeyError = (err: unknown): err is MongoDuplicateKeyError => {
-        return (
-            typeof err === 'object' &&
-            err !== null &&
-            'code' in err &&
-            (err as { code: unknown }).code === 11000
-        );
+      return (
+        typeof err === 'object' &&
+        err !== null &&
+        'code' in err &&
+        (err as { code: unknown }).code === 11000
+      );
     }
 
     if (isMongoDuplicateKeyError(error)) {
@@ -117,7 +119,7 @@ export async function POST(request: NextRequest) {
         { status: 409 }
       );
     }
-    
+
     const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
     return NextResponse.json({ message: 'Failed to create product(s)', error: errorMessage }, { status: 500 });
   }

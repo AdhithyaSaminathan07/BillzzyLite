@@ -9,6 +9,7 @@ interface CartItem {
   name: string;
   quantity: number;
   price: number;
+  profitPerUnit?: number;
 }
 
 // export async function POST(request: Request) {
@@ -24,7 +25,7 @@ interface CartItem {
 //     if (!cart || !Array.isArray(cart) || cart.length === 0) {
 //         return NextResponse.json({ success: false, message: 'Invalid data' }, { status: 400 });
 //     }
-    
+
 //     // 1. Generate Random Token (Hex string)
 //     const randomToken = crypto.randomBytes(16).toString('hex');
 
@@ -46,12 +47,12 @@ interface CartItem {
 //       paymentMethod: 'qr-code', 
 //       status: 'pending',
 //       createdAt: new Date(),
-      
+
 //       // Save the token and expiration
 //       publicToken: randomToken,
 //       expiresAt: expiryDate
 //     });
-    
+
 //     // Return the TOKEN, not the DB ID
 //     return NextResponse.json({ success: true, orderId: randomToken }, { status: 201 });
 
@@ -69,14 +70,14 @@ export async function POST(request: Request) {
     }
 
     await connectMongoDB();
-    
+
     // 1. Get paymentMethod from the request body
     const { cart, totalAmount, paymentMethod } = await request.json(); // <--- Added paymentMethod here
 
     if (!cart || !Array.isArray(cart) || cart.length === 0) {
-        return NextResponse.json({ success: false, message: 'Invalid data' }, { status: 400 });
+      return NextResponse.json({ success: false, message: 'Invalid data' }, { status: 400 });
     }
-    
+
     const randomToken = crypto.randomBytes(16).toString('hex');
     const expiryDate = new Date();
     expiryDate.setHours(expiryDate.getHours() + 24);
@@ -85,19 +86,20 @@ export async function POST(request: Request) {
       billId: `NFC-${Date.now().toString().slice(-8)}`,
       tenantId: session.user.email,
       items: cart.map((item: CartItem) => ({
-          name: item.name,
-          quantity: item.quantity,
-          price: item.price,
+        name: item.name,
+        quantity: item.quantity,
+        price: item.price,
       })),
       amount: totalAmount,
+      profit: cart.reduce((sum: number, item: CartItem) => sum + ((item.profitPerUnit || 0) * item.quantity), 0),
       // 2. Use the dynamic variable (fallback to 'qr-code' only if missing)
-      paymentMethod: paymentMethod || 'qr-code', 
+      paymentMethod: paymentMethod || 'qr-code',
       status: 'pending',
       createdAt: new Date(),
       publicToken: randomToken,
       expiresAt: expiryDate
     });
-    
+
     return NextResponse.json({ success: true, orderId: randomToken }, { status: 201 });
 
   } catch (error) {

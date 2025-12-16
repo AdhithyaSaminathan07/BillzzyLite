@@ -31,9 +31,10 @@ type CartItem = {
   id: number;
   productId?: string;
   name: string;
-  quantity: number;
-  price: number;
+  quantity: number | '';
+  price: number | '';
   gstRate: number;
+  profitPerUnit?: number;
   isEditing?: boolean;
 };
 
@@ -45,6 +46,7 @@ type InventoryProduct = {
   gstRate: number;
   image?: string;
   sku?: string;
+  profitPerUnit?: number;
 };
 
 // --- MODAL COMPONENT ---
@@ -94,7 +96,7 @@ export default function BillingPage() {
   // States for flow
   const [showWhatsAppSharePanel, setShowWhatsAppSharePanel] = React.useState(false);
   const [showPaymentOptions, setShowPaymentOptions] = React.useState(false);
-  
+
   // This state holds 'cash' or 'qr-code' depending on which tab is open
   const [selectedPayment, setSelectedPayment] = React.useState<string>('');
 
@@ -104,11 +106,11 @@ export default function BillingPage() {
   const [whatsAppNumber, setWhatsAppNumber] = React.useState('');
   const [customerName, setCustomerName] = React.useState('');
   const [amountGiven, setAmountGiven] = React.useState<number | ''>('');
-  
+
   // Loading states
   const [isMessaging, setIsMessaging] = React.useState(false); // For WhatsApp/DB Save
   const [isCreatingLink, setIsCreatingLink] = React.useState(false); // For NFC
-  
+
   const [scannerError, setScannerError] = React.useState<string>('');
   const [modal, setModal] = React.useState<{ isOpen: boolean; title: string; message: string | React.ReactNode; onConfirm?: (() => void); confirmText: string; showCancel: boolean; }>({ isOpen: false, title: '', message: '', confirmText: 'OK', showCancel: false });
   const suggestionsRef = React.useRef<HTMLDivElement | null>(null);
@@ -119,8 +121,8 @@ export default function BillingPage() {
 
   const subtotal = React.useMemo(() =>
     cart.reduce((sum, item) => {
-      const { totalPrice } = calculateGstDetails(item.price, item.gstRate);
-      return sum + totalPrice * item.quantity;
+      const { totalPrice } = calculateGstDetails(Number(item.price) || 0, item.gstRate);
+      return sum + totalPrice * (Number(item.quantity) || 0);
     }, 0),
     [cart]
   );
@@ -287,14 +289,14 @@ export default function BillingPage() {
   }, [whatsAppNumber, sendWhatsAppMessage]);
 
   // --- CART ACTIONS ---
-  const addToCart = React.useCallback((name: string, price: number, gstRate: number, productId?: string, isEditing = false) => {
+  const addToCart = React.useCallback((name: string, price: number, gstRate: number, productId?: string, profitPerUnit?: number, isEditing = false) => {
     if (!name || price < 0) return;
     setCart(prev => {
       const existingItem = productId ? prev.find(item => item.productId === productId) : null;
       if (existingItem) {
-        return prev.map(item => item.productId === productId ? { ...item, quantity: item.quantity + 1 } : item);
+        return prev.map(item => item.productId === productId ? { ...item, quantity: (Number(item.quantity) || 0) + 1 } : item);
       }
-      return [{ id: Date.now(), productId, name, quantity: 1, price, gstRate, isEditing }, ...prev];
+      return [{ id: Date.now(), productId, name, quantity: 1, price, gstRate, profitPerUnit: profitPerUnit || 0, isEditing }, ...prev];
     });
     setProductName('');
     setShowSuggestions(false);
@@ -305,10 +307,10 @@ export default function BillingPage() {
       const scannedValue = results[0].rawValue;
       const foundProduct = inventory.find(p => p.id === scannedValue || p.sku?.toLowerCase() === scannedValue.toLowerCase() || p.name.toLowerCase() === scannedValue.toLowerCase());
       if (foundProduct) {
-        addToCart(foundProduct.name, foundProduct.sellingPrice, foundProduct.gstRate, foundProduct.id);
+        addToCart(foundProduct.name, foundProduct.sellingPrice, foundProduct.gstRate, foundProduct.id, foundProduct.profitPerUnit);
         setScanning(false);
       } else {
-        addToCart(scannedValue, 0, 0, undefined, true);
+        addToCart(scannedValue, 0, 0, undefined, 0, true);
         setScanning(false);
       }
     }
@@ -324,7 +326,7 @@ export default function BillingPage() {
       setModal({ isOpen: true, title: 'Item Name Required', message: 'Please enter a name for the custom item.', showCancel: false, confirmText: 'OK' });
       return;
     }
-    addToCart(name, 0, 0, undefined, true);
+    addToCart(name, 0, 0, undefined, 0, true);
   }, [productName, addToCart]);
 
   const deleteCartItem = (id: number) => setCart(prev => prev.filter(item => item.id !== id));
@@ -344,13 +346,13 @@ export default function BillingPage() {
 
   const handleProceedToPayment = React.useCallback(async () => {
     if (showWhatsAppSharePanel && cart.length > 0) {
-        if (whatsAppNumber.trim() !== '') {
-             const phoneRegex = /^\d{10,15}$/;
-             if (!phoneRegex.test(whatsAppNumber)) {
-               alert("Please enter a valid phone number (10-15 digits)");
-               return;
-             }
+      if (whatsAppNumber.trim() !== '') {
+        const phoneRegex = /^\d{10,15}$/;
+        if (!phoneRegex.test(whatsAppNumber)) {
+          alert("Please enter a valid phone number (10-15 digits)");
+          return;
         }
+      }
     }
 
     if (cart.length === 0) {
@@ -373,9 +375,16 @@ export default function BillingPage() {
     try {
       // 2. Prepare Variables
       let nfcToken = '';
-      
+
+      // Prepare sanitized cart with valid numbers for API
+      const safeCart = cart.map(item => ({
+        ...item,
+        quantity: Number(item.quantity) || 0,
+        price: Number(item.price) || 0
+      }));
+
       // 3. Update Inventory (ALWAYS run this for both)
-      const updatePromises = cart.filter(item => item.productId).map(item =>
+      const updatePromises = safeCart.filter(item => item.productId).map(item =>
         fetch(`/api/products/${item.productId}`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
@@ -393,6 +402,9 @@ export default function BillingPage() {
         }).catch(err => console.error("Customer save error", err));
       }
 
+      // Calculate total profit based on safeCart
+      const totalProfit = safeCart.reduce((sum, item) => sum + ((item.profitPerUnit || 0) * item.quantity), 0);
+
       // 5. HANDLE PAYMENT & SALE CREATION
       if (useNfc) {
         // === NFC FLOW ===
@@ -401,10 +413,10 @@ export default function BillingPage() {
         const nfcRes = await fetch('/api/nfc-link', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ cart, totalAmount, paymentMethod: selectedPayment }),
+          body: JSON.stringify({ cart: safeCart, totalAmount, paymentMethod: selectedPayment, profit: totalProfit }),
         });
         const nfcData = await nfcRes.json();
-        
+
         if (nfcData.success && nfcData.orderId) {
           nfcToken = nfcData.orderId;
         } else {
@@ -418,14 +430,18 @@ export default function BillingPage() {
         const response = await fetch('/api/sales', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ amount: totalAmount, paymentMethod: selectedPayment })
+          body: JSON.stringify({
+            amount: totalAmount,
+            paymentMethod: selectedPayment,
+            profit: totalProfit
+          })
         });
 
         if (!response.ok) {
-           const errorData = await response.json();
-           throw new Error(errorData.message || 'Failed to save sale');
+          const errorData = await response.json();
+          throw new Error(errorData.message || 'Failed to save sale');
         }
-        
+
         // Send WhatsApp only for Manual Confirm
         if (whatsAppNumber && whatsAppNumber.trim()) {
           await sendWhatsAppReceipt(selectedPayment);
@@ -443,8 +459,8 @@ export default function BillingPage() {
       setModal({
         isOpen: true,
         title: 'Success!',
-        message: useNfc 
-          ? 'Inventory updated. Tap your card to finish.' 
+        message: useNfc
+          ? 'Inventory updated. Tap your card to finish.'
           : 'Transaction completed! Receipt sent via WhatsApp.',
         confirmText: 'New Bill',
         onConfirm: handleTransactionDone,
@@ -501,7 +517,7 @@ export default function BillingPage() {
                 <div ref={suggestionsRef} className="relative flex-1">
                   <input type="text" placeholder={settingsComplete ? "Search or add item..." : "Settings required to add items"} className="w-full rounded-lg border-2 border-gray-300 p-2.5 text-sm focus:ring-2 focus:ring-[#5a4fcf] focus:border-[#5a4fcf] outline-none transition-all" value={productName} onChange={(e) => setProductName(e.target.value)} onClick={() => setScanning(false)} onKeyPress={(e) => { if (e.key === 'Enter') { handleManualAdd(); } }} disabled={!settingsComplete} />
                   {showSuggestions && settingsComplete && (
-                    <div className="absolute z-10 mt-2 w-full rounded-xl border-2 border-[#5a4fcf] bg-white shadow-xl max-h-48 overflow-y-auto">{suggestions.map((s) => (<div key={s.id} onClick={() => addToCart(s.name, s.sellingPrice, s.gstRate, s.id)} className="cursor-pointer border-b border-gray-100 p-3 hover:bg-indigo-50 transition-colors last:border-b-0"><div className="flex justify-between items-center"><span className="font-semibold text-gray-800 text-sm">{s.name}</span><span className="text-[#5a4fcf] font-bold text-sm">{formatCurrency(s.sellingPrice)}</span></div>{s.sku && <p className="text-xs text-gray-500 mt-0.5">SKU: {s.sku}</p>}</div>))}</div>
+                    <div className="absolute z-10 mt-2 w-full rounded-xl border-2 border-[#5a4fcf] bg-white shadow-xl max-h-48 overflow-y-auto">{suggestions.map((s) => (<div key={s.id} onClick={() => addToCart(s.name, s.sellingPrice, s.gstRate, s.id, s.profitPerUnit)} className="cursor-pointer border-b border-gray-100 p-3 hover:bg-indigo-50 transition-colors last:border-b-0"><div className="flex justify-between items-center"><span className="font-semibold text-gray-800 text-sm">{s.name}</span><span className="text-[#5a4fcf] font-bold text-sm">{formatCurrency(s.sellingPrice)}</span></div>{s.sku && <p className="text-xs text-gray-500 mt-0.5">SKU: {s.sku}</p>}</div>))}</div>
                   )}
                 </div>
               </div>
@@ -511,7 +527,99 @@ export default function BillingPage() {
             {cart.length === 0 ? (
               <div className="bg-white rounded-xl p-8 text-center shadow-md border border-gray-200"><div className="text-5xl mb-3">🛒</div><p className="text-gray-600 font-medium">{settingsComplete ? "Cart is Empty" : "Settings Required"}</p><p className="text-xs text-gray-500 mt-1">{settingsComplete ? "Add items to get started" : "Please complete your settings to start billing"}</p></div>
             ) : (
-              <div className="space-y-2">{cart.map((item) => { const { gstAmount, totalPrice } = calculateGstDetails(item.price, item.gstRate); const totalItemPrice = totalPrice * item.quantity; return (<div key={item.id} className="bg-white rounded-xl p-3 shadow-md border border-gray-200"><div className="flex justify-between items-start gap-2"><div className="flex-1 min-w-0">{item.isEditing ? (<div className="space-y-2"><input type="text" value={item.name} onChange={(e) => updateCartItem(item.id, { name: e.target.value })} className="w-full border-2 border-gray-300 rounded-lg p-2 text-sm focus:ring-2 focus:ring-[#5a4fcf] outline-none" placeholder="Item name" disabled={!settingsComplete} /><div className="grid grid-cols-2 gap-2"><input type="number" value={item.quantity} onChange={(e) => updateCartItem(item.id, { quantity: parseInt(e.target.value, 10) || 1 })} className="border-2 border-gray-300 rounded-lg p-2 text-sm focus:ring-2 focus:ring-[#5a4fcf] outline-none" placeholder="Qty" disabled={!settingsComplete} /><input type="number" value={item.price} onChange={(e) => updateCartItem(item.id, { price: parseFloat(e.target.value) || 0 })} className="border-2 border-gray-300 rounded-lg p-2 text-sm focus:ring-2 focus:ring-[#5a4fcf] outline-none" placeholder="Price" disabled={!settingsComplete} /></div></div>) : (<><p className="font-bold text-gray-900 text-sm truncate">{item.name}</p><p className="text-xs text-gray-500 mt-0.5">Qty: {item.quantity} × {formatCurrency(totalPrice)}</p></>)}</div><div className="flex gap-2 items-start flex-shrink-0"><span className="text-base font-bold text-[#5a4fcf]">{formatCurrency(totalItemPrice)}</span><button onClick={() => toggleEdit(item.id)} className={`p-1.5 rounded-lg ${item.isEditing ? 'bg-green-100 text-green-600' : 'bg-indigo-50 text-[#5a4fcf]'} hover:opacity-80`} disabled={!settingsComplete}>{item.isEditing ? <Check size={16} /> : <Edit2 size={16} />}</button><button onClick={() => deleteCartItem(item.id)} className="p-1.5 rounded-lg bg-red-50 text-red-500 hover:bg-red-100" disabled={!settingsComplete}><Trash2 size={16} /></button></div></div>{!item.isEditing && item.gstRate > 0 && (<div className="text-xs text-gray-600 bg-indigo-50 rounded-lg p-2 mt-2 border border-indigo-100">Base: {formatCurrency(item.price)} + GST ({item.gstRate}%): {formatCurrency(gstAmount)}</div>)}</div>); })}</div>
+              <div className="space-y-2">{cart.map((item) => {
+                const { gstAmount, totalPrice } = calculateGstDetails(Number(item.price) || 0, item.gstRate); const totalItemPrice = totalPrice * (Number(item.quantity) || 0); return (
+                  <div key={item.id} className={`rounded-lg p-2.5 shadow-sm border transition-all ${item.isEditing ? 'bg-indigo-50 border-[#5a4fcf]' : 'bg-white border-gray-200'}`}>
+
+                    {item.isEditing ? (
+                      /* === COMPACT EDIT MODE === */
+                      <div className="flex flex-col gap-2">
+                        {/* Row 1: Name */}
+                        <input
+                          type="text"
+                          value={item.name}
+                          onChange={(e) => updateCartItem(item.id, { name: e.target.value })}
+                          className="w-full px-2 py-1.5 rounded-md border border-gray-300 text-sm focus:ring-1 focus:ring-[#5a4fcf] outline-none bg-white"
+                          placeholder="Item Name"
+                          disabled={!settingsComplete}
+                        />
+
+                        {/* Row 2: Qty | Price | Actions */}
+                        <div className="flex items-center gap-2">
+                          <div className="relative flex-[1]">
+                            <input
+                              type="number"
+                              value={item.quantity}
+                              onChange={(e) => updateCartItem(item.id, { quantity: e.target.value === '' ? '' : parseInt(e.target.value, 10) })}
+                              className="w-full px-2 py-1.5 rounded-md border border-gray-300 text-sm focus:ring-1 focus:ring-[#5a4fcf] outline-none bg-white font-medium text-center"
+                              placeholder="Qty"
+                              disabled={!settingsComplete}
+                            />
+                            <span className="absolute right-1 top-1/2 -translate-y-1/2 text-[9px] text-gray-400 pointer-events-none">Qty</span>
+                          </div>
+
+                          <div className="relative flex-[1.5]">
+                            <span className="absolute left-2 top-1/2 -translate-y-1/2 text-gray-500 text-xs">₹</span>
+                            <input
+                              type="number"
+                              value={item.price}
+                              onChange={(e) => updateCartItem(item.id, { price: e.target.value === '' ? '' : parseFloat(e.target.value) })}
+                              className="w-full pl-5 pr-2 py-1.5 rounded-md border border-gray-300 text-sm focus:ring-1 focus:ring-[#5a4fcf] outline-none bg-white font-medium"
+                              placeholder="Price"
+                              disabled={!settingsComplete}
+                            />
+                          </div>
+
+                          {/* Actions */}
+                          <button
+                            onClick={() => toggleEdit(item.id)}
+                            className="flex items-center justify-center p-1.5 rounded-md bg-[#5a4fcf] text-white hover:bg-[#4c42b8] shadow-sm transition-all"
+                            title="Save"
+                          >
+                            <Check size={16} />
+                          </button>
+                          <button
+                            onClick={() => deleteCartItem(item.id)}
+                            className="flex items-center justify-center p-1.5 rounded-md bg-red-100 text-red-500 hover:bg-red-200 shadow-sm transition-all"
+                            title="Remove"
+                          >
+                            <Trash2 size={16} />
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      /* === VIEW MODE UI (Compact) === */
+                      <div className="flex justify-between items-start gap-2">
+                        <div className="flex-1 min-w-0">
+                          <p className="font-bold text-gray-900 text-sm truncate leading-tight">{item.name}</p>
+                          <div className="flex items-center gap-1.5 mt-1">
+                            <span className="text-xs text-gray-500 bg-gray-100 px-1.5 py-0.5 rounded">Qty: {item.quantity}</span>
+                            <span className="text-[10px] text-gray-400">×</span>
+                            <span className="text-xs text-gray-500">{formatCurrency(totalPrice)}</span>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm font-bold text-[#5a4fcf]">
+                            {formatCurrency(totalItemPrice)}
+                          </span>
+
+                          <div className="flex gap-1">
+                            <button onClick={() => toggleEdit(item.id)} disabled={!settingsComplete} className="p-1 rounded bg-gray-100 text-gray-600 hover:bg-indigo-50 hover:text-[#5a4fcf] transition-colors"><Edit2 size={14} /></button>
+                            <button onClick={() => deleteCartItem(item.id)} disabled={!settingsComplete} className="p-1 rounded bg-red-50 text-red-500 hover:bg-red-100 transition-colors"><Trash2 size={14} /></button>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {!item.isEditing && item.gstRate > 0 && (
+                      <div className="mt-1.5 pt-1.5 border-t border-dashed border-gray-100 text-[10px] text-gray-400">
+                        Base: {formatCurrency(Number(item.price) || 0)} + GST ({item.gstRate}%): {formatCurrency(gstAmount)}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}</div>
             )}
           </div>
         </div>

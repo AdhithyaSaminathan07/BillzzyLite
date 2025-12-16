@@ -29,7 +29,7 @@ export default function BillingHistory() {
 
   const fetchHistory = async (from: string, to: string) => {
     try {
-      const url = from && to 
+      const url = from && to
         ? `/api/billing-history?from=${from}&to=${to}`
         : '/api/billing-history'; // Fetch all if no dates
       const res = await fetch(url);
@@ -72,10 +72,10 @@ export default function BillingHistory() {
   };
 
   const formatTime = (dateString: string) => {
-    return new Date(dateString).toLocaleTimeString('en-IN', { 
-      hour: '2-digit', 
+    return new Date(dateString).toLocaleTimeString('en-IN', {
+      hour: '2-digit',
       minute: '2-digit',
-      hour12: true 
+      hour12: true
     });
   };
 
@@ -214,7 +214,7 @@ export default function BillingHistory() {
                       <p className="text-lg font-bold text-gray-900">₹{bill.amount.toLocaleString()}</p>
                     </div>
                   </div>
-                  
+
                   <div className="flex items-center justify-between pt-2.5 border-t border-gray-100">
                     <span className="text-xs text-gray-500">Payment Method</span>
                     <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg border ${getPaymentColor(bill.paymentMethod)}`}>

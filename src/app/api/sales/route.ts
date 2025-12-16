@@ -22,34 +22,49 @@ export async function GET(request: Request) {
     await dbConnect();
 
     const { searchParams } = new URL(request.url);
-    const period = searchParams.get('period') || 'today';
+    const period = searchParams.get('period');
+    const startParam = searchParams.get('startDate');
+    const endParam = searchParams.get('endDate');
 
+    // Default to today if nothing provided
     let startDate: Date;
     let endDate: Date = new Date();
-    const now = new Date();
+    const now = new Date(); // Start with current time
+    // Force now to use Indian Standard Time (IST) if deployed on UTC server
+    // But since we are doing date objects, let's keep it simple for now and rely on consistent server time.
 
-    switch (period) {
-      case 'weekly':
-        const firstDayOfWeek = now.getDate() - now.getDay();
-        startDate = new Date(now.setDate(firstDayOfWeek));
-        startDate.setHours(0, 0, 0, 0);
+    if (startParam && endParam) {
+      // 1. Custom Date Range
+      startDate = new Date(startParam);
+      startDate.setHours(0, 0, 0, 0);
 
-        endDate = new Date(startDate);
-        endDate.setDate(endDate.getDate() + 6);
-        endDate.setHours(23, 59, 59, 999);
-        break;
-      case 'monthly':
-        startDate = new Date(now.getFullYear(), now.getMonth(), 1);
-        startDate.setHours(0, 0, 0, 0);
+      endDate = new Date(endParam);
+      endDate.setHours(23, 59, 59, 999);
+    } else {
+      // 2. Predefined Periods
+      switch (period) {
+        case 'weekly':
+          const firstDayOfWeek = now.getDate() - now.getDay();
+          startDate = new Date(now.setDate(firstDayOfWeek));
+          startDate.setHours(0, 0, 0, 0);
 
-        endDate = new Date(now.getFullYear(), now.getMonth() + 1, 0);
-        endDate.setHours(23, 59, 59, 999);
-        break;
-      default: // 'today'
-        startDate = new Date();
-        startDate.setHours(0, 0, 0, 0);
-        endDate.setHours(23, 59, 59, 999);
-        break;
+          endDate = new Date(startDate);
+          endDate.setDate(endDate.getDate() + 6);
+          endDate.setHours(23, 59, 59, 999);
+          break;
+        case 'monthly':
+          startDate = new Date(now.getFullYear(), now.getMonth(), 1);
+          startDate.setHours(0, 0, 0, 0);
+
+          endDate = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+          endDate.setHours(23, 59, 59, 999);
+          break;
+        default: // 'today' or fallback
+          startDate = new Date();
+          startDate.setHours(0, 0, 0, 0);
+          endDate.setHours(23, 59, 59, 999);
+          break;
+      }
     }
 
     const periodSales = await Sale.find({
@@ -69,6 +84,8 @@ export async function GET(request: Request) {
       .filter((sale) => sale.paymentMethod === "card")
       .reduce((sum, sale) => sum + sale.amount, 0);
 
+    const totalProfit = periodSales.reduce((sum, sale) => sum + (sale.profit || 0), 0);
+
     const totalSales = cashSales + qrSales + cardSales;
     const billsCount = periodSales.length;
 
@@ -77,6 +94,7 @@ export async function GET(request: Request) {
       cash: cashSales,
       qr: qrSales,
       card: cardSales,
+      profit: totalProfit,
       bills: billsCount,
       lastUpdated: new Date().toISOString(),
     };
@@ -104,7 +122,7 @@ export async function POST(request: Request) {
     const tenantId = session.user.email;
     await dbConnect();
 
-    const { amount, paymentMethod } = await request.json();
+    const { amount, paymentMethod, profit } = await request.json();
     if (!amount || !paymentMethod) {
       return NextResponse.json({ message: "Missing required fields" }, { status: 400 });
     }
@@ -117,6 +135,7 @@ export async function POST(request: Request) {
       billId,
       amount,
       paymentMethod,
+      profit: profit || 0,
     });
 
     await newSale.save();

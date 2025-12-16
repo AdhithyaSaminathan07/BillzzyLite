@@ -26,6 +26,7 @@ export async function PUT(
 
     await dbConnect();
     const body = await request.json();
+    console.log("Updating Product:", id, JSON.stringify(body, null, 2));
 
     // The query now only uses the product ID, making it public.
     const query = { _id: id };
@@ -73,7 +74,7 @@ export async function DELETE(
     const { id } = await context.params;
 
     await dbConnect();
-    
+
     // The query now only uses the product ID, making it public.
     const result = await Product.deleteOne({ _id: id });
 
