@@ -8,6 +8,8 @@
 // import Image from "next/image";
 // import { useVirtualizer } from "@tanstack/react-virtual";
 // import { Scanner } from "@yudiel/react-qr-scanner";
+// // 👇 1. Import the compression library
+// import imageCompression from 'browser-image-compression';
 
 // const LOW_STOCK_THRESHOLD = 10;
 
@@ -30,7 +32,7 @@
 
 // type DetectedBarcode = {
 //     rawValue: string;
-// };
+// }
 
 // interface UpdateInfo {
 //     id: string;
@@ -217,9 +219,11 @@
 // }
 
 // const ProductFormModal: FC<ProductFormModalProps> = ({ product, onSave, onClose }) => {
+//     // 👇 2. Add loading state to the Modal
+//     const [isSubmitting, setIsSubmitting] = useState(false);
+
 //     const getInitialState = useCallback((): ProductFormState => {
 //         if (product) {
-//             console.log("Editing Product Data:", product); // DEBUG LOG
 //             return {
 //                 ...product,
 //                 quantity: product.quantity ?? '',
@@ -288,7 +292,10 @@
 //         }
 //     };
 
-//     const handleFormSubmit = () => {
+//     // 👇 3. Updated Submit Handler (Handles loading state)
+//     const handleFormSubmit = async () => {
+//         if (isSubmitting) return; // Prevent double clicks
+        
 //         const finalQuantity = isEditing
 //             ? Math.max(0, (product.quantity || 0) + (Number(stockAdjustment) || 0))
 //             : Number(formData.quantity) || 0;
@@ -302,7 +309,15 @@
 //             lowStockThreshold: Number(formData.lowStockThreshold) || undefined,
 //             profitPerUnit: Number(formData.profitPerUnit) || undefined,
 //         };
-//         onSave(dataToSave, imageFile);
+
+//         setIsSubmitting(true);
+//         try {
+//             await onSave(dataToSave, imageFile);
+//         } catch (e) {
+//             console.error(e);
+//         } finally {
+//             setIsSubmitting(false);
+//         }
 //     };
 
 //     const showCalculation = Number(formData.sellingPrice) > 0 && Number(formData.gstRate) >= 0;
@@ -316,7 +331,7 @@
 //                         <h2 className="text-lg font-bold text-white">{product?.id ? 'Edit Product' : 'Add New Product'}</h2>
 //                         <p className="text-indigo-100 text-xs mt-0.5">{product?.id ? 'Update product information' : 'Fill in the details below'}</p>
 //                     </div>
-//                     <button onClick={onClose} className="text-white hover:bg-white/20 rounded-full p-1.5 transition-colors"><X className="w-5 h-5" /></button>
+//                     <button onClick={onClose} disabled={isSubmitting} className="text-white hover:bg-white/20 rounded-full p-1.5 transition-colors"><X className="w-5 h-5" /></button>
 //                 </div>
 
 //                 <div className="p-4 space-y-3.5 max-h-[60vh] sm:max-h-[70vh] overflow-y-auto">
@@ -331,30 +346,30 @@
 //                         <>
 //                             <div className="space-y-1.5">
 //                                 <label className="text-xs font-medium text-gray-700">Product Image</label>
-//                                 <div className="w-full h-32 border-2 border-dashed border-gray-300 rounded-xl flex items-center justify-center cursor-pointer hover:border-[#5a4fcf] transition-colors" onClick={() => fileInputRef.current?.click()}>
+//                                 <div className="w-full h-32 border-2 border-dashed border-gray-300 rounded-xl flex items-center justify-center cursor-pointer hover:border-[#5a4fcf] transition-colors" onClick={() => !isSubmitting && fileInputRef.current?.click()}>
 //                                     <input type="file" accept="image/*" ref={fileInputRef} onChange={handleImageChange} className="hidden" />
 //                                     {imagePreview ? <div className="relative w-full h-full"><Image src={imagePreview} alt="Product Preview" fill sizes="(max-width: 768px) 100vw, 512px" style={{ objectFit: 'contain' }} className="p-2" /></div> : <div className="text-center text-gray-500"><ImageIcon className="w-8 h-8 mx-auto mb-1.5" /><p className="text-xs">Click to upload</p></div>}
 //                                 </div>
 //                             </div>
 //                             <div className="space-y-1.5">
 //                                 <label className="text-xs font-medium text-gray-700">Product Name</label>
-//                                 <input type="text" name="name" placeholder="Enter product name" className="w-full border-2 border-gray-200 px-3 py-2 rounded-xl focus:border-[#5a4fcf] focus:ring-2 focus:ring-[#5a4fcf]/20 transition-all outline-none text-sm" value={formData.name} onChange={handleInputChange} />
+//                                 <input type="text" name="name" placeholder="Enter product name" className="w-full border-2 border-gray-200 px-3 py-2 rounded-xl focus:border-[#5a4fcf] focus:ring-2 focus:ring-[#5a4fcf]/20 transition-all outline-none text-sm" value={formData.name} onChange={handleInputChange} disabled={isSubmitting} />
 //                             </div>
 //                             <div className="space-y-1.5">
 //                                 <label className="text-xs font-medium text-gray-700">Product ID (SKU)</label>
 //                                 <div className="relative">
-//                                     <input type="text" name="sku" placeholder="SKU, Barcode, or custom ID" className="w-full border-2 border-gray-200 px-3 py-2 pr-12 rounded-xl focus:border-[#5a4fcf] focus:ring-2 focus:ring-[#5a4fcf]/20 transition-all outline-none font-mono text-xs" value={formData.sku || ''} onChange={handleInputChange} />
-//                                     <button type="button" onClick={() => setIsScannerOpen(true)} className="absolute right-1 top-1/2 -translate-y-1/2 flex items-center justify-center w-9 h-9 bg-gradient-to-r from-[#5a4fcf] to-[#7b68ee] text-white rounded-xl hover:from-[#4a3fb5] hover:to-[#6b58de] shadow-md shadow-[#5a4fcf]/20 transition-all active:scale-95" aria-label="Scan barcode"><Camera className="w-4 h-4" /></button>
+//                                     <input type="text" name="sku" placeholder="SKU, Barcode, or custom ID" className="w-full border-2 border-gray-200 px-3 py-2 pr-12 rounded-xl focus:border-[#5a4fcf] focus:ring-2 focus:ring-[#5a4fcf]/20 transition-all outline-none font-mono text-xs" value={formData.sku || ''} onChange={handleInputChange} disabled={isSubmitting} />
+//                                     <button type="button" onClick={() => setIsScannerOpen(true)} disabled={isSubmitting} className="absolute right-1 top-1/2 -translate-y-1/2 flex items-center justify-center w-9 h-9 bg-gradient-to-r from-[#5a4fcf] to-[#7b68ee] text-white rounded-xl hover:from-[#4a3fb5] hover:to-[#6b58de] shadow-md shadow-[#5a4fcf]/20 transition-all active:scale-95" aria-label="Scan barcode"><Camera className="w-4 h-4" /></button>
 //                                 </div>
 //                             </div>
 //                             <div className="grid grid-cols-2 gap-3">
 //                                 <div className="space-y-1.5">
 //                                     <label className="text-xs font-medium text-gray-700">{isEditing ? 'Current Quantity' : 'Quantity'}</label>
-//                                     <input type="number" name="quantity" placeholder="e.g., 50" value={isEditing ? product.quantity : formData.quantity} readOnly={isEditing} onChange={!isEditing ? handleInputChange : undefined} className={`w-full border-2 border-gray-200 px-3 py-2 rounded-xl focus:border-green-500 focus:ring-2 focus:ring-green-200 transition-all outline-none text-sm ${isEditing ? 'bg-gray-100 cursor-not-allowed' : ''}`} />
+//                                     <input type="number" name="quantity" placeholder="e.g., 50" value={isEditing ? product.quantity : formData.quantity} readOnly={isEditing} onChange={!isEditing ? handleInputChange : undefined} className={`w-full border-2 border-gray-200 px-3 py-2 rounded-xl focus:border-green-500 focus:ring-2 focus:ring-green-200 transition-all outline-none text-sm ${isEditing ? 'bg-gray-100 cursor-not-allowed' : ''}`} disabled={isSubmitting && !isEditing} />
 //                                 </div>
 //                                 <div className="space-y-1.5">
 //                                     <label className="text-xs font-medium text-gray-700 flex items-center gap-1" title="Set a custom alert when quantity falls to this level. Leave blank for default.">Low Stock Alert <Info className="w-3 h-3 text-gray-400 cursor-help" /></label>
-//                                     <input type="number" name="lowStockThreshold" placeholder={`Default: ${LOW_STOCK_THRESHOLD}`} className="w-full border-2 border-gray-200 px-3 py-2 rounded-xl focus:border-red-500 focus:ring-2 focus:ring-red-200 transition-all outline-none text-sm" value={formData.lowStockThreshold} onChange={handleInputChange} />
+//                                     <input type="number" name="lowStockThreshold" placeholder={`Default: ${LOW_STOCK_THRESHOLD}`} className="w-full border-2 border-gray-200 px-3 py-2 rounded-xl focus:border-red-500 focus:ring-2 focus:ring-red-200 transition-all outline-none text-sm" value={formData.lowStockThreshold} onChange={handleInputChange} disabled={isSubmitting} />
 //                                 </div>
 //                             </div>
 
@@ -364,7 +379,7 @@
 //                                     <div className="flex items-center gap-2">
 //                                         <div className="flex-1 text-center">
 //                                             <p className="text-xs text-gray-600">Adjustment (+/-)</p>
-//                                             <input type="number" placeholder="e.g., 10 or -5" value={stockAdjustment} onChange={(e) => setStockAdjustment(e.target.value === '' ? '' : Number(e.target.value))} className="w-full mt-1 border-2 text-center border-gray-200 px-3 py-2 rounded-xl focus:border-[#5a4fcf] focus:ring-2 focus:ring-[#5a4fcf]/20 transition-all outline-none text-sm" />
+//                                             <input type="number" placeholder="e.g., 10 or -5" value={stockAdjustment} onChange={(e) => setStockAdjustment(e.target.value === '' ? '' : Number(e.target.value))} className="w-full mt-1 border-2 text-center border-gray-200 px-3 py-2 rounded-xl focus:border-[#5a4fcf] focus:ring-2 focus:ring-[#5a4fcf]/20 transition-all outline-none text-sm" disabled={isSubmitting} />
 //                                         </div>
 //                                         <div className="text-2xl text-gray-400 font-light">=</div>
 //                                         <div className="flex-1 text-center">
@@ -378,11 +393,11 @@
 //                             <div className={`grid grid-cols-1 ${!isGstInclusive ? 'sm:grid-cols-2' : ''} gap-3`}>
 //                                 <div className="space-y-1.5">
 //                                     <label className="text-xs font-medium text-gray-700">{isGstInclusive ? 'Total Price (incl. GST)' : 'Selling Price (excl. GST)'}</label>
-//                                     <div className="relative"><span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 font-medium text-sm">₹</span><input type="number" name="sellingPrice" placeholder="e.g., 199.99" className="w-full border-2 border-gray-200 pl-7 pr-3 py-2 rounded-xl focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all outline-none text-sm" value={formData.sellingPrice} onChange={handleInputChange} /></div>
+//                                     <div className="relative"><span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 font-medium text-sm">₹</span><input type="number" name="sellingPrice" placeholder="e.g., 199.99" className="w-full border-2 border-gray-200 pl-7 pr-3 py-2 rounded-xl focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all outline-none text-sm" value={formData.sellingPrice} onChange={handleInputChange} disabled={isSubmitting} /></div>
 //                                 </div>
-//                                 {!isGstInclusive && <div className="space-y-1.5"><label className="text-xs font-medium text-gray-700">GST Rate</label><div className="relative"><input type="number" name="gstRate" placeholder="e.g., 18" className="w-full border-2 border-gray-200 px-3 py-2 pr-10 rounded-xl focus:border-amber-500 focus:ring-2 focus:ring-amber-200 transition-all outline-none text-sm" value={formData.gstRate} onChange={handleInputChange} /><span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 font-medium text-sm">%</span></div></div>}
+//                                 {!isGstInclusive && <div className="space-y-1.5"><label className="text-xs font-medium text-gray-700">GST Rate</label><div className="relative"><input type="number" name="gstRate" placeholder="e.g., 18" className="w-full border-2 border-gray-200 px-3 py-2 pr-10 rounded-xl focus:border-amber-500 focus:ring-2 focus:ring-amber-200 transition-all outline-none text-sm" value={formData.gstRate} onChange={handleInputChange} disabled={isSubmitting} /><span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 font-medium text-sm">%</span></div></div>}
 //                             </div>
-//                             <div className="flex items-center justify-center p-0.5 rounded-lg bg-gray-200"><button type="button" onClick={() => setIsGstInclusive(false)} className={`w-1/2 py-1.5 text-xs font-semibold rounded-md transition-all duration-200 ${!isGstInclusive ? 'bg-white text-[#5a4fcf] shadow-sm' : 'text-gray-600'}`}>Exclusive GST</button><button type="button" onClick={() => setIsGstInclusive(true)} className={`w-1/2 py-1.5 text-xs font-semibold rounded-md transition-all duration-200 ${isGstInclusive ? 'bg-white text-[#5a4fcf] shadow-sm' : 'text-gray-600'}`}>Inclusive GST</button></div>
+//                             <div className="flex items-center justify-center p-0.5 rounded-lg bg-gray-200"><button type="button" onClick={() => setIsGstInclusive(false)} disabled={isSubmitting} className={`w-1/2 py-1.5 text-xs font-semibold rounded-md transition-all duration-200 ${!isGstInclusive ? 'bg-white text-[#5a4fcf] shadow-sm' : 'text-gray-600'}`}>Exclusive GST</button><button type="button" onClick={() => setIsGstInclusive(true)} disabled={isSubmitting} className={`w-1/2 py-1.5 text-xs font-semibold rounded-md transition-all duration-200 ${isGstInclusive ? 'bg-white text-[#5a4fcf] shadow-sm' : 'text-gray-600'}`}>Inclusive GST</button></div>
 //                             {showCalculation && !isGstInclusive && <div className="grid grid-cols-3 gap-2 bg-gray-50 p-3 rounded-lg border animate-in fade-in duration-300"><div className="text-center"><label className="text-[10px] font-medium text-gray-500 block">Base Price</label><div className="text-gray-800 font-semibold text-xs mt-0.5">{formatCurrency(priceCalculations.basePrice)}</div></div><div className="text-center"><label className="text-[10px] font-medium text-gray-500 block">GST Amount</label><div className="text-gray-800 font-semibold text-xs mt-0.5">{formatCurrency(priceCalculations.gstAmount)}</div></div><div className="text-center"><label className="text-[10px] font-medium text-gray-500 block">Total Price</label><div className="text-gray-900 font-bold text-sm mt-0.5">{formatCurrency(priceCalculations.totalPrice)}</div></div></div>}
 
 //                             <div className="space-y-1.5">
@@ -396,6 +411,7 @@
 //                                         className="w-full border-2 border-gray-200 pl-7 pr-3 py-2 rounded-xl focus:border-green-500 focus:ring-2 focus:ring-green-200 transition-all outline-none text-sm"
 //                                         value={formData.profitPerUnit}
 //                                         onChange={handleInputChange}
+//                                         disabled={isSubmitting}
 //                                     />
 //                                 </div>
 //                             </div>
@@ -425,8 +441,16 @@
 //                 </div>
 
 //                 <div className="bg-gray-50 px-4 py-3 flex justify-end gap-2.5 border-t">
-//                     <button onClick={onClose} className="px-5 py-2 bg-white border-2 border-gray-300 text-gray-700 rounded-xl hover:bg-gray-50 font-medium transition-colors text-sm">Cancel</button>
-//                     <button onClick={handleFormSubmit} className="px-5 py-2 bg-gradient-to-r from-[#5a4fcf] to-[#7b68ee] text-white rounded-xl hover:from-[#4a3fb5] hover:to-[#6b58de] font-medium shadow-lg shadow-[#5a4fcf]/30 transition-all text-sm">{product?.id ? 'Save Changes' : 'Add Product'}</button>
+//                     <button onClick={onClose} disabled={isSubmitting} className="px-5 py-2 bg-white border-2 border-gray-300 text-gray-700 rounded-xl hover:bg-gray-50 font-medium transition-colors text-sm disabled:opacity-50">Cancel</button>
+//                     {/* 👇 4. Updated Save Button */}
+//                     <button 
+//                         onClick={handleFormSubmit} 
+//                         disabled={isSubmitting}
+//                         className={`px-5 py-2 text-white rounded-xl font-medium shadow-lg transition-all text-sm flex items-center justify-center min-w-[120px] 
+//                             ${isSubmitting ? 'bg-gray-400 cursor-not-allowed' : 'bg-gradient-to-r from-[#5a4fcf] to-[#7b68ee] hover:from-[#4a3fb5] hover:to-[#6b58de] shadow-[#5a4fcf]/30'}`}
+//                     >
+//                         {isSubmitting ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Saving...</> : (product?.id ? 'Save Changes' : 'Add Product')}
+//                     </button>
 //                 </div>
 //             </motion.div>
 //         </div>
@@ -543,6 +567,7 @@
 //         reader.readAsArrayBuffer(file);
 //     }, [refreshProducts]);
 
+//     // 👇 5. Compression Logic Added Here
 //     const handleSaveProduct = useCallback(async (productData: ProductFormData, imageFile: File | null) => {
 //         const isEditing = !!productData.id;
 //         const originalQuantity = isEditing ? (products.find(p => p.id === productData.id)?.quantity || 0) : 0;
@@ -550,12 +575,30 @@
 //         try {
 //             let imageUrl = productData.image || '';
 //             if (imageFile) {
-//                 const formData = new FormData();
-//                 formData.append('file', imageFile);
-//                 const uploadResponse = await fetch('/api/upload', { method: 'POST', body: formData });
-//                 const uploadData = await uploadResponse.json();
-//                 if (!uploadResponse.ok) throw new Error(uploadData.message || 'Image upload failed');
-//                 imageUrl = uploadData.url;
+//                 // Settings for resizing and compression
+//                 const options = {
+//                     maxSizeMB: 1,             // Compress to max 1MB
+//                     maxWidthOrHeight: 1024,   // Resize max dimension to 1024px
+//                     useWebWorker: true,
+//                 };
+
+//                 try {
+//                     // Compress the file
+//                     const compressedFile = await imageCompression(imageFile, options);
+                    
+//                     const formData = new FormData();
+//                     formData.append('file', compressedFile); // Upload compressed file
+                    
+//                     const uploadResponse = await fetch('/api/upload', { method: 'POST', body: formData });
+//                     const uploadData = await uploadResponse.json();
+                    
+//                     if (!uploadResponse.ok) throw new Error(uploadData.message || 'Image upload failed');
+//                     imageUrl = uploadData.url;
+//                 } catch (error) {
+//                     console.error("Compression/Upload Error:", error);
+//                     alert("Failed to process image. Please try a smaller file.");
+//                     return; // Stop execution on error
+//                 }
 //             }
 
 //             const url = isEditing ? `/api/products/${productData.id}` : '/api/products';
@@ -652,6 +695,7 @@
 
 // export default Inventory;
 
+
 'use client';
 
 import React, { useState, useEffect, FC, ChangeEvent, useRef, useMemo, useCallback } from "react";
@@ -662,7 +706,6 @@ import { motion, useAnimationControls, PanInfo, AnimatePresence } from "framer-m
 import Image from "next/image";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import { Scanner } from "@yudiel/react-qr-scanner";
-// 👇 1. Import the compression library
 import imageCompression from 'browser-image-compression';
 
 const LOW_STOCK_THRESHOLD = 10;
@@ -873,7 +916,6 @@ interface ProductFormModalProps {
 }
 
 const ProductFormModal: FC<ProductFormModalProps> = ({ product, onSave, onClose }) => {
-    // 👇 2. Add loading state to the Modal
     const [isSubmitting, setIsSubmitting] = useState(false);
 
     const getInitialState = useCallback((): ProductFormState => {
@@ -946,9 +988,8 @@ const ProductFormModal: FC<ProductFormModalProps> = ({ product, onSave, onClose 
         }
     };
 
-    // 👇 3. Updated Submit Handler (Handles loading state)
     const handleFormSubmit = async () => {
-        if (isSubmitting) return; // Prevent double clicks
+        if (isSubmitting) return; 
         
         const finalQuantity = isEditing
             ? Math.max(0, (product.quantity || 0) + (Number(stockAdjustment) || 0))
@@ -1096,7 +1137,6 @@ const ProductFormModal: FC<ProductFormModalProps> = ({ product, onSave, onClose 
 
                 <div className="bg-gray-50 px-4 py-3 flex justify-end gap-2.5 border-t">
                     <button onClick={onClose} disabled={isSubmitting} className="px-5 py-2 bg-white border-2 border-gray-300 text-gray-700 rounded-xl hover:bg-gray-50 font-medium transition-colors text-sm disabled:opacity-50">Cancel</button>
-                    {/* 👇 4. Updated Save Button */}
                     <button 
                         onClick={handleFormSubmit} 
                         disabled={isSubmitting}
@@ -1221,7 +1261,6 @@ const Inventory: FC = () => {
         reader.readAsArrayBuffer(file);
     }, [refreshProducts]);
 
-    // 👇 5. Compression Logic Added Here
     const handleSaveProduct = useCallback(async (productData: ProductFormData, imageFile: File | null) => {
         const isEditing = !!productData.id;
         const originalQuantity = isEditing ? (products.find(p => p.id === productData.id)?.quantity || 0) : 0;
@@ -1229,19 +1268,17 @@ const Inventory: FC = () => {
         try {
             let imageUrl = productData.image || '';
             if (imageFile) {
-                // Settings for resizing and compression
                 const options = {
-                    maxSizeMB: 1,             // Compress to max 1MB
-                    maxWidthOrHeight: 1024,   // Resize max dimension to 1024px
+                    maxSizeMB: 1,             
+                    maxWidthOrHeight: 1024,   
                     useWebWorker: true,
                 };
 
                 try {
-                    // Compress the file
                     const compressedFile = await imageCompression(imageFile, options);
                     
                     const formData = new FormData();
-                    formData.append('file', compressedFile); // Upload compressed file
+                    formData.append('file', compressedFile); 
                     
                     const uploadResponse = await fetch('/api/upload', { method: 'POST', body: formData });
                     const uploadData = await uploadResponse.json();
@@ -1251,7 +1288,7 @@ const Inventory: FC = () => {
                 } catch (error) {
                     console.error("Compression/Upload Error:", error);
                     alert("Failed to process image. Please try a smaller file.");
-                    return; // Stop execution on error
+                    return; 
                 }
             }
 
@@ -1278,12 +1315,18 @@ const Inventory: FC = () => {
         }
     }, [products, refreshProducts]);
 
+    // 👇 UPDATED DELETE FUNCTION (Fixes the 404 error)
     const handleDeleteProduct = useCallback(async (id: string) => {
         if (!window.confirm('Are you sure you want to delete this product?')) return;
         try {
             const response = await fetch(`/api/products/${id}`, { method: 'DELETE' });
-            if (response.status !== 204) throw new Error('Failed to delete product on the server.');
-            refreshProducts();
+            
+            // Accept 200 (Success), 204 (No Content), or 404 (Already deleted) as success
+            if (response.ok || response.status === 404) {
+                refreshProducts();
+            } else {
+                throw new Error('Failed to delete product on the server.');
+            }
         } catch (err: unknown) {
             alert(`Error: ${err instanceof Error ? err.message : 'Could not delete product'}`);
         }
