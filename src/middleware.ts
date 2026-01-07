@@ -20,48 +20,54 @@ export async function middleware(req: NextRequest) {
   const isLoggedIn = !!token;
   const isAdmin = token?.role === 'admin';
 
+  // DEBUG LOGGING
+  if (pathname !== '/_next/static' && !pathname.includes('.')) {
+    console.log(`[Middleware] Path: ${pathname}, LoggedIn: ${isLoggedIn}, Phone: ${token?.phoneNumber}`);
+  }
+
   // Define route categories
-  const publicRoutes = ['/', '/admin'];
-  const liteUserRoutes = ['/dashboard', '/billing', '/inventory', '/settings', '/pay', '/billing-history'];
   const adminRoutes = ['/admin/dashboard'];
 
   // 4. Redirect logged-in users away from the Landing Page
-  if (isLoggedIn && publicRoutes.includes(pathname)) {
+  if (isLoggedIn && pathname === '/') {
     if (isAdmin) {
       return NextResponse.redirect(new URL('/admin/dashboard', req.url));
     }
     return NextResponse.redirect(new URL('/dashboard', req.url));
   }
 
-  // Allow access to verification page
-  if (pathname === '/verify-phone') {
-    if (!isLoggedIn) {
-      return NextResponse.redirect(new URL('/', req.url));
+  // Define specific public paths that do NOT require Auth/Verification
+  const publicPaths = ['/', '/admin', '/logo.png', '/favicon.ico', '/login'];
+
+  // Helper to check if path is public
+  const isPublic = (path: string) => {
+    return publicPaths.some(p => path === p || path.startsWith('/admin')); // Admin handled separately
+  };
+
+  // 5. Protect Admin Routes (Explicit check)
+  if (pathname.startsWith('/admin')) {
+    if (adminRoutes.some(route => pathname.startsWith(route))) {
+      if (!isAdmin) return NextResponse.redirect(new URL('/dashboard', req.url));
     }
-    // If already verified, go to dashboard
-    if (token?.phoneNumber) {
-      return NextResponse.redirect(new URL('/dashboard', req.url));
-    }
-    return NextResponse.next();
+    // Allow other admin public pages (like /admin login) if any, or default allow
   }
 
-  // 5. Protect Admin Routes
-  if (adminRoutes.some(route => pathname.startsWith(route))) {
-    if (!isAdmin) {
-      return NextResponse.redirect(new URL('/dashboard', req.url));
-    }
-  }
+  // 6. Protect ALL other routes (App Routes) - "Deny by Default"
+  // If it's not public, not API, not Receipt, not Verification -> IT IS PROTECTED.
+  if (!isPublic(pathname) && pathname !== '/verify-phone') {
 
-  // 6. Protect App Routes
-  if (liteUserRoutes.some(route => pathname.startsWith(route))) {
+    // A. Must be logged in
     if (!isLoggedIn) {
       const loginUrl = new URL('/', req.url);
       loginUrl.searchParams.set('callbackUrl', pathname);
+      console.log(`[Middleware] Redirecting unauth user to Login. Path: ${pathname}`);
       return NextResponse.redirect(loginUrl);
     }
 
-    // Check Phone Verification
+    // B. Must be Verified (if not admin)
+    // We check token.phoneNumber to ensure they completed the flow
     if (!isAdmin && !token?.phoneNumber) {
+      console.log(`[Middleware] Redirecting unverified user to /verify-phone. Path: ${pathname}`);
       return NextResponse.redirect(new URL('/verify-phone', req.url));
     }
   }
@@ -83,6 +89,6 @@ export const config = {
   // ✅ FIXED: Added "|receipt" to the regex.
   // This forces Next.js to SKIP middleware entirely for these paths.
   matcher: [
-    '/((?!api|_next/static|_next/image|favicon.ico|receipt).*)',
+    '/((?!api|_next/static|_next/image|assets|images|favicon.ico|sw.js|workbox|manifest.json|receipt).*)',
   ],
 };
