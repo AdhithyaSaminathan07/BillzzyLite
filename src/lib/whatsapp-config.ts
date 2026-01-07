@@ -4,14 +4,14 @@ export const whatsappConfig = {
   phoneNumberId: process.env.WHATSAPP_PHONE_NUMBER_ID,
   accessToken: process.env.WHATSAPP_BUSINESS_API_TOKEN,
   businessAccountId: process.env.WHATSAPP_BUSINESS_ACCOUNT_ID,
-  
+
   // Validate configuration
   isValid: (): boolean => {
-    return !!(whatsappConfig.phoneNumberId && 
-              whatsappConfig.accessToken && 
-              whatsappConfig.businessAccountId);
+    return !!(whatsappConfig.phoneNumberId &&
+      whatsappConfig.accessToken &&
+      whatsappConfig.businessAccountId);
   },
-  
+
   // Get configuration for logging
   getConfig: () => ({
     hasPhoneId: !!whatsappConfig.phoneNumberId,
@@ -28,7 +28,7 @@ export const whatsappTemplates = {
     language: { code: "en" }
   },
   payment_receipt_cashh: {
-    name: "payment_receipt_cashh", 
+    name: "payment_receipt_cashh",
     language: { code: "en" }
   },
   payment_receipt_upii: {
@@ -37,6 +37,10 @@ export const whatsappTemplates = {
   },
   payment_receipt_card: {
     name: "payment_receipt_card",
+    language: { code: "en" }
+  },
+  otp_verification: {
+    name: "login_for_billzzy_lite",
     language: { code: "en" }
   }
 };

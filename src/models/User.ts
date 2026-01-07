@@ -9,6 +9,8 @@ export interface IUser extends Document {
   phoneNumber?: string; // Added phone number field
   onboarded?: boolean; // Track onboarding status
   pin?: string; // unique PIN for client report access
+  verificationOtp?: string; // OTP for phone verification
+  verificationOtpExpires?: Date; // Expiry time for OTP
 }
 
 const UserSchema: Schema = new Schema({
@@ -51,6 +53,14 @@ const UserSchema: Schema = new Schema({
     type: String,
     required: false,
     default: null,
+  },
+  verificationOtp: {
+    type: String,
+    select: false,
+  },
+  verificationOtpExpires: {
+    type: Date,
+    select: false,
   },
 }, {
   timestamps: true,

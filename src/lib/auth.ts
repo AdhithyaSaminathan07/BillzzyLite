@@ -14,7 +14,7 @@ import User from "@/models/User";
 
 // Validate environment variables
 const validateEnvVars = () => {
-  const requiredVars = [ 'NEXTAUTH_SECRET', 'GOOGLE_CLIENT_ID', 'GOOGLE_CLIENT_SECRET', 'MONGODB_URI' ];
+  const requiredVars = ['NEXTAUTH_SECRET', 'GOOGLE_CLIENT_ID', 'GOOGLE_CLIENT_SECRET', 'MONGODB_URI'];
   const missingVars = requiredVars.filter(varName => !process.env[varName]);
   if (missingVars.length > 0) {
     console.warn('Missing environment variables:', missingVars);
@@ -55,16 +55,16 @@ export const authOptions: NextAuthOptions = {
           if (credentials.email === process.env.ADMIN_EMAIL && credentials.password === process.env.ADMIN_PASSWORD) {
             return { id: 'master-admin-01', email: process.env.ADMIN_EMAIL, role: 'admin' };
           }
-          
+
           await dbConnect();
           const user = await User.findOne({ email: credentials.email }).select('+password');
-          
+
           if (!user || !user.password) return null;
-          
+
           const isPasswordCorrect = await bcrypt.compare(credentials.password, user.password);
           if (!isPasswordCorrect) return null;
 
-          return { id: user._id.toString(), email: user.email, name: user.name, role: user.role, tenantId: user.tenantId };
+          return { id: user._id.toString(), email: user.email, name: user.name, role: user.role, tenantId: user.tenantId, phoneNumber: user.phoneNumber };
         } catch (error) {
           console.error("🔥 UNEXPECTED ERROR IN AUTHORIZE FUNCTION 🔥", error);
           return null;
@@ -77,12 +77,19 @@ export const authOptions: NextAuthOptions = {
 
   // Correct, simplified callbacks that trust the Adapter
   callbacks: {
-    async jwt({ token, user }) {
+    async jwt({ token, user, trigger, session }) {
       if (user) {
         token.id = user.id;
         token.role = user.role;
         token.tenantId = user.tenantId;
+        token.phoneNumber = user.phoneNumber;
       }
+
+      // Update token if session is updated (e.g. after phone verification)
+      if (trigger === "update" && session?.phoneNumber) {
+        token.phoneNumber = session.phoneNumber;
+      }
+
       return token;
     },
     async session({ session, token }) {
@@ -90,12 +97,13 @@ export const authOptions: NextAuthOptions = {
         session.user.id = token.id;
         session.user.role = token.role;
         session.user.tenantId = token.tenantId;
+        session.user.phoneNumber = token.phoneNumber;
       }
       return session;
     },
   },
-  
-  pages: { 
+
+  pages: {
     signIn: '/',
     error: '/',
   },

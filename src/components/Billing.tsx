@@ -150,6 +150,22 @@ export default function BillingPage() {
   // Check Phone Number
   const checkPhoneNumber = React.useCallback(() => {
     if (status === 'authenticated' && session?.user?.email) {
+      // 1. Check Session first (Source of Truth for Phone)
+      if (session.user.phoneNumber) {
+        setSettingsComplete(true);
+        // We still need merchant details from local storage if available
+        const savedData = localStorage.getItem(`userSettings-${session.user.email}`);
+        if (savedData) {
+          try {
+            const parsedData = JSON.parse(savedData);
+            setMerchantUpi(parsedData.merchantUpiId || '');
+            setMerchantName(parsedData.shopName || 'Billzzy Lite');
+          } catch (e) { /* ignore */ }
+        }
+        return true;
+      }
+
+      // 2. Fallback to Local Storage (Legacy behavior)
       const savedData = localStorage.getItem(`userSettings-${session.user.email}`);
       if (savedData) {
         try {
@@ -506,7 +522,7 @@ export default function BillingPage() {
 
             {scanning && settingsComplete && (
               <div className="bg-white rounded-xl p-3 shadow-md border border-indigo-100">
-                <div className="max-w-sm mx-auto"><Scanner constraints={{ facingMode: 'environment' }} onScan={handleScan} onError={handleScanError} scanDelay={300} styles={{ container: { width: '100%', height: 180, borderRadius: '12px', overflow: 'hidden' } }} /></div>
+                <div className="max-w-sm mx-auto"><Scanner onScan={handleScan} onError={handleScanError} scanDelay={300} styles={{ container: { width: '100%', height: 180, borderRadius: '12px', overflow: 'hidden' } }} /></div>
                 {scannerError && <p className="text-center text-xs text-red-500 mt-2">{scannerError}</p>}
                 <button onClick={toggleScanner} className="w-full mt-3 flex items-center justify-center gap-2 bg-red-50 text-red-600 py-2 rounded-lg text-sm font-semibold hover:bg-red-100"><X size={16} /> Close Scanner</button>
               </div>

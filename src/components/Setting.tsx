@@ -165,16 +165,26 @@ export default function Settings() {
 
       const savedData = localStorage.getItem(`userSettings-${session.user.email}`);
       if (savedData) {
-        setFormData(JSON.parse(savedData));
+        const parsed = JSON.parse(savedData);
+        // If session has verified phone but local storage doesn't (or is different), update local
+        if (session.user.phoneNumber && parsed.phoneNumber !== session.user.phoneNumber) {
+          parsed.phoneNumber = session.user.phoneNumber;
+          localStorage.setItem(`userSettings-${session.user.email}`, JSON.stringify(parsed));
+        }
+        setFormData(parsed);
       } else {
-        setFormData({
+        // Init with session data
+        const initialData = {
           name: session.user.name || '',
-          phoneNumber: '',
+          phoneNumber: session.user.phoneNumber || '',
           address: '',
           shopName: '',
           shopAddress: '',
           merchantUpiId: '',
-        });
+        };
+        // Save to local storage immediately so other tabs/components can see it
+        localStorage.setItem(`userSettings-${session.user.email}`, JSON.stringify(initialData));
+        setFormData(initialData);
       }
     }
   }, [session]);

@@ -27,8 +27,9 @@ declare module 'next-auth' {
   interface Session {
     user: {
       id: string;
-      role: string;
+      role: 'user' | 'admin' | 'tenant';
       tenantId?: string | null;
+      phoneNumber?: string | null;
     } & DefaultSession['user']; // Keeps the default properties (name, email, image)
   }
 
@@ -36,8 +37,9 @@ declare module 'next-auth' {
    * This is the shape of the `user` object passed to callbacks.
    */
   interface User extends DefaultUser {
-    role: string;
+    role: 'user' | 'admin' | 'tenant';
     tenantId?: string | null;
+    phoneNumber?: string | null;
   }
 }
 
@@ -45,7 +47,8 @@ declare module 'next-auth/jwt' {
   /** This is the shape of the JWT token. */
   interface JWT {
     id: string;
-    role: string;
+    role: 'user' | 'admin' | 'tenant';
     tenantId?: string | null;
+    phoneNumber?: string | null;
   }
 }

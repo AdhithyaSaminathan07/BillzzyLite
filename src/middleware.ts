@@ -33,6 +33,18 @@ export async function middleware(req: NextRequest) {
     return NextResponse.redirect(new URL('/dashboard', req.url));
   }
 
+  // Allow access to verification page
+  if (pathname === '/verify-phone') {
+    if (!isLoggedIn) {
+      return NextResponse.redirect(new URL('/', req.url));
+    }
+    // If already verified, go to dashboard
+    if (token?.phoneNumber) {
+      return NextResponse.redirect(new URL('/dashboard', req.url));
+    }
+    return NextResponse.next();
+  }
+
   // 5. Protect Admin Routes
   if (adminRoutes.some(route => pathname.startsWith(route))) {
     if (!isAdmin) {
@@ -46,6 +58,11 @@ export async function middleware(req: NextRequest) {
       const loginUrl = new URL('/', req.url);
       loginUrl.searchParams.set('callbackUrl', pathname);
       return NextResponse.redirect(loginUrl);
+    }
+
+    // Check Phone Verification
+    if (!isAdmin && !token?.phoneNumber) {
+      return NextResponse.redirect(new URL('/verify-phone', req.url));
     }
   }
 
