@@ -1314,7 +1314,10 @@ const Inventory: FC = () => {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ ...productData, image: imageUrl })
             });
-            if (!response.ok) throw new Error(`Failed to ${isEditing ? 'update' : 'create'} product`);
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.message || `Failed to ${isEditing ? 'update' : 'create'} product`);
+            }
 
             if (isEditing) {
                 // PUT returns the single raw object (often with _id instead of id)
