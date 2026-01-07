@@ -1316,21 +1316,24 @@ const Inventory: FC = () => {
             });
             if (!response.ok) throw new Error(`Failed to ${isEditing ? 'update' : 'create'} product`);
 
-            const savedProduct = await response.json();
-
-            // ✅ IMMEDIATE UI UPDATE (Optimistic)
-            setProducts(prevProducts => {
-                if (isEditing) {
-                    return prevProducts.map(p => p.id === savedProduct.id ? savedProduct : p);
-                } else {
-                    return [savedProduct, ...prevProducts];
-                }
-            });
-
             if (isEditing) {
+                // PUT returns the single raw object (often with _id instead of id)
+                const savedProductRaw = await response.json();
+                const savedProduct = {
+                    ...savedProductRaw,
+                    id: savedProductRaw.id || savedProductRaw._id?.toString() || productData.id
+                };
+
+                setProducts(prevProducts => prevProducts.map(p => p.id === productData.id ? savedProduct : p));
+
                 const quantityChange = savedProduct.quantity - originalQuantity;
                 if (quantityChange !== 0) setUpdatedProductInfo({ id: savedProduct.id, change: quantityChange });
+            } else {
+                // POST returns the ENTIRE list of products (already transformed)
+                const allProducts = await response.json();
+                setProducts(allProducts);
             }
+
             setModalState({ isOpen: false, product: null });
         } catch (err: unknown) {
             alert(`Error: ${err instanceof Error ? err.message : 'Could not save product'}`);
