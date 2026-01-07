@@ -292,7 +292,7 @@
 
 //     const handleFormSubmit = async () => {
 //         if (isSubmitting) return; 
-        
+
 //         const finalQuantity = isEditing
 //             ? Math.max(0, (product.quantity || 0) + (Number(stockAdjustment) || 0))
 //             : Number(formData.quantity) || 0;
@@ -578,13 +578,13 @@
 
 //                 try {
 //                     const compressedFile = await imageCompression(imageFile, options);
-                    
+
 //                     const formData = new FormData();
 //                     formData.append('file', compressedFile); 
-                    
+
 //                     const uploadResponse = await fetch('/api/upload', { method: 'POST', body: formData });
 //                     const uploadData = await uploadResponse.json();
-                    
+
 //                     if (!uploadResponse.ok) throw new Error(uploadData.message || 'Image upload failed');
 //                     imageUrl = uploadData.url;
 //                 } catch (error) {
@@ -622,7 +622,7 @@
 //         if (!window.confirm('Are you sure you want to delete this product?')) return;
 //         try {
 //             const response = await fetch(`/api/products/${id}`, { method: 'DELETE' });
-            
+
 //             // Accept 200 (Success), 204 (No Content), or 404 (Already deleted) as success
 //             if (response.ok || response.status === 404) {
 //                 refreshProducts();
@@ -987,8 +987,8 @@ const ProductFormModal: FC<ProductFormModalProps> = ({ product, onSave, onClose 
     };
 
     const handleFormSubmit = async () => {
-        if (isSubmitting) return; 
-        
+        if (isSubmitting) return;
+
         const finalQuantity = isEditing
             ? Math.max(0, (product.quantity || 0) + (Number(stockAdjustment) || 0))
             : Number(formData.quantity) || 0;
@@ -1135,8 +1135,8 @@ const ProductFormModal: FC<ProductFormModalProps> = ({ product, onSave, onClose 
 
                 <div className="bg-gray-50 px-4 py-3 flex justify-end gap-2.5 border-t">
                     <button onClick={onClose} disabled={isSubmitting} className="px-5 py-2 bg-white border-2 border-gray-300 text-gray-700 rounded-xl hover:bg-gray-50 font-medium transition-colors text-sm disabled:opacity-50">Cancel</button>
-                    <button 
-                        onClick={handleFormSubmit} 
+                    <button
+                        onClick={handleFormSubmit}
                         disabled={isSubmitting}
                         className={`px-5 py-2 text-white rounded-xl font-medium shadow-lg transition-all text-sm flex items-center justify-center min-w-[120px] 
                             ${isSubmitting ? 'bg-gray-400 cursor-not-allowed' : 'bg-gradient-to-r from-[#5a4fcf] to-[#7b68ee] hover:from-[#4a3fb5] hover:to-[#6b58de] shadow-[#5a4fcf]/30'}`}
@@ -1199,12 +1199,12 @@ const Inventory: FC = () => {
 
         if (searchQuery) {
             const lowercasedQuery = searchQuery.toLowerCase();
-            result = result.filter(p => 
-                p.name.toLowerCase().includes(lowercasedQuery) || 
+            result = result.filter(p =>
+                p.name.toLowerCase().includes(lowercasedQuery) ||
                 (p.sku && p.sku.toLowerCase().includes(lowercasedQuery))
             );
         }
-        
+
         return result;
     }, [products, searchQuery, activeFilter]);
 
@@ -1295,7 +1295,7 @@ const Inventory: FC = () => {
                 try {
                     const compressedFile = await imageCompression(imageFile, options);
                     const formData = new FormData();
-                    formData.append('file', compressedFile); 
+                    formData.append('file', compressedFile);
                     const uploadResponse = await fetch('/api/upload', { method: 'POST', body: formData });
                     const uploadData = await uploadResponse.json();
                     if (!uploadResponse.ok) throw new Error(uploadData.message || 'Image upload failed');
@@ -1303,7 +1303,7 @@ const Inventory: FC = () => {
                 } catch (error) {
                     console.error("Compression/Upload Error:", error);
                     alert("Failed to process image. Please try a smaller file.");
-                    return; 
+                    return;
                 }
             }
 
@@ -1317,7 +1317,16 @@ const Inventory: FC = () => {
             if (!response.ok) throw new Error(`Failed to ${isEditing ? 'update' : 'create'} product`);
 
             const savedProduct = await response.json();
-            refreshProducts();
+
+            // ✅ IMMEDIATE UI UPDATE (Optimistic)
+            setProducts(prevProducts => {
+                if (isEditing) {
+                    return prevProducts.map(p => p.id === savedProduct.id ? savedProduct : p);
+                } else {
+                    return [savedProduct, ...prevProducts];
+                }
+            });
+
             if (isEditing) {
                 const quantityChange = savedProduct.quantity - originalQuantity;
                 if (quantityChange !== 0) setUpdatedProductInfo({ id: savedProduct.id, change: quantityChange });
@@ -1326,21 +1335,22 @@ const Inventory: FC = () => {
         } catch (err: unknown) {
             alert(`Error: ${err instanceof Error ? err.message : 'Could not save product'}`);
         }
-    }, [products, refreshProducts]);
+    }, [products]);
 
     const handleDeleteProduct = useCallback(async (id: string) => {
         if (!window.confirm('Are you sure you want to delete this product?')) return;
         try {
             const response = await fetch(`/api/products/${id}`, { method: 'DELETE' });
             if (response.ok || response.status === 404) {
-                refreshProducts();
+                // ✅ IMMEDIATE UI UPDATE
+                setProducts(prevProducts => prevProducts.filter(p => p.id !== id));
             } else {
                 throw new Error('Failed to delete product on the server.');
             }
         } catch (err: unknown) {
             alert(`Error: ${err instanceof Error ? err.message : 'Could not delete product'}`);
         }
-    }, [refreshProducts]);
+    }, []);
 
     const renderContent = () => {
         if (!isMounted || sessionStatus === 'loading' || fetchStatus === 'loading') {
@@ -1351,10 +1361,10 @@ const Inventory: FC = () => {
         if (products.length === 0) return <div className="text-center h-64 flex flex-col justify-center items-center bg-gray-50 rounded-lg"><Info className="w-8 h-8 mb-2 text-gray-400" /> <h3 className="font-semibold">No Products Found</h3><p className="text-gray-500">Click &quot;Add Product&quot; to get started.</p></div>;
         if (filteredProducts.length === 0) return (
             <div className="text-center h-64 flex flex-col justify-center items-center bg-gray-50 rounded-lg">
-                <Search className="w-8 h-8 mb-2 text-gray-400" /> 
+                <Search className="w-8 h-8 mb-2 text-gray-400" />
                 <h3 className="font-semibold">No Matching Products</h3>
                 <p className="text-gray-500">Try clearing filters or search query.</p>
-                <button onClick={() => {setActiveFilter('all'); setSearchQuery('');}} className="mt-4 text-[#5a4fcf] font-medium underline">Clear all filters</button>
+                <button onClick={() => { setActiveFilter('all'); setSearchQuery(''); }} className="mt-4 text-[#5a4fcf] font-medium underline">Clear all filters</button>
             </div>
         );
 
@@ -1396,7 +1406,7 @@ const Inventory: FC = () => {
             </div>
 
             <div className="grid grid-cols-3 gap-2 sm:gap-4 mb-6">
-                <button 
+                <button
                     onClick={() => setActiveFilter('all')}
                     className={`${activeFilter === 'all' ? 'ring-2 ring-[#5a4fcf] bg-indigo-100' : 'bg-indigo-50'} border border-indigo-100 rounded-xl p-2 sm:p-4 flex flex-col sm:flex-row items-center sm:gap-4 shadow-sm transition-all active:scale-95`}
                 >
@@ -1409,7 +1419,7 @@ const Inventory: FC = () => {
                     </div>
                 </button>
 
-                <button 
+                <button
                     onClick={() => setActiveFilter('low')}
                     className={`${activeFilter === 'low' ? 'ring-2 ring-orange-500 bg-orange-100' : 'bg-orange-50'} border border-orange-100 rounded-xl p-2 sm:p-4 flex flex-col sm:flex-row items-center sm:gap-4 shadow-sm transition-all active:scale-95`}
                 >
@@ -1422,7 +1432,7 @@ const Inventory: FC = () => {
                     </div>
                 </button>
 
-                <button 
+                <button
                     onClick={() => setActiveFilter('out')}
                     className={`${activeFilter === 'out' ? 'ring-2 ring-red-500 bg-red-100' : 'bg-red-50'} border border-red-100 rounded-xl p-2 sm:p-4 flex flex-col sm:flex-row items-center sm:gap-4 shadow-sm transition-all active:scale-95`}
                 >
