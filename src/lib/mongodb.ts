@@ -38,15 +38,15 @@
 //     const uri = new URL(MONGODB_URI!);
 //     const dbName = uri.pathname.substring(1) || 'billzzyDB'; // Default to billzzyDB if not specified
 //     console.log('Connecting to MongoDB database:', dbName);
-    
+
 //     // Ensure the database name is explicitly set in the connection URI
 //     let connectionUri = MONGODB_URI!;
 //     if (!uri.pathname || uri.pathname === '/') {
 //       connectionUri = `${MONGODB_URI!.replace(/\/$/, '')}/${dbName}`;
 //     }
-    
+
 //     console.log('Using connection URI:', connectionUri);
-    
+
 //     // THIS IS THE FIX: We add '!' to tell TypeScript that MONGODB_URI is not undefined.
 //     console.log('Connecting to MongoDB with URI:', connectionUri);
 //     cached.promise = mongoose.connect(connectionUri, {
@@ -73,13 +73,13 @@
 //     const uri = new URL(MONGODB_URI!);
 //     const dbName = uri.pathname.substring(1) || 'billzzyDB';
 //     console.log('MongoClient connecting to database:', dbName);
-    
+
 //     // Ensure the database name is explicitly set in the connection URI for MongoClient
 //     let connectionUri = MONGODB_URI!;
 //     if (!uri.pathname || uri.pathname === '/') {
 //       connectionUri = `${MONGODB_URI!.replace(/\/$/, '')}/${dbName}`;
 //     }
-    
+
 //     console.log('Creating MongoClient with URI:', connectionUri);
 //     client = new MongoClient(connectionUri, {});
 //     globalWithMongo._mongoClientPromise = client.connect();
@@ -90,13 +90,13 @@
 //   const uri = new URL(MONGODB_URI!);
 //   const dbName = uri.pathname.substring(1) || 'billzzyDB';
 //   console.log('MongoClient connecting to database:', dbName);
-  
+
 //   // Ensure the database name is explicitly set in the connection URI for MongoClient
 //   let connectionUri = MONGODB_URI!;
 //   if (!uri.pathname || uri.pathname === '/') {
 //     connectionUri = `${MONGODB_URI!.replace(/\/$/, '')}/${dbName}`;
 //   }
-  
+
 //   console.log('Creating MongoClient with URI:', connectionUri);
 //   client = new MongoClient(connectionUri, {});
 //   clientPromise = client.connect();
@@ -120,17 +120,17 @@ if (!MONGODB_URI) {
 // These settings prevent the "stale connection" and 504 errors on AWS
 const options: MongoClientOptions = {
   maxPoolSize: 10,                // Limit connections to save RAM (Crucial for Lightsail)
-  serverSelectionTimeoutMS: 5000, // Fail fast (5s) instead of hanging indefinitely
-  socketTimeoutMS: 45000,         // Close idle connections to prevent "Zombie" sockets
+  serverSelectionTimeoutMS: 20000, // Fail fast (20s) instead of hanging indefinitely
+  socketTimeoutMS: 60000,         // Close idle connections to prevent "Zombie" sockets
   family: 4                       // Force IPv4 to prevent AWS IPv6 lookup timeouts
 };
 // -------------------------------------------------
 
 // Helper to handle DB Name extraction safely
 const getDbConfig = (uriString: string) => {
-    const uriObj = new URL(uriString);
-    const dbName = uriObj.pathname.substring(1) || 'billzzyDB';
-    return { uri: uriString, dbName };
+  const uriObj = new URL(uriString);
+  const dbName = uriObj.pathname.substring(1) || 'billzzyDB';
+  return { uri: uriString, dbName };
 }
 
 // --- MONGOOSE CACHE (For Application Logic) ---
@@ -156,7 +156,7 @@ async function dbConnect() {
 
   if (!cached.promise) {
     const { uri, dbName } = getDbConfig(MONGODB_URI!);
-    
+
     console.log(`Connecting to Mongoose [DB: ${dbName}]...`);
 
     const mongooseOpts = {
@@ -172,7 +172,7 @@ async function dbConnect() {
       return mongooseInstance;
     });
   }
-  
+
   try {
     cached.conn = await cached.promise;
   } catch (e) {
@@ -180,7 +180,7 @@ async function dbConnect() {
     console.error("❌ Mongoose Connection Error:", e);
     throw e;
   }
-  
+
   return cached.conn;
 }
 
@@ -203,12 +203,12 @@ if (process.env.NODE_ENV === 'development') {
 } else {
   // PRODUCTION MODE
   console.log('Initializing MongoClient (Prod)...');
-  
+
   client = new MongoClient(uri, options);
   clientPromise = client.connect()
     .catch(err => {
-        console.error("❌ MongoDB Connection Failed:", err);
-        throw err;
+      console.error("❌ MongoDB Connection Failed:", err);
+      throw err;
     });
 }
 
