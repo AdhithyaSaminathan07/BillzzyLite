@@ -16,11 +16,20 @@ import User from "@/models/User";
 const validateEnvVars = () => {
   const requiredVars = ['NEXTAUTH_SECRET', 'GOOGLE_CLIENT_ID', 'GOOGLE_CLIENT_SECRET', 'MONGODB_URI'];
   const missingVars = requiredVars.filter(varName => !process.env[varName]);
+
   if (missingVars.length > 0) {
     console.warn('Missing environment variables:', missingVars);
     if (process.env.NODE_ENV === 'development') {
       throw new Error(`Missing required environment variables: ${missingVars.join(', ')}`);
     }
+  }
+
+  // Check NEXTAUTH_URL specifically
+  if (!process.env.NEXTAUTH_URL) {
+    console.warn('⚠️ NEXTAUTH_URL is not set. This may cause issues with OAuth redirects, especially when using custom domains or ngrok.');
+    console.warn('Current Origin likely defaults to localhost.');
+  } else {
+    console.log(`✅ NEXTAUTH_URL is set to: ${process.env.NEXTAUTH_URL}`);
   }
 };
 validateEnvVars();
