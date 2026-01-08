@@ -305,8 +305,31 @@ export default function BillingPage() {
   }, [whatsAppNumber, sendWhatsAppMessage]);
 
   // --- CART ACTIONS ---
+  // --- CART ACTIONS ---
   const addToCart = React.useCallback((name: string, price: number, gstRate: number, productId?: string, profitPerUnit?: number, isEditing = false) => {
     if (!name || price < 0) return;
+
+    // Check stock if productId exists
+    if (productId) {
+      const product = inventory.find(p => p.id === productId);
+      if (product) {
+        // Find existing quantity in cart
+        const existingItem = cart.find(item => item.productId === productId);
+        const currentCartQty = existingItem ? (Number(existingItem.quantity) || 0) : 0;
+
+        if (currentCartQty + 1 > product.quantity) {
+          setModal({
+            isOpen: true,
+            title: 'Out of Stock',
+            message: `Cannot add more "${name}". Only ${product.quantity} available.`,
+            confirmText: 'OK',
+            showCancel: false
+          });
+          return;
+        }
+      }
+    }
+
     setCart(prev => {
       const existingItem = productId ? prev.find(item => item.productId === productId) : null;
       if (existingItem) {
@@ -316,7 +339,7 @@ export default function BillingPage() {
     });
     setProductName('');
     setShowSuggestions(false);
-  }, []);
+  }, [inventory, cart]); // Added dependencies
 
   const handleScan = React.useCallback((results: IDetectedBarcode[]) => {
     if (results && results[0]) {
@@ -347,7 +370,30 @@ export default function BillingPage() {
 
   const deleteCartItem = (id: number) => setCart(prev => prev.filter(item => item.id !== id));
   const toggleEdit = (id: number) => setCart(prev => prev.map(item => item.id === id ? { ...item, isEditing: !item.isEditing } : { ...item, isEditing: false }));
-  const updateCartItem = (id: number, updatedValues: Partial<CartItem>) => setCart(prev => prev.map(item => item.id === id ? { ...item, ...updatedValues } : item));
+
+  const updateCartItem = (id: number, updatedValues: Partial<CartItem>) => {
+    setCart(prev => prev.map(item => {
+      if (item.id === id) {
+        // If updating quantity, check stock
+        if (updatedValues.quantity !== undefined && item.productId) {
+          const product = inventory.find(p => p.id === item.productId);
+          const newQty = Number(updatedValues.quantity);
+          if (product && newQty > product.quantity) {
+            setModal({
+              isOpen: true,
+              title: 'Insufficient Stock',
+              message: `Cannot set quantity to ${newQty}. Only ${product.quantity} available.`,
+              confirmText: 'OK',
+              showCancel: false
+            });
+            return item; // Return original item without update
+          }
+        }
+        return { ...item, ...updatedValues };
+      }
+      return item;
+    }));
+  };
 
   const handleTransactionDone = React.useCallback(() => {
     setCart([]);

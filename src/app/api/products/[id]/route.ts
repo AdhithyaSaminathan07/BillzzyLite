@@ -69,10 +69,24 @@ export async function PUT(
 
     const query = { _id: id };
 
-    const updateOperation =
-      "quantityToDecrement" in body && typeof body.quantityToDecrement === "number"
-        ? { $inc: { quantity: -body.quantityToDecrement } }
-        : { $set: body };
+    let updateOperation;
+
+    if (
+      "quantityToDecrement" in body &&
+      typeof body.quantityToDecrement === "number"
+    ) {
+      updateOperation = [
+        {
+          $set: {
+            quantity: {
+              $max: [0, { $subtract: ["$quantity", body.quantityToDecrement] }],
+            },
+          },
+        },
+      ];
+    } else {
+      updateOperation = { $set: body };
+    }
 
     const updatedProduct = await Product.findOneAndUpdate(query, updateOperation, {
       new: true,
