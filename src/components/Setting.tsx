@@ -1,3 +1,780 @@
+// // 'use client';
+
+// // import { useSession, signOut } from 'next-auth/react';
+// // import { useRouter } from 'next/navigation';
+// // import React, { useCallback, useEffect, useState } from 'react';
+// // import {
+// //   UserCircleIcon,
+// //   BuildingStorefrontIcon,
+// //   ExclamationTriangleIcon,
+// //   QrCodeIcon,
+// //   PencilIcon,
+// //   CheckIcon,
+// //   XMarkIcon,
+// //   ArrowDownTrayIcon,
+// // } from '@heroicons/react/24/outline';
+
+// // // Type for the form data
+// // type FormData = {
+// //   name: string;
+// //   phoneNumber: string;
+// //   address: string;
+// //   shopName: string;
+// //   shopAddress: string;
+// //   merchantUpiId: string;
+// // };
+
+// // // Type for the SettingsField component's props
+// // type SettingsFieldProps = {
+// //   label: string;
+// //   value: string;
+// //   isEditing: boolean;
+// //   name: keyof FormData;
+// //   onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+// //   type?: string;
+// // };
+
+// // // A reusable component for displaying a settings field
+// // const SettingsField = ({ label, value, isEditing, name, onChange, type = 'text' }: SettingsFieldProps) => (
+// //   <div className="py-2 border-b border-gray-200 last:border-b-0">
+// //     <label htmlFor={name} className="block text-xs font-medium text-gray-500 uppercase tracking-wide">
+// //       {label}
+// //     </label>
+// //     {isEditing ? (
+// //       <input
+// //         type={type}
+// //         name={name}
+// //         id={name}
+// //         value={value}
+// //         onChange={onChange}
+// //         className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm py-1.5 px-2 mt-1"
+// //         placeholder={`Enter ${label.toLowerCase()}`}
+// //       />
+// //     ) : (
+// //       <p className="text-sm text-gray-800 pt-0.5">{value || '-'}</p>
+// //     )}
+// //   </div>
+// // );
+
+// // // --- ENHANCED MODAL COMPONENT (Compact Version) ---
+// // type ModalProps = {
+// //   isOpen: boolean;
+// //   onClose: () => void;
+// //   title: string;
+// //   message: string;
+// //   type?: 'success' | 'error' | 'info';
+// // };
+
+// // const Modal = ({ isOpen, onClose, title, message, type = 'info' }: ModalProps) => {
+// //   if (!isOpen) return null;
+
+// //   let Icon = ExclamationTriangleIcon;
+// //   let iconColor = 'text-gray-500';
+// //   let bgColor = 'bg-gray-100';
+// //   let borderColor = 'from-[#5a4fcf]';
+
+// //   if (type === 'success') {
+// //     Icon = CheckIcon;
+// //     iconColor = 'text-green-600';
+// //     bgColor = 'bg-green-100';
+// //     borderColor = 'from-[#5a4fcf]';
+// //   } else if (type === 'error') {
+// //     Icon = ExclamationTriangleIcon;
+// //     iconColor = 'text-red-600';
+// //     bgColor = 'bg-red-100';
+// //     borderColor = 'from-red-500';
+// //   } else {
+// //     Icon = ExclamationTriangleIcon; // Info default
+// //     iconColor = 'text-blue-600';
+// //     bgColor = 'bg-blue-100';
+// //     borderColor = 'from-[#5a4fcf]';
+// //   }
+
+// //   return (
+// //     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 animate-in fade-in duration-200">
+// //       {/* Outer Wrapper - Reduced Max Width to max-w-xs (approx 320px) */}
+// //       <div className="relative group w-full max-w-[300px] rounded-xl overflow-hidden p-1.5">
+// //         {/* Animated 'Sound Line' Border */}
+// //         <div className={`absolute inset-[-100%] bg-[conic-gradient(from_90deg_at_50%_50%,#E2E8F0_0%,#E2E8F0_50%,var(--tw-gradient-from)_100%)] ${borderColor} animate-[spin_3s_linear_infinite]`} />
+
+// //         {/* Modal Content - Compact Padding */}
+// //         <div className="relative bg-white w-full h-full rounded-xl shadow-2xl overflow-hidden">
+// //           <div className="p-4 flex items-start gap-3">
+// //             <div className={`p-2 rounded-full flex-shrink-0 ${bgColor}`}>
+// //               <Icon className={`h-5 w-5 ${iconColor}`} />
+// //             </div>
+// //             <div className="flex-1 min-w-0">
+// //               <h3 className="text-base font-bold text-gray-900 leading-tight mb-1">{title}</h3>
+// //               <p className="text-xs text-gray-600 leading-relaxed font-medium">{message}</p>
+// //             </div>
+// //           </div>
+// //           <div className="bg-gray-50 px-4 py-2 flex justify-end">
+// //             <button
+// //               onClick={onClose}
+// //               className="px-3 py-1.5 bg-indigo-600 text-white text-xs font-bold rounded-md hover:bg-indigo-700 transition-colors shadow-sm"
+// //             >
+// //               Okay
+// //             </button>
+// //           </div>
+// //         </div>
+// //       </div>
+// //     </div>
+// //   );
+// // };
+
+// // export default function Settings() {
+// //   const { data: session, status } = useSession();
+// //   const router = useRouter();
+// //   const [editingSection, setEditingSection] = useState<string | null>(null);
+// //   const [formData, setFormData] = useState<FormData>({
+// //     name: '',
+// //     phoneNumber: '',
+// //     address: '',
+// //     shopName: '',
+// //     shopAddress: '',
+// //     merchantUpiId: '',
+// //   });
+// //   // eslint-disable-next-line @typescript-eslint/no-unused-vars
+// //   const [isNewUser, setIsNewUser] = useState<boolean>(false);
+
+// //   // Modal State
+// //   const [modalState, setModalState] = useState<{ isOpen: boolean; title: string; message: string; type: 'success' | 'error' | 'info' }>({
+// //     isOpen: false,
+// //     title: '',
+// //     message: '',
+// //     type: 'info'
+// //   });
+
+// //   const closeModal = () => setModalState(prev => ({ ...prev, isOpen: false }));
+
+// //   const loadFormData = useCallback(async () => {
+// //     if (session?.user?.email) {
+// //       try {
+// //         const response = await fetch(`/api/users/check?email=${encodeURIComponent(session.user.email)}`);
+// //         if (response.ok) {
+// //           const userData = await response.json();
+// //           setIsNewUser(!userData.hasData);
+
+// //           if (!userData.hasData) {
+// //             localStorage.removeItem(`userSettings-${session.user.email}`);
+// //           }
+// //         }
+// //       } catch (error) {
+// //         console.error('Error checking user data:', error);
+// //       }
+
+// //       const savedData = localStorage.getItem(`userSettings-${session.user.email}`);
+// //       if (savedData) {
+// //         const parsed = JSON.parse(savedData);
+// //         // If session has verified phone but local storage doesn't (or is different), update local
+// //         if (session.user.phoneNumber && parsed.phoneNumber !== session.user.phoneNumber) {
+// //           parsed.phoneNumber = session.user.phoneNumber;
+// //           localStorage.setItem(`userSettings-${session.user.email}`, JSON.stringify(parsed));
+// //         }
+// //         setFormData(parsed);
+// //       } else {
+// //         // Init with session data
+// //         const initialData = {
+// //           name: session.user.name || '',
+// //           phoneNumber: session.user.phoneNumber || '',
+// //           address: '',
+// //           shopName: '',
+// //           shopAddress: '',
+// //           merchantUpiId: '',
+// //         };
+// //         // Save to local storage immediately so other tabs/components can see it
+// //         localStorage.setItem(`userSettings-${session.user.email}`, JSON.stringify(initialData));
+// //         setFormData(initialData);
+// //       }
+// //     }
+// //   }, [session]);
+
+// //   useEffect(() => {
+// //     if (status === 'authenticated') {
+// //       loadFormData();
+// //     }
+// //   }, [status, loadFormData]);
+
+// //   useEffect(() => {
+// //     if (status === 'unauthenticated') {
+// //       router.push('/');
+// //     }
+// //   }, [status, router]);
+
+// //   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+// //     const { name, value } = e.target;
+// //     setFormData(prev => ({ ...prev, [name]: value }));
+// //   };
+
+// //   const handleSave = async (sectionKey: string) => {
+// //     if (!session?.user?.email) {
+// //       setModalState({ isOpen: true, title: 'Error', message: 'Could not save settings. User not found.', type: 'error' });
+// //       return;
+// //     }
+
+// //     localStorage.setItem(`userSettings-${session.user.email}`, JSON.stringify(formData));
+
+// //     try {
+// //       if (sectionKey === 'personal') {
+// //         const response = await fetch('/api/users/phone', {
+// //           method: 'PUT',
+// //           headers: { 'Content-Type': 'application/json' },
+// //           body: JSON.stringify({ phoneNumber: formData.phoneNumber }),
+// //         });
+
+// //         if (!response.ok) {
+// //           const errorData = await response.json();
+// //           throw new Error(errorData.message || 'Failed to update phone number');
+// //         }
+// //       }
+
+// //       setModalState({ isOpen: true, title: 'Success!', message: 'Settings saved successfully.', type: 'success' });
+// //     } catch (error) {
+// //       console.error('Error saving data to database:', error);
+// //       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+// //       setModalState({
+// //         isOpen: true,
+// //         title: 'Save Warning',
+// //         message: `Settings saved locally, but failed to update in the database. Error: ${errorMessage}`,
+// //         type: 'error'
+// //       });
+// //     } finally {
+// //       setEditingSection(null);
+// //     }
+// //   };
+
+// //   const handleCancel = () => {
+// //     loadFormData();
+// //     setEditingSection(null);
+// //   };
+
+// //   if (status === 'loading') {
+// //     return (
+// //       <div className="min-h-screen flex items-center justify-center bg-gray-50">
+// //         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
+// //       </div>
+// //     );
+// //   }
+
+// //   const SectionHeader = ({ title, sectionKey, icon }: { title: string; sectionKey: string; icon: React.ReactNode }) => (
+// //     <div className="px-3 py-1.5 border-b border-gray-200 flex items-center justify-between gap-2 bg-gray-50">
+// //       <div className="flex items-center gap-2">
+// //         {icon}
+// //         <h2 className="text-sm font-semibold text-gray-800">{title}</h2>
+// //       </div>
+// //       <div>
+// //         {editingSection === sectionKey ? (
+// //           <div className="flex items-center gap-2">
+// //             <button type="button" onClick={handleCancel} className="p-1.5 rounded-full text-gray-500 hover:bg-gray-200">
+// //               <XMarkIcon className="h-5 w-5" />
+// //             </button>
+// //             <button type="button" onClick={() => handleSave(sectionKey)} className="p-1.5 rounded-full text-indigo-600 hover:bg-indigo-100">
+// //               <CheckIcon className="h-5 w-5" />
+// //             </button>
+// //           </div>
+// //         ) : (
+// //           <button type="button" onClick={() => setEditingSection(sectionKey)} className="p-1.5 rounded-full text-gray-500 hover:bg-gray-200">
+// //             <PencilIcon className="h-4 w-4" />
+// //           </button>
+// //         )}
+// //       </div>
+// //     </div>
+// //   );
+
+// //   if (status === 'authenticated' && session.user) {
+// //     return (
+// //       <div className="bg-gray-50 min-h-screen pb-20">
+// //         <div className="bg-gradient-to-br from-indigo-500 to-purple-600 px-4 py-3">
+// //           <div className="flex items-center gap-3">
+// //             <div className="h-12 w-12 rounded-full bg-white/20 flex items-center justify-center">
+// //               <UserCircleIcon className="h-8 w-8 text-white" />
+// //             </div>
+// //             <div>
+// //               <p className="text-white font-semibold text-base">{session.user.name}</p>
+// //               <p className="mt-1">
+// //                 <span style={{ backgroundColor: '#5a4fcf' }} className="px-2 py-0.5 rounded-full text-white text-xs font-medium">
+// //                   {session.user.email}
+// //                 </span>
+// //               </p>
+// //             </div>
+// //           </div>
+// //         </div>
+
+// //         <div className="space-y-2 px-2 pt-2">
+// //           {/* User Profile Section */}
+// //           <div className="bg-white rounded-lg shadow-sm overflow-hidden">
+// //             <SectionHeader title="Personal Information" sectionKey="personal" icon={<UserCircleIcon className="h-4 w-4 text-indigo-600" />} />
+// //             <div className="px-3">
+// //               <SettingsField label="Full Name" name="name" value={formData.name} isEditing={editingSection === 'personal'} onChange={handleChange} />
+// //               <SettingsField label="Phone Number" name="phoneNumber" value={formData.phoneNumber || ''} isEditing={editingSection === 'personal'} onChange={handleChange} type="tel" />
+// //               <SettingsField label="Address" name="address" value={formData.address} isEditing={editingSection === 'personal'} onChange={handleChange} />
+// //             </div>
+// //           </div>
+
+// //           {/* Shop Details Section */}
+// //           <div className="bg-white rounded-lg shadow-sm overflow-hidden">
+// //             <SectionHeader title="Shop Details" sectionKey="shop" icon={<BuildingStorefrontIcon className="h-4 w-4 text-green-600" />} />
+// //             <div className="px-3">
+// //               <SettingsField label="Shop Name" name="shopName" value={formData.shopName} isEditing={editingSection === 'shop'} onChange={handleChange} />
+// //               <SettingsField label="Shop Address" name="shopAddress" value={formData.shopAddress} isEditing={editingSection === 'shop'} onChange={handleChange} />
+// //             </div>
+// //           </div>
+
+// //           {/* Merchant UPI Section */}
+// //           <div className="bg-white rounded-lg shadow-sm overflow-hidden">
+// //             <SectionHeader title="Payment Details" sectionKey="payment" icon={<QrCodeIcon className="h-4 w-4 text-purple-600" />} />
+// //             <div className="px-3">
+// //               <SettingsField label="Merchant UPI ID" name="merchantUpiId" value={formData.merchantUpiId} isEditing={editingSection === 'payment'} onChange={handleChange} />
+// //             </div>
+// //           </div>
+
+// //           {/* --- NEW SECTION: Download App --- */}
+// //           <div className="bg-white rounded-lg shadow-sm overflow-hidden">
+// //             <div className="px-3 py-1.5 border-b border-gray-200 flex items-center gap-2 bg-gray-50">
+// //               <ArrowDownTrayIcon className="h-4 w-4 text-blue-600" />
+// //               <h2 className="text-sm font-semibold text-gray-800">Install App</h2>
+// //             </div>
+// //             <div className="px-3 py-2.5">
+// //               <a
+// //                 href="/downloads/billzzylite.apk"
+// //                 download="billzzylite.apk"
+// //                 className="w-full rounded-md bg-blue-50 border border-blue-200 px-4 py-2 text-sm font-semibold text-blue-700 hover:bg-blue-100 transition-colors flex items-center justify-center gap-2"
+// //               >
+// //                 <ArrowDownTrayIcon className="h-5 w-5" />
+// //                 Download Android APK
+// //               </a>
+// //             </div>
+// //           </div>
+
+// //           {/* Danger Zone */}
+// //           <div className="bg-white rounded-lg shadow-sm overflow-hidden">
+// //             <div className="px-3 py-1.5 border-b border-gray-200 flex items-center gap-2 bg-gray-50">
+// //               <ExclamationTriangleIcon className="h-4 w-4 text-red-600" />
+// //               <h2 className="text-sm font-semibold text-gray-800">Account Actions</h2>
+// //             </div>
+// //             <div className="px-3 py-2.5">
+// //               <button
+// //                 onClick={() => signOut({ callbackUrl: '/' })}
+// //                 type="button"
+// //                 className="w-full rounded-md bg-red-50 border border-red-200 px-4 py-2 text-sm font-semibold text-red-700 hover:bg-red-100 transition-colors flex items-center justify-center gap-2"
+// //               >
+// //                 Log Out
+// //               </button>
+// //             </div>
+// //           </div>
+// //         </div>
+
+// //         {/* Modal Render */}
+// //         <Modal
+// //           isOpen={modalState.isOpen}
+// //           onClose={closeModal}
+// //           title={modalState.title}
+// //           message={modalState.message}
+// //           type={modalState.type}
+// //         />
+// //       </div>
+// //     );
+// //   }
+
+// //   return null;
+// // }
+
+// 'use client';
+
+// import { useSession, signOut } from 'next-auth/react';
+// import { useRouter } from 'next/navigation';
+// import React, { useCallback, useEffect, useState } from 'react';
+// import {
+//   UserCircleIcon,
+//   BuildingStorefrontIcon,
+//   ExclamationTriangleIcon,
+//   QrCodeIcon,
+//   PencilIcon,
+//   CheckIcon,
+//   XMarkIcon,
+//   ArrowDownTrayIcon,
+//   GlobeAltIcon, // Added for Webhooks
+// } from '@heroicons/react/24/outline';
+
+// // Type for the form data
+// type FormData = {
+//   name: string;
+//   phoneNumber: string;
+//   address: string;
+//   shopName: string;
+//   shopAddress: string;
+//   merchantUpiId: string;
+//   webhookUrl: string; // Added field
+// };
+
+// // Type for the SettingsField component's props
+// type SettingsFieldProps = {
+//   label: string;
+//   value: string;
+//   isEditing: boolean;
+//   name: keyof FormData;
+//   onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+//   type?: string;
+// };
+
+// // A reusable component for displaying a settings field
+// const SettingsField = ({ label, value, isEditing, name, onChange, type = 'text' }: SettingsFieldProps) => (
+//   <div className="py-2 border-b border-gray-200 last:border-b-0">
+//     <label htmlFor={name} className="block text-xs font-medium text-gray-500 uppercase tracking-wide">
+//       {label}
+//     </label>
+//     {isEditing ? (
+//       <input
+//         type={type}
+//         name={name}
+//         id={name}
+//         value={value}
+//         onChange={onChange}
+//         className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm py-1.5 px-2 mt-1"
+//         placeholder={`Enter ${label.toLowerCase()}`}
+//       />
+//     ) : (
+//       <p className="text-sm text-gray-800 pt-0.5 break-all">{value || '-'}</p>
+//     )}
+//   </div>
+// );
+
+// // --- ENHANCED MODAL COMPONENT ---
+// type ModalProps = {
+//   isOpen: boolean;
+//   onClose: () => void;
+//   title: string;
+//   message: string;
+//   type?: 'success' | 'error' | 'info';
+// };
+
+// const Modal = ({ isOpen, onClose, title, message, type = 'info' }: ModalProps) => {
+//   if (!isOpen) return null;
+
+//   let Icon = ExclamationTriangleIcon;
+//   let iconColor = 'text-gray-500';
+//   let bgColor = 'bg-gray-100';
+//   let borderColor = 'from-[#5a4fcf]';
+
+//   if (type === 'success') {
+//     Icon = CheckIcon;
+//     iconColor = 'text-green-600';
+//     bgColor = 'bg-green-100';
+//     borderColor = 'from-[#5a4fcf]';
+//   } else if (type === 'error') {
+//     Icon = ExclamationTriangleIcon;
+//     iconColor = 'text-red-600';
+//     bgColor = 'bg-red-100';
+//     borderColor = 'from-red-500';
+//   } else {
+//     Icon = ExclamationTriangleIcon; // Info default
+//     iconColor = 'text-blue-600';
+//     bgColor = 'bg-blue-100';
+//     borderColor = 'from-[#5a4fcf]';
+//   }
+
+//   return (
+//     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 animate-in fade-in duration-200">
+//       <div className="relative group w-full max-w-[300px] rounded-xl overflow-hidden p-1.5">
+//         <div className={`absolute inset-[-100%] bg-[conic-gradient(from_90deg_at_50%_50%,#E2E8F0_0%,#E2E8F0_50%,var(--tw-gradient-from)_100%)] ${borderColor} animate-[spin_3s_linear_infinite]`} />
+//         <div className="relative bg-white w-full h-full rounded-xl shadow-2xl overflow-hidden">
+//           <div className="p-4 flex items-start gap-3">
+//             <div className={`p-2 rounded-full flex-shrink-0 ${bgColor}`}>
+//               <Icon className={`h-5 w-5 ${iconColor}`} />
+//             </div>
+//             <div className="flex-1 min-w-0">
+//               <h3 className="text-base font-bold text-gray-900 leading-tight mb-1">{title}</h3>
+//               <p className="text-xs text-gray-600 leading-relaxed font-medium">{message}</p>
+//             </div>
+//           </div>
+//           <div className="bg-gray-50 px-4 py-2 flex justify-end">
+//             <button
+//               onClick={onClose}
+//               className="px-3 py-1.5 bg-indigo-600 text-white text-xs font-bold rounded-md hover:bg-indigo-700 transition-colors shadow-sm"
+//             >
+//               Okay
+//             </button>
+//           </div>
+//         </div>
+//       </div>
+//     </div>
+//   );
+// };
+
+// export default function Settings() {
+//   const { data: session, status } = useSession();
+//   const router = useRouter();
+//   const [editingSection, setEditingSection] = useState<string | null>(null);
+//   const [formData, setFormData] = useState<FormData>({
+//     name: '',
+//     phoneNumber: '',
+//     address: '',
+//     shopName: '',
+//     shopAddress: '',
+//     merchantUpiId: '',
+//     webhookUrl: '', // Initial state
+//   });
+
+//   const [modalState, setModalState] = useState<{ isOpen: boolean; title: string; message: string; type: 'success' | 'error' | 'info' }>({
+//     isOpen: false,
+//     title: '',
+//     message: '',
+//     type: 'info'
+//   });
+
+//   const closeModal = () => setModalState(prev => ({ ...prev, isOpen: false }));
+
+//   const loadFormData = useCallback(async () => {
+//     if (session?.user?.email) {
+//       try {
+//         // 1. Fetch Cloud Data (Needed for Webhook/UPI persistence)
+//         const response = await fetch('/api/merchant/details');
+//         const dbData = response.ok ? await response.json() : {};
+
+//         // 2. Fetch Local Data
+//         const savedData = localStorage.getItem(`userSettings-${session.user.email}`);
+//         const localData = savedData ? JSON.parse(savedData) : {};
+
+//         // 3. Merge Data (DB takes priority for settings, Local for drafts)
+//         setFormData({
+//             name: dbData.name || localData.name || session.user.name || '',
+//             phoneNumber: dbData.phoneNumber || localData.phoneNumber || session.user.phoneNumber || '',
+//             address: localData.address || '',
+//             shopName: localData.shopName || '',
+//             shopAddress: localData.shopAddress || '',
+//             merchantUpiId: dbData.upiId || localData.merchantUpiId || '',
+//             webhookUrl: dbData.webhookUrl || '',
+//         });
+//       } catch (error) {
+//         console.error('Error checking user data:', error);
+//       }
+//     }
+//   }, [session]);
+
+//   useEffect(() => {
+//     if (status === 'authenticated') {
+//       loadFormData();
+//     }
+//   }, [status, loadFormData]);
+
+//   useEffect(() => {
+//     if (status === 'unauthenticated') {
+//       router.push('/');
+//     }
+//   }, [status, router]);
+
+//   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+//     const { name, value } = e.target;
+//     setFormData(prev => ({ ...prev, [name]: value }));
+//   };
+
+//   const handleSave = async (sectionKey: string) => {
+//     if (!session?.user?.email) {
+//       setModalState({ isOpen: true, title: 'Error', message: 'Could not save settings. User not found.', type: 'error' });
+//       return;
+//     }
+
+//     localStorage.setItem(`userSettings-${session.user.email}`, JSON.stringify(formData));
+
+//     try {
+//       // Save Webhooks
+//       if (sectionKey === 'webhooks') {
+//         await fetch('/api/merchant/details', {
+//           method: 'PATCH',
+//           headers: { 'Content-Type': 'application/json' },
+//           body: JSON.stringify({ webhookUrl: formData.webhookUrl }),
+//         });
+//       }
+
+//       // Save Payment (UPI)
+//       if (sectionKey === 'payment') {
+//         await fetch('/api/merchant/details', {
+//             method: 'PATCH',
+//             headers: { 'Content-Type': 'application/json' },
+//             body: JSON.stringify({ upiId: formData.merchantUpiId }),
+//           });
+//       }
+
+//       // Save Personal
+//       if (sectionKey === 'personal') {
+//         const response = await fetch('/api/users/phone', {
+//           method: 'PUT',
+//           headers: { 'Content-Type': 'application/json' },
+//           body: JSON.stringify({ phoneNumber: formData.phoneNumber }),
+//         });
+
+//         if (!response.ok) {
+//           const errorData = await response.json();
+//           throw new Error(errorData.message || 'Failed to update phone number');
+//         }
+//       }
+
+//       setModalState({ isOpen: true, title: 'Success!', message: 'Settings saved successfully.', type: 'success' });
+//     } catch (error) {
+//       console.error('Error saving data to database:', error);
+//       setModalState({
+//         isOpen: true,
+//         title: 'Save Warning',
+//         message: `Settings saved locally, but cloud sync failed.`,
+//         type: 'error'
+//       });
+//     } finally {
+//       setEditingSection(null);
+//     }
+//   };
+
+//   const handleCancel = () => {
+//     loadFormData();
+//     setEditingSection(null);
+//   };
+
+//   if (status === 'loading') {
+//     return (
+//       <div className="min-h-screen flex items-center justify-center bg-gray-50">
+//         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
+//       </div>
+//     );
+//   }
+
+//   const SectionHeader = ({ title, sectionKey, icon }: { title: string; sectionKey: string; icon: React.ReactNode }) => (
+//     <div className="px-3 py-1.5 border-b border-gray-200 flex items-center justify-between gap-2 bg-gray-50">
+//       <div className="flex items-center gap-2">
+//         {icon}
+//         <h2 className="text-sm font-semibold text-gray-800">{title}</h2>
+//       </div>
+//       <div>
+//         {editingSection === sectionKey ? (
+//           <div className="flex items-center gap-2">
+//             <button type="button" onClick={handleCancel} className="p-1.5 rounded-full text-gray-500 hover:bg-gray-200">
+//               <XMarkIcon className="h-5 w-5" />
+//             </button>
+//             <button type="button" onClick={() => handleSave(sectionKey)} className="p-1.5 rounded-full text-indigo-600 hover:bg-indigo-100">
+//               <CheckIcon className="h-5 w-5" />
+//             </button>
+//           </div>
+//         ) : (
+//           <button type="button" onClick={() => setEditingSection(sectionKey)} className="p-1.5 rounded-full text-gray-500 hover:bg-gray-200">
+//             <PencilIcon className="h-4 w-4" />
+//           </button>
+//         )}
+//       </div>
+//     </div>
+//   );
+
+//   if (status === 'authenticated' && session.user) {
+//     return (
+//       <div className="bg-gray-50 min-h-screen pb-20">
+//         <div className="bg-gradient-to-br from-indigo-500 to-purple-600 px-4 py-3">
+//           <div className="flex items-center gap-3">
+//             <div className="h-12 w-12 rounded-full bg-white/20 flex items-center justify-center">
+//               <UserCircleIcon className="h-8 w-8 text-white" />
+//             </div>
+//             <div>
+//               <p className="text-white font-semibold text-base">{session.user.name}</p>
+//               <p className="mt-1">
+//                 <span style={{ backgroundColor: '#5a4fcf' }} className="px-2 py-0.5 rounded-full text-white text-xs font-medium">
+//                   {session.user.email}
+//                 </span>
+//               </p>
+//             </div>
+//           </div>
+//         </div>
+
+//         <div className="space-y-2 px-2 pt-2">
+//           {/* User Profile Section */}
+//           <div className="bg-white rounded-lg shadow-sm overflow-hidden">
+//             <SectionHeader title="Personal Information" sectionKey="personal" icon={<UserCircleIcon className="h-4 w-4 text-indigo-600" />} />
+//             <div className="px-3">
+//               <SettingsField label="Full Name" name="name" value={formData.name} isEditing={editingSection === 'personal'} onChange={handleChange} />
+//               <SettingsField label="Phone Number" name="phoneNumber" value={formData.phoneNumber || ''} isEditing={editingSection === 'personal'} onChange={handleChange} type="tel" />
+//               <SettingsField label="Address" name="address" value={formData.address} isEditing={editingSection === 'personal'} onChange={handleChange} />
+//             </div>
+//           </div>
+
+//           {/* Shop Details Section */}
+//           <div className="bg-white rounded-lg shadow-sm overflow-hidden">
+//             <SectionHeader title="Shop Details" sectionKey="shop" icon={<BuildingStorefrontIcon className="h-4 w-4 text-green-600" />} />
+//             <div className="px-3">
+//               <SettingsField label="Shop Name" name="shopName" value={formData.shopName} isEditing={editingSection === 'shop'} onChange={handleChange} />
+//               <SettingsField label="Shop Address" name="shopAddress" value={formData.shopAddress} isEditing={editingSection === 'shop'} onChange={handleChange} />
+//             </div>
+//           </div>
+
+//           {/* Merchant UPI Section */}
+//           <div className="bg-white rounded-lg shadow-sm overflow-hidden">
+//             <SectionHeader title="Payment Details" sectionKey="payment" icon={<QrCodeIcon className="h-4 w-4 text-purple-600" />} />
+//             <div className="px-3">
+//               <SettingsField label="Merchant UPI ID" name="merchantUpiId" value={formData.merchantUpiId} isEditing={editingSection === 'payment'} onChange={handleChange} />
+//             </div>
+//           </div>
+
+//           {/* NEW SECTION: Webhook Configuration */}
+//           <div className="bg-white rounded-lg shadow-sm overflow-hidden">
+//             <SectionHeader title="Developer Webhooks" sectionKey="webhooks" icon={<GlobeAltIcon className="h-4 w-4 text-orange-600" />} />
+//             <div className="px-3">
+//               <SettingsField 
+//                 label="Webhook URL" 
+//                 name="webhookUrl" 
+//                 value={formData.webhookUrl} 
+//                 isEditing={editingSection === 'webhooks'} 
+//                 onChange={handleChange} 
+//                 type="url"
+//               />
+//               <p className="text-[10px] text-gray-500 pb-2 pl-0.5">We will POST payment data to this URL.</p>
+//             </div>
+//           </div>
+
+//           {/* Download App */}
+//           <div className="bg-white rounded-lg shadow-sm overflow-hidden">
+//             <div className="px-3 py-1.5 border-b border-gray-200 flex items-center gap-2 bg-gray-50">
+//               <ArrowDownTrayIcon className="h-4 w-4 text-blue-600" />
+//               <h2 className="text-sm font-semibold text-gray-800">Install App</h2>
+//             </div>
+//             <div className="px-3 py-2.5">
+//               <a
+//                 href="/downloads/billzzylite.apk"
+//                 download="billzzylite.apk"
+//                 className="w-full rounded-md bg-blue-50 border border-blue-200 px-4 py-2 text-sm font-semibold text-blue-700 hover:bg-blue-100 transition-colors flex items-center justify-center gap-2"
+//               >
+//                 <ArrowDownTrayIcon className="h-5 w-5" />
+//                 Download Android APK
+//               </a>
+//             </div>
+//           </div>
+
+//           {/* Danger Zone */}
+//           <div className="bg-white rounded-lg shadow-sm overflow-hidden">
+//             <div className="px-3 py-1.5 border-b border-gray-200 flex items-center gap-2 bg-gray-50">
+//               <ExclamationTriangleIcon className="h-4 w-4 text-red-600" />
+//               <h2 className="text-sm font-semibold text-gray-800">Account Actions</h2>
+//             </div>
+//             <div className="px-3 py-2.5">
+//               <button
+//                 onClick={() => signOut({ callbackUrl: '/' })}
+//                 type="button"
+//                 className="w-full rounded-md bg-red-50 border border-red-200 px-4 py-2 text-sm font-semibold text-red-700 hover:bg-red-100 transition-colors flex items-center justify-center gap-2"
+//               >
+//                 Log Out
+//               </button>
+//             </div>
+//           </div>
+//         </div>
+
+//         <Modal
+//           isOpen={modalState.isOpen}
+//           onClose={closeModal}
+//           title={modalState.title}
+//           message={modalState.message}
+//           type={modalState.type}
+//         />
+//       </div>
+//     );
+//   }
+
+//   return null;
+// }
+
+
 'use client';
 
 import { useSession, signOut } from 'next-auth/react';
@@ -12,9 +789,11 @@ import {
   CheckIcon,
   XMarkIcon,
   ArrowDownTrayIcon,
+  GlobeAltIcon,
+  ClipboardDocumentIcon
 } from '@heroicons/react/24/outline';
 
-// Type for the form data
+// --- TYPES ---
 type FormData = {
   name: string;
   phoneNumber: string;
@@ -22,25 +801,18 @@ type FormData = {
   shopName: string;
   shopAddress: string;
   merchantUpiId: string;
+  webhookUrl: string;
 };
 
-// Type for the SettingsField component's props
-type SettingsFieldProps = {
-  label: string;
-  value: string;
-  isEditing: boolean;
-  name: keyof FormData;
-  onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
-  type?: string;
-};
+// --- COMPONENTS ---
 
-// A reusable component for displaying a settings field
-const SettingsField = ({ label, value, isEditing, name, onChange, type = 'text' }: SettingsFieldProps) => (
+// Enhanced Settings Field with ReadOnly support
+const SettingsField = ({ label, value, isEditing, name, onChange, type = 'text', placeholder, readOnly = false }: any) => (
   <div className="py-2 border-b border-gray-200 last:border-b-0">
     <label htmlFor={name} className="block text-xs font-medium text-gray-500 uppercase tracking-wide">
       {label}
     </label>
-    {isEditing ? (
+    {isEditing && !readOnly ? (
       <input
         type={type}
         name={name}
@@ -48,288 +820,246 @@ const SettingsField = ({ label, value, isEditing, name, onChange, type = 'text' 
         value={value}
         onChange={onChange}
         className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm py-1.5 px-2 mt-1"
-        placeholder={`Enter ${label.toLowerCase()}`}
+        placeholder={placeholder || `Enter ${label.toLowerCase()}`}
       />
     ) : (
-      <p className="text-sm text-gray-800 pt-0.5">{value || '-'}</p>
+      <div className="flex justify-between items-center pt-0.5">
+        <p className="text-sm text-gray-800 break-all font-medium">{value || '-'}</p>
+        {readOnly && value && (
+          <span className="text-[10px] bg-indigo-50 text-indigo-700 px-2 py-0.5 rounded-full border border-indigo-100 whitespace-nowrap ml-2">
+            Auto-Generated
+          </span>
+        )}
+      </div>
     )}
   </div>
 );
 
-// --- ENHANCED MODAL COMPONENT (Compact Version) ---
-type ModalProps = {
-  isOpen: boolean;
-  onClose: () => void;
-  title: string;
-  message: string;
-  type?: 'success' | 'error' | 'info';
-};
-
+// Modal Component
+type ModalProps = { isOpen: boolean; onClose: () => void; title: string; message: string; type?: 'success' | 'error' | 'info'; };
 const Modal = ({ isOpen, onClose, title, message, type = 'info' }: ModalProps) => {
   if (!isOpen) return null;
-
-  let Icon = ExclamationTriangleIcon;
-  let iconColor = 'text-gray-500';
-  let bgColor = 'bg-gray-100';
-  let borderColor = 'from-[#5a4fcf]';
-
-  if (type === 'success') {
-    Icon = CheckIcon;
-    iconColor = 'text-green-600';
-    bgColor = 'bg-green-100';
-    borderColor = 'from-[#5a4fcf]';
-  } else if (type === 'error') {
-    Icon = ExclamationTriangleIcon;
-    iconColor = 'text-red-600';
-    bgColor = 'bg-red-100';
-    borderColor = 'from-red-500';
-  } else {
-    Icon = ExclamationTriangleIcon; // Info default
-    iconColor = 'text-blue-600';
-    bgColor = 'bg-blue-100';
-    borderColor = 'from-[#5a4fcf]';
-  }
-
+  let Icon = ExclamationTriangleIcon; let iconColor = 'text-gray-500'; let bgColor = 'bg-gray-100';
+  if (type === 'success') { Icon = CheckIcon; iconColor = 'text-green-600'; bgColor = 'bg-green-100'; }
+  else if (type === 'error') { Icon = ExclamationTriangleIcon; iconColor = 'text-red-600'; bgColor = 'bg-red-100'; }
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 animate-in fade-in duration-200">
-      {/* Outer Wrapper - Reduced Max Width to max-w-xs (approx 320px) */}
-      <div className="relative group w-full max-w-[300px] rounded-xl overflow-hidden p-1.5">
-        {/* Animated 'Sound Line' Border */}
-        <div className={`absolute inset-[-100%] bg-[conic-gradient(from_90deg_at_50%_50%,#E2E8F0_0%,#E2E8F0_50%,var(--tw-gradient-from)_100%)] ${borderColor} animate-[spin_3s_linear_infinite]`} />
-
-        {/* Modal Content - Compact Padding */}
-        <div className="relative bg-white w-full h-full rounded-xl shadow-2xl overflow-hidden">
-          <div className="p-4 flex items-start gap-3">
-            <div className={`p-2 rounded-full flex-shrink-0 ${bgColor}`}>
-              <Icon className={`h-5 w-5 ${iconColor}`} />
-            </div>
-            <div className="flex-1 min-w-0">
-              <h3 className="text-base font-bold text-gray-900 leading-tight mb-1">{title}</h3>
-              <p className="text-xs text-gray-600 leading-relaxed font-medium">{message}</p>
-            </div>
-          </div>
-          <div className="bg-gray-50 px-4 py-2 flex justify-end">
-            <button
-              onClick={onClose}
-              className="px-3 py-1.5 bg-indigo-600 text-white text-xs font-bold rounded-md hover:bg-indigo-700 transition-colors shadow-sm"
-            >
-              Okay
-            </button>
-          </div>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 animate-in fade-in">
+      <div className="bg-white w-full max-w-[300px] rounded-xl shadow-2xl overflow-hidden">
+        <div className="p-4 flex items-start gap-3">
+          <div className={`p-2 rounded-full ${bgColor}`}><Icon className={`h-5 w-5 ${iconColor}`} /></div>
+          <div><h3 className="font-bold text-gray-900">{title}</h3><p className="text-xs text-gray-600">{message}</p></div>
+        </div>
+        <div className="bg-gray-50 px-4 py-2 flex justify-end">
+          <button onClick={onClose} className="px-3 py-1.5 bg-indigo-600 text-white text-xs font-bold rounded-md">Okay</button>
         </div>
       </div>
     </div>
   );
 };
+
+// --- MAIN PAGE COMPONENT ---
 
 export default function Settings() {
   const { data: session, status } = useSession();
   const router = useRouter();
   const [editingSection, setEditingSection] = useState<string | null>(null);
+  
   const [formData, setFormData] = useState<FormData>({
-    name: '',
-    phoneNumber: '',
-    address: '',
-    shopName: '',
-    shopAddress: '',
-    merchantUpiId: '',
+    name: '', phoneNumber: '', address: '', shopName: '', shopAddress: '', merchantUpiId: '', webhookUrl: '',
   });
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const [isNewUser, setIsNewUser] = useState<boolean>(false);
 
-  // Modal State
   const [modalState, setModalState] = useState<{ isOpen: boolean; title: string; message: string; type: 'success' | 'error' | 'info' }>({
-    isOpen: false,
-    title: '',
-    message: '',
-    type: 'info'
+    isOpen: false, title: '', message: '', type: 'info'
   });
-
-  const closeModal = () => setModalState(prev => ({ ...prev, isOpen: false }));
 
   const loadFormData = useCallback(async () => {
     if (session?.user?.email) {
       try {
-        const response = await fetch(`/api/users/check?email=${encodeURIComponent(session.user.email)}`);
-        if (response.ok) {
-          const userData = await response.json();
-          setIsNewUser(!userData.hasData);
+        // Fetch Cloud Data
+        const response = await fetch('/api/merchant/details');
+        const dbData = response.ok ? await response.json() : {};
 
-          if (!userData.hasData) {
-            localStorage.removeItem(`userSettings-${session.user.email}`);
-          }
-        }
-      } catch (error) {
-        console.error('Error checking user data:', error);
-      }
+        // Fetch Local Data
+        const savedData = localStorage.getItem(`userSettings-${session.user.email}`);
+        const localData = savedData ? JSON.parse(savedData) : {};
 
-      const savedData = localStorage.getItem(`userSettings-${session.user.email}`);
-      if (savedData) {
-        const parsed = JSON.parse(savedData);
-        // If session has verified phone but local storage doesn't (or is different), update local
-        if (session.user.phoneNumber && parsed.phoneNumber !== session.user.phoneNumber) {
-          parsed.phoneNumber = session.user.phoneNumber;
-          localStorage.setItem(`userSettings-${session.user.email}`, JSON.stringify(parsed));
-        }
-        setFormData(parsed);
-      } else {
-        // Init with session data
-        const initialData = {
-          name: session.user.name || '',
-          phoneNumber: session.user.phoneNumber || '',
-          address: '',
-          shopName: '',
-          shopAddress: '',
-          merchantUpiId: '',
-        };
-        // Save to local storage immediately so other tabs/components can see it
-        localStorage.setItem(`userSettings-${session.user.email}`, JSON.stringify(initialData));
-        setFormData(initialData);
-      }
+        // Merge Data
+        setFormData({
+          name: dbData.name || localData.name || session.user.name || '',
+          phoneNumber: dbData.phoneNumber || localData.phoneNumber || session.user.phoneNumber || '',
+          address: localData.address || '',
+          shopName: localData.shopName || '',
+          shopAddress: localData.shopAddress || '',
+          merchantUpiId: dbData.upiId || localData.merchantUpiId || '',
+          webhookUrl: dbData.webhookUrl || '', 
+        });
+      } catch (error) { console.error('Error loading data:', error); }
     }
   }, [session]);
 
   useEffect(() => {
-    if (status === 'authenticated') {
-      loadFormData();
-    }
-  }, [status, loadFormData]);
-
-  useEffect(() => {
-    if (status === 'unauthenticated') {
-      router.push('/');
-    }
-  }, [status, router]);
+    if (status === 'authenticated') loadFormData();
+    else if (status === 'unauthenticated') router.push('/');
+  }, [status, router, loadFormData]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
+    setFormData(prev => ({ ...prev, [e.target.name]: e.target.value }));
   };
 
   const handleSave = async (sectionKey: string) => {
-    if (!session?.user?.email) {
-      setModalState({ isOpen: true, title: 'Error', message: 'Could not save settings. User not found.', type: 'error' });
-      return;
-    }
+    if (!session?.user?.email) return;
 
+    // Save locally
     localStorage.setItem(`userSettings-${session.user.email}`, JSON.stringify(formData));
 
     try {
-      if (sectionKey === 'personal') {
-        const response = await fetch('/api/users/phone', {
-          method: 'PUT',
+      // --- PAYMENT SECTION SAVE ---
+      if (sectionKey === 'payment') {
+        const response = await fetch('/api/merchant/details', {
+          method: 'PATCH',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ phoneNumber: formData.phoneNumber }),
+          body: JSON.stringify({ upiId: formData.merchantUpiId }), 
         });
 
-        if (!response.ok) {
-          const errorData = await response.json();
-          throw new Error(errorData.message || 'Failed to update phone number');
+        if (response.ok) {
+          const updatedData = await response.json();
+          // Update Webhook URL from response immediately
+          if (updatedData.webhookUrl) {
+            setFormData(prev => ({ ...prev, webhookUrl: updatedData.webhookUrl }));
+          }
+          setModalState({ isOpen: true, title: 'Success', message: 'UPI Saved & Webhook Generated.', type: 'success' });
+        } else {
+          throw new Error('Failed to update payment details');
         }
       }
 
-      setModalState({ isOpen: true, title: 'Success!', message: 'Settings saved successfully.', type: 'success' });
+      // --- PERSONAL SECTION SAVE ---
+      if (sectionKey === 'personal') {
+        await fetch('/api/users/phone', { method: 'PUT', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ phoneNumber: formData.phoneNumber }) });
+        await fetch('/api/merchant/details', { method: 'PATCH', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ name: formData.name }) });
+        setModalState({ isOpen: true, title: 'Success', message: 'Profile updated.', type: 'success' });
+      }
+
+       // --- SHOP SECTION SAVE ---
+       if (sectionKey === 'shop') {
+        setModalState({ isOpen: true, title: 'Saved', message: 'Shop details saved locally.', type: 'success' });
+      }
+
     } catch (error) {
-      console.error('Error saving data to database:', error);
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-      setModalState({
-        isOpen: true,
-        title: 'Save Warning',
-        message: `Settings saved locally, but failed to update in the database. Error: ${errorMessage}`,
-        type: 'error'
-      });
+      console.error(error);
+      setModalState({ isOpen: true, title: 'Error', message: 'Failed to save to cloud.', type: 'error' });
     } finally {
       setEditingSection(null);
     }
   };
 
-  const handleCancel = () => {
-    loadFormData();
-    setEditingSection(null);
+  const copyToClipboard = () => {
+    if (formData.webhookUrl) {
+      navigator.clipboard.writeText(formData.webhookUrl);
+      setModalState({ isOpen: true, title: 'Copied', message: 'Webhook URL copied to clipboard.', type: 'success' });
+    }
   };
 
-  if (status === 'loading') {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
-      </div>
-    );
-  }
-
-  const SectionHeader = ({ title, sectionKey, icon }: { title: string; sectionKey: string; icon: React.ReactNode }) => (
+  const SectionHeader = ({ title, sectionKey, icon, noEdit }: any) => (
     <div className="px-3 py-1.5 border-b border-gray-200 flex items-center justify-between gap-2 bg-gray-50">
       <div className="flex items-center gap-2">
         {icon}
         <h2 className="text-sm font-semibold text-gray-800">{title}</h2>
       </div>
-      <div>
-        {editingSection === sectionKey ? (
-          <div className="flex items-center gap-2">
-            <button type="button" onClick={handleCancel} className="p-1.5 rounded-full text-gray-500 hover:bg-gray-200">
-              <XMarkIcon className="h-5 w-5" />
-            </button>
-            <button type="button" onClick={() => handleSave(sectionKey)} className="p-1.5 rounded-full text-indigo-600 hover:bg-indigo-100">
-              <CheckIcon className="h-5 w-5" />
-            </button>
-          </div>
-        ) : (
-          <button type="button" onClick={() => setEditingSection(sectionKey)} className="p-1.5 rounded-full text-gray-500 hover:bg-gray-200">
-            <PencilIcon className="h-4 w-4" />
-          </button>
-        )}
-      </div>
+      {!noEdit && (
+        <div>
+          {editingSection === sectionKey ? (
+            <div className="flex items-center gap-2">
+              <button onClick={() => { loadFormData(); setEditingSection(null); }} className="p-1.5 rounded-full text-gray-500 hover:bg-gray-200"><XMarkIcon className="h-5 w-5" /></button>
+              <button onClick={() => handleSave(sectionKey)} className="p-1.5 rounded-full text-indigo-600 hover:bg-indigo-100"><CheckIcon className="h-5 w-5" /></button>
+            </div>
+          ) : (
+            <button onClick={() => setEditingSection(sectionKey)} className="p-1.5 rounded-full text-gray-500 hover:bg-gray-200"><PencilIcon className="h-4 w-4" /></button>
+          )}
+        </div>
+      )}
     </div>
   );
 
-  if (status === 'authenticated' && session.user) {
-    return (
-      <div className="bg-gray-50 min-h-screen pb-20">
-        <div className="bg-gradient-to-br from-indigo-500 to-purple-600 px-4 py-3">
-          <div className="flex items-center gap-3">
-            <div className="h-12 w-12 rounded-full bg-white/20 flex items-center justify-center">
-              <UserCircleIcon className="h-8 w-8 text-white" />
-            </div>
-            <div>
-              <p className="text-white font-semibold text-base">{session.user.name}</p>
-              <p className="mt-1">
-                <span style={{ backgroundColor: '#5a4fcf' }} className="px-2 py-0.5 rounded-full text-white text-xs font-medium">
-                  {session.user.email}
-                </span>
-              </p>
-            </div>
+  if (status === 'loading') return <div className="min-h-screen flex items-center justify-center bg-gray-50">Loading...</div>;
+
+  return (
+    <div className="bg-gray-50 min-h-screen pb-20">
+      {/* Header */}
+      <div className="bg-gradient-to-br from-indigo-500 to-purple-600 px-4 py-3">
+        <div className="flex items-center gap-3">
+          <div className="h-12 w-12 rounded-full bg-white/20 flex items-center justify-center">
+            <UserCircleIcon className="h-8 w-8 text-white" />
+          </div>
+          <div>
+            <p className="text-white font-semibold text-base">{formData.name || session?.user?.name}</p>
+            <p className="mt-1"><span className="bg-[#5a4fcf] px-2 py-0.5 rounded-full text-white text-xs font-medium">{session?.user?.email}</span></p>
+          </div>
+        </div>
+      </div>
+
+      <div className="space-y-2 px-2 pt-2">
+        
+        {/* Personal */}
+        <div className="bg-white rounded-lg shadow-sm overflow-hidden">
+          <SectionHeader title="Personal Information" sectionKey="personal" icon={<UserCircleIcon className="h-4 w-4 text-indigo-600" />} />
+          <div className="px-3">
+            <SettingsField label="Full Name" name="name" value={formData.name} isEditing={editingSection === 'personal'} onChange={handleChange} />
+            <SettingsField label="Phone" name="phoneNumber" value={formData.phoneNumber} isEditing={editingSection === 'personal'} onChange={handleChange} type="tel" />
           </div>
         </div>
 
-        <div className="space-y-2 px-2 pt-2">
-          {/* User Profile Section */}
-          <div className="bg-white rounded-lg shadow-sm overflow-hidden">
-            <SectionHeader title="Personal Information" sectionKey="personal" icon={<UserCircleIcon className="h-4 w-4 text-indigo-600" />} />
-            <div className="px-3">
-              <SettingsField label="Full Name" name="name" value={formData.name} isEditing={editingSection === 'personal'} onChange={handleChange} />
-              <SettingsField label="Phone Number" name="phoneNumber" value={formData.phoneNumber || ''} isEditing={editingSection === 'personal'} onChange={handleChange} type="tel" />
-              <SettingsField label="Address" name="address" value={formData.address} isEditing={editingSection === 'personal'} onChange={handleChange} />
-            </div>
+        {/* Payment (Saving this generates Webhook) */}
+        <div className="bg-white rounded-lg shadow-sm overflow-hidden">
+          <SectionHeader title="Payment Details" sectionKey="payment" icon={<QrCodeIcon className="h-4 w-4 text-purple-600" />} />
+          <div className="px-3">
+            <SettingsField 
+              label="Merchant UPI ID" 
+              name="merchantUpiId" 
+              value={formData.merchantUpiId} 
+              isEditing={editingSection === 'payment'} 
+              onChange={handleChange}
+              placeholder="username@bank"
+            />
           </div>
+        </div>
 
-          {/* Shop Details Section */}
-          <div className="bg-white rounded-lg shadow-sm overflow-hidden">
-            <SectionHeader title="Shop Details" sectionKey="shop" icon={<BuildingStorefrontIcon className="h-4 w-4 text-green-600" />} />
-            <div className="px-3">
-              <SettingsField label="Shop Name" name="shopName" value={formData.shopName} isEditing={editingSection === 'shop'} onChange={handleChange} />
-              <SettingsField label="Shop Address" name="shopAddress" value={formData.shopAddress} isEditing={editingSection === 'shop'} onChange={handleChange} />
-            </div>
+        {/* Webhook (Display Only) */}
+        <div className="bg-white rounded-lg shadow-sm overflow-hidden">
+          <SectionHeader title="Developer Webhook" sectionKey="webhooks" icon={<GlobeAltIcon className="h-4 w-4 text-orange-600" />} noEdit={true} />
+          <div className="px-3 py-3">
+            {formData.webhookUrl ? (
+              <div>
+                <label className="block text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">Your Payment Endpoint</label>
+                <div className="flex items-center gap-2 bg-gray-50 border border-gray-200 rounded-md p-2">
+                  <p className="flex-1 text-xs text-gray-600 font-mono break-all">{formData.webhookUrl}</p>
+                  <button onClick={copyToClipboard} className="p-1 text-gray-400 hover:text-indigo-600 transition-colors">
+                    <ClipboardDocumentIcon className="h-5 w-5" />
+                  </button>
+                </div>
+                <p className="text-[10px] text-gray-400 mt-2">
+                  We will send POST requests to this URL when you receive a payment.
+                </p>
+              </div>
+            ) : (
+              <div className="text-center py-2">
+                <p className="text-xs text-gray-500 italic">Add and Save a UPI ID above to generate your webhook URL.</p>
+              </div>
+            )}
           </div>
+        </div>
 
-          {/* Merchant UPI Section */}
-          <div className="bg-white rounded-lg shadow-sm overflow-hidden">
-            <SectionHeader title="Payment Details" sectionKey="payment" icon={<QrCodeIcon className="h-4 w-4 text-purple-600" />} />
-            <div className="px-3">
-              <SettingsField label="Merchant UPI ID" name="merchantUpiId" value={formData.merchantUpiId} isEditing={editingSection === 'payment'} onChange={handleChange} />
-            </div>
+        {/* Shop */}
+        <div className="bg-white rounded-lg shadow-sm overflow-hidden">
+          <SectionHeader title="Shop Details" sectionKey="shop" icon={<BuildingStorefrontIcon className="h-4 w-4 text-green-600" />} />
+          <div className="px-3">
+            <SettingsField label="Shop Name" name="shopName" value={formData.shopName} isEditing={editingSection === 'shop'} onChange={handleChange} />
+            <SettingsField label="Address" name="shopAddress" value={formData.shopAddress} isEditing={editingSection === 'shop'} onChange={handleChange} />
           </div>
+        </div>
 
-          {/* --- NEW SECTION: Download App --- */}
-          <div className="bg-white rounded-lg shadow-sm overflow-hidden">
+        {/* Download App */}
+        <div className="bg-white rounded-lg shadow-sm overflow-hidden">
             <div className="px-3 py-1.5 border-b border-gray-200 flex items-center gap-2 bg-gray-50">
               <ArrowDownTrayIcon className="h-4 w-4 text-blue-600" />
               <h2 className="text-sm font-semibold text-gray-800">Install App</h2>
@@ -344,37 +1074,17 @@ export default function Settings() {
                 Download Android APK
               </a>
             </div>
-          </div>
-
-          {/* Danger Zone */}
-          <div className="bg-white rounded-lg shadow-sm overflow-hidden">
-            <div className="px-3 py-1.5 border-b border-gray-200 flex items-center gap-2 bg-gray-50">
-              <ExclamationTriangleIcon className="h-4 w-4 text-red-600" />
-              <h2 className="text-sm font-semibold text-gray-800">Account Actions</h2>
-            </div>
-            <div className="px-3 py-2.5">
-              <button
-                onClick={() => signOut({ callbackUrl: '/' })}
-                type="button"
-                className="w-full rounded-md bg-red-50 border border-red-200 px-4 py-2 text-sm font-semibold text-red-700 hover:bg-red-100 transition-colors flex items-center justify-center gap-2"
-              >
-                Log Out
-              </button>
-            </div>
-          </div>
         </div>
 
-        {/* Modal Render */}
-        <Modal
-          isOpen={modalState.isOpen}
-          onClose={closeModal}
-          title={modalState.title}
-          message={modalState.message}
-          type={modalState.type}
-        />
-      </div>
-    );
-  }
+        {/* Logout */}
+        <div className="bg-white rounded-lg shadow-sm overflow-hidden mt-4">
+           <button onClick={() => signOut({ callbackUrl: '/' })} className="w-full py-3 text-red-600 text-sm font-bold flex items-center justify-center gap-2">
+             Log Out
+           </button>
+        </div>
 
-  return null;
+      </div>
+      <Modal isOpen={modalState.isOpen} onClose={() => setModalState(p => ({ ...p, isOpen: false }))} title={modalState.title} message={modalState.message} type={modalState.type} />
+    </div>
+  );
 }
