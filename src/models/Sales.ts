@@ -105,11 +105,12 @@ export interface ISale extends Document {
   status: "pending" | "paid" | "failed"; // Stricter types
   items: { name: string; quantity: number; price: number }[];
   publicToken?: string;
-  
+
   // ✅ NEW FIELDS
   transactionId?: string; // To save the Bank Ref ID (e.g., T230119...)
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   paymentProviderData?: any; // To save the raw log for debugging
-  
+
   expiresAt?: Date;
   createdAt: Date;
 }
@@ -133,7 +134,7 @@ const SaleSchema = new Schema<ISale>({
   }],
 
   // ✅ ADDED fields for Webhook Data
-  transactionId: { type: String }, 
+  transactionId: { type: String },
   paymentProviderData: { type: Object },
 
   publicToken: {

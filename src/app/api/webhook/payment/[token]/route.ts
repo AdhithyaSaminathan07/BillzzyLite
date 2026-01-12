@@ -104,8 +104,8 @@ export async function POST(
 
     // 2. Parse Incoming Data
     const payload = await req.json();
-    const incomingBillId = payload.orderId || payload.billId; 
-    const incomingStatus = payload.status; 
+    const incomingBillId = payload.orderId || payload.billId;
+    const incomingStatus = payload.status;
     const incomingTxnId = payload.txnId || payload.transactionId;
 
     console.log(`Webhook triggered for bill: ${incomingBillId}`);
@@ -116,7 +116,7 @@ export async function POST(
 
     // 3. Find the Bill (Globally first)
     // We look for the bill by ID first, ignoring the tenant for a moment
-    let sale = await Sales.findOne({ billId: incomingBillId });
+    const sale = await Sales.findOne({ billId: incomingBillId });
 
     if (!sale) {
       console.error(`Webhook: Bill ${incomingBillId} does not exist.`);
@@ -126,10 +126,10 @@ export async function POST(
     // 4. "Self-Healing" Logic
     // If the bill belongs to an Email (legacy) instead of the Merchant ID, we fix it now.
     const merchantId = merchant._id.toString();
-    
+
     if (sale.tenantId !== merchantId) {
       console.log(`⚠️ Mismatch detected! Bill has ${sale.tenantId}, Merchant is ${merchantId}. Fixing it...`);
-      
+
       // OPTIONAL SECURITY: You could check if sale.tenantId matches merchant.email here.
       // For now, since you possess the secret Token, we assume you own the bill.
       sale.tenantId = merchantId;
@@ -151,12 +151,13 @@ export async function POST(
       { new: true }
     );
 
-    return NextResponse.json({ 
-      success: true, 
-      message: 'Bill Updated to PAID (and auto-fixed)', 
-      billId: updatedSale.billId 
+    return NextResponse.json({
+      success: true,
+      message: 'Bill Updated to PAID (and auto-fixed)',
+      billId: updatedSale.billId
     }, { status: 200 });
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
   } catch (error: any) {
     console.error('Webhook Error:', error);
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });

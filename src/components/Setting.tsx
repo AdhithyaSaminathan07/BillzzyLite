@@ -807,6 +807,7 @@ type FormData = {
 // --- COMPONENTS ---
 
 // Enhanced Settings Field with ReadOnly support
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 const SettingsField = ({ label, value, isEditing, name, onChange, type = 'text', placeholder, readOnly = false }: any) => (
   <div className="py-2 border-b border-gray-200 last:border-b-0">
     <label htmlFor={name} className="block text-xs font-medium text-gray-500 uppercase tracking-wide">
@@ -863,7 +864,7 @@ export default function Settings() {
   const { data: session, status } = useSession();
   const router = useRouter();
   const [editingSection, setEditingSection] = useState<string | null>(null);
-  
+
   const [formData, setFormData] = useState<FormData>({
     name: '', phoneNumber: '', address: '', shopName: '', shopAddress: '', merchantUpiId: '', webhookUrl: '',
   });
@@ -891,7 +892,7 @@ export default function Settings() {
           shopName: localData.shopName || '',
           shopAddress: localData.shopAddress || '',
           merchantUpiId: dbData.upiId || localData.merchantUpiId || '',
-          webhookUrl: dbData.webhookUrl || '', 
+          webhookUrl: dbData.webhookUrl || '',
         });
       } catch (error) { console.error('Error loading data:', error); }
     }
@@ -918,7 +919,7 @@ export default function Settings() {
         const response = await fetch('/api/merchant/details', {
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ upiId: formData.merchantUpiId }), 
+          body: JSON.stringify({ upiId: formData.merchantUpiId }),
         });
 
         if (response.ok) {
@@ -935,13 +936,13 @@ export default function Settings() {
 
       // --- PERSONAL SECTION SAVE ---
       if (sectionKey === 'personal') {
-        await fetch('/api/users/phone', { method: 'PUT', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ phoneNumber: formData.phoneNumber }) });
-        await fetch('/api/merchant/details', { method: 'PATCH', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ name: formData.name }) });
+        await fetch('/api/users/phone', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ phoneNumber: formData.phoneNumber }) });
+        await fetch('/api/merchant/details', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name: formData.name }) });
         setModalState({ isOpen: true, title: 'Success', message: 'Profile updated.', type: 'success' });
       }
 
-       // --- SHOP SECTION SAVE ---
-       if (sectionKey === 'shop') {
+      // --- SHOP SECTION SAVE ---
+      if (sectionKey === 'shop') {
         setModalState({ isOpen: true, title: 'Saved', message: 'Shop details saved locally.', type: 'success' });
       }
 
@@ -960,6 +961,7 @@ export default function Settings() {
     }
   };
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const SectionHeader = ({ title, sectionKey, icon, noEdit }: any) => (
     <div className="px-3 py-1.5 border-b border-gray-200 flex items-center justify-between gap-2 bg-gray-50">
       <div className="flex items-center gap-2">
@@ -999,7 +1001,7 @@ export default function Settings() {
       </div>
 
       <div className="space-y-2 px-2 pt-2">
-        
+
         {/* Personal */}
         <div className="bg-white rounded-lg shadow-sm overflow-hidden">
           <SectionHeader title="Personal Information" sectionKey="personal" icon={<UserCircleIcon className="h-4 w-4 text-indigo-600" />} />
@@ -1013,11 +1015,11 @@ export default function Settings() {
         <div className="bg-white rounded-lg shadow-sm overflow-hidden">
           <SectionHeader title="Payment Details" sectionKey="payment" icon={<QrCodeIcon className="h-4 w-4 text-purple-600" />} />
           <div className="px-3">
-            <SettingsField 
-              label="Merchant UPI ID" 
-              name="merchantUpiId" 
-              value={formData.merchantUpiId} 
-              isEditing={editingSection === 'payment'} 
+            <SettingsField
+              label="Merchant UPI ID"
+              name="merchantUpiId"
+              value={formData.merchantUpiId}
+              isEditing={editingSection === 'payment'}
               onChange={handleChange}
               placeholder="username@bank"
             />
@@ -1060,27 +1062,27 @@ export default function Settings() {
 
         {/* Download App */}
         <div className="bg-white rounded-lg shadow-sm overflow-hidden">
-            <div className="px-3 py-1.5 border-b border-gray-200 flex items-center gap-2 bg-gray-50">
-              <ArrowDownTrayIcon className="h-4 w-4 text-blue-600" />
-              <h2 className="text-sm font-semibold text-gray-800">Install App</h2>
-            </div>
-            <div className="px-3 py-2.5">
-              <a
-                href="/downloads/billzzylite.apk"
-                download="billzzylite.apk"
-                className="w-full rounded-md bg-blue-50 border border-blue-200 px-4 py-2 text-sm font-semibold text-blue-700 hover:bg-blue-100 transition-colors flex items-center justify-center gap-2"
-              >
-                <ArrowDownTrayIcon className="h-5 w-5" />
-                Download Android APK
-              </a>
-            </div>
+          <div className="px-3 py-1.5 border-b border-gray-200 flex items-center gap-2 bg-gray-50">
+            <ArrowDownTrayIcon className="h-4 w-4 text-blue-600" />
+            <h2 className="text-sm font-semibold text-gray-800">Install App</h2>
+          </div>
+          <div className="px-3 py-2.5">
+            <a
+              href="/downloads/billzzylite.apk"
+              download="billzzylite.apk"
+              className="w-full rounded-md bg-blue-50 border border-blue-200 px-4 py-2 text-sm font-semibold text-blue-700 hover:bg-blue-100 transition-colors flex items-center justify-center gap-2"
+            >
+              <ArrowDownTrayIcon className="h-5 w-5" />
+              Download Android APK
+            </a>
+          </div>
         </div>
 
         {/* Logout */}
         <div className="bg-white rounded-lg shadow-sm overflow-hidden mt-4">
-           <button onClick={() => signOut({ callbackUrl: '/' })} className="w-full py-3 text-red-600 text-sm font-bold flex items-center justify-center gap-2">
-             Log Out
-           </button>
+          <button onClick={() => signOut({ callbackUrl: '/' })} className="w-full py-3 text-red-600 text-sm font-bold flex items-center justify-center gap-2">
+            Log Out
+          </button>
         </div>
 
       </div>

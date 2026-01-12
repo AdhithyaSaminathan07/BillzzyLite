@@ -174,7 +174,7 @@ export async function GET(request: Request) {
     // 1. Find the Tenant ID based on the logged-in user's email
     // We need the _id to match what the Webhook uses.
     const tenant = await Tenant.findOne({ email: session.user.email });
-    
+
     // Fallback: If tenant record doesn't exist yet, use email (legacy support), 
     // but ideally we want the object ID.
     const tenantIdQuery = tenant ? tenant._id.toString() : session.user.email;
@@ -235,7 +235,7 @@ export async function GET(request: Request) {
 
     // Calculate Totals (Only count PAID sales for totals)
     const validSales = periodSales.filter(sale => sale.status === 'paid' || sale.status === 'completed' || !sale.status);
-    
+
     const cashSales = validSales
       .filter((sale) => sale.paymentMethod === "cash")
       .reduce((sum, sale) => sum + sale.amount, 0);
@@ -279,12 +279,12 @@ export async function POST(request: Request) {
     }
 
     await connectDB();
-    
+
     // 1. Get Tenant Object
     // We MUST use the Tenant's _id so the Webhook can find this bill later.
     // The Webhook doesn't know the email, it only knows the Tenant ID linked to the token.
-    let tenant = await Tenant.findOne({ email: session.user.email });
-    
+    const tenant = await Tenant.findOne({ email: session.user.email });
+
     // If tenant doesn't exist (edge case), rely on email, but this breaks auto-payment.
     if (!tenant) {
       console.warn("Tenant not found for email, creating generic link");
@@ -292,7 +292,7 @@ export async function POST(request: Request) {
     }
 
     const { amount, paymentMethod, profit, items, status, customerName } = await request.json();
-    
+
     if (!amount || !paymentMethod) {
       return NextResponse.json({ message: "Missing required fields" }, { status: 400 });
     }
@@ -317,11 +317,11 @@ export async function POST(request: Request) {
 
     await newSale.save();
 
-    return NextResponse.json({ 
+    return NextResponse.json({
       success: true,
-      message: "Sale created successfully", 
+      message: "Sale created successfully",
       billId: newSale.billId,
-      saleId: newSale._id 
+      saleId: newSale._id
     }, { status: 201 });
 
   } catch (error) {

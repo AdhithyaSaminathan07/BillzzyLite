@@ -517,17 +517,20 @@
 //         window.location.href = bridgeUrl;
 //       }
 
-//       // 7. Show Success Modal
-//       setModal({
-//         isOpen: true,
-//         title: 'Success!',
-//         message: useNfc
-//           ? 'Inventory updated. Tap your card to finish.'
-//           : 'Transaction completed! Receipt sent via WhatsApp.',
-//         confirmText: 'New Bill',
-//         onConfirm: handleTransactionDone,
-//         showCancel: false
-//       });
+//       // 7. Show Success Animation
+//       // 7. Show Success Animation
+//       /*
+// setModal({
+//   isOpen: true,
+//   title: 'Success!',
+//   message: useNfc
+//     ? 'Inventory updated. Tap your card to finish.'
+//     : 'Transaction completed! Receipt sent via WhatsApp.',
+//   confirmText: 'New Bill',
+//   onConfirm: handleTransactionDone,
+//   showCancel: false
+// });
+// */
 
 //     } catch (error) {
 //       console.error("Payment Process Error:", error);
@@ -772,6 +775,7 @@ import {
   CreditCard, CheckCircle, DollarSign, MessageSquare,
   Nfc, Loader2
 } from 'lucide-react';
+import PaymentSuccess from './ui/PaymentSuccess';
 
 // --- HELPER FUNCTIONS ---
 const formatCurrency = (amount: number): string => {
@@ -849,7 +853,7 @@ const Modal = ({ isOpen, onClose, title, children, onConfirm, confirmText = 'OK'
 // --- MAIN BILLING COMPONENT ---
 export default function BillingPage() {
   const { data: session, status } = useSession();
-  
+
   // ✅ FIX 1: Add a Ref to track processing status synchronously
   // This prevents the "double-fire" issue in polling loops
   const isProcessingRef = React.useRef(false);
@@ -864,6 +868,8 @@ export default function BillingPage() {
   // States for flow
   const [showWhatsAppSharePanel, setShowWhatsAppSharePanel] = React.useState(false);
   const [showPaymentOptions, setShowPaymentOptions] = React.useState(false);
+  const [showSuccessAnimation, setShowSuccessAnimation] = React.useState(false);
+  const [successMessage, setSuccessMessage] = React.useState('Payment Successful!');
   const [selectedPayment, setSelectedPayment] = React.useState<string>('');
 
   // Data states
@@ -874,8 +880,8 @@ export default function BillingPage() {
   const [amountGiven, setAmountGiven] = React.useState<number | ''>('');
 
   // Loading states
-  const [isMessaging, setIsMessaging] = React.useState(false); 
-  const [isCreatingLink, setIsCreatingLink] = React.useState(false); 
+  const [isMessaging, setIsMessaging] = React.useState(false);
+  const [isCreatingLink, setIsCreatingLink] = React.useState(false);
 
   // --- AUTO PAYMENT STATES ---
   const [pendingBillId, setPendingBillId] = React.useState<string | null>(null);
@@ -885,7 +891,7 @@ export default function BillingPage() {
   const [modal, setModal] = React.useState<{ isOpen: boolean; title: string; message: string | React.ReactNode; onConfirm?: (() => void); confirmText: string; showCancel: boolean; }>({ isOpen: false, title: '', message: '', confirmText: 'OK', showCancel: false });
   const suggestionsRef = React.useRef<HTMLDivElement | null>(null);
   const [settingsComplete, setSettingsComplete] = React.useState(false);
-  
+
   const [discountInput, setDiscountInput] = React.useState<string>('');
   const [discountType, setDiscountType] = React.useState<'percentage' | 'fixed'>('percentage');
 
@@ -1105,7 +1111,7 @@ export default function BillingPage() {
 
   const deleteCartItem = (id: number) => setCart(prev => prev.filter(item => item.id !== id));
   const toggleEdit = (id: number) => setCart(prev => prev.map(item => item.id === id ? { ...item, isEditing: !item.isEditing } : { ...item, isEditing: false }));
-  
+
   const updateCartItem = (id: number, updatedValues: Partial<CartItem>) => {
     setCart(prev => prev.map(item => {
       if (item.id === id) {
@@ -1126,15 +1132,16 @@ export default function BillingPage() {
   const handleTransactionDone = React.useCallback(() => {
     // ✅ FIX 2: Reset the processing lock so new bills can be made
     isProcessingRef.current = false;
-    
+
     setCart([]);
     setSelectedPayment('');
     setShowWhatsAppSharePanel(false);
     setShowPaymentOptions(false);
+    setShowSuccessAnimation(false);
     setWhatsAppNumber('');
     setAmountGiven('');
     setDiscountInput('');
-    setPendingBillId(null); 
+    setPendingBillId(null);
     setIsWaitingForPayment(false);
     setModal({ ...modal, isOpen: false });
   }, [modal]);
@@ -1163,7 +1170,7 @@ export default function BillingPage() {
       const createPendingBill = async () => {
         setIsWaitingForPayment(true);
         // Ensure the lock is false when starting a new transaction
-        isProcessingRef.current = false; 
+        isProcessingRef.current = false;
 
         try {
           const safeCart = cart.map(item => ({ ...item, quantity: Number(item.quantity) || 0, price: Number(item.price) || 0 }));
@@ -1231,6 +1238,10 @@ export default function BillingPage() {
       }
 
       // 4. Show Success
+      // 4. Show Success
+      setSuccessMessage('Payment Received!');
+      setShowSuccessAnimation(true);
+      /*
       setModal({
         isOpen: true,
         title: 'Payment Received!',
@@ -1239,6 +1250,7 @@ export default function BillingPage() {
         onConfirm: handleTransactionDone,
         showCancel: false
       });
+      */
 
     } catch (error) {
       console.error("Auto-finalize error:", error);
@@ -1258,18 +1270,18 @@ export default function BillingPage() {
       try {
         const res = await fetch(`/api/sales/status?billId=${pendingBillId}`);
         const data = await res.json();
-        
+
         // ✅ FIX 4: Check if paid AND not locked.
         if ((data.status === 'paid' || data.status === 'success') && !isProcessingRef.current) {
-          
+
           // Lock immediately so the next interval tick doesn't run this block
           isProcessingRef.current = true;
-          
+
           clearInterval(interval);
-          await handleAutoPaymentSuccess(); 
+          await handleAutoPaymentSuccess();
         }
       } catch (e) { console.error("Polling error", e); }
-    }, 3000); 
+    }, 3000);
 
     return () => clearInterval(interval);
   }, [pendingBillId, selectedPayment, handleAutoPaymentSuccess]);
@@ -1316,6 +1328,9 @@ export default function BillingPage() {
         window.location.href = bridgeUrl;
       }
 
+      setSuccessMessage(useNfc ? 'Ready to Tap!' : 'Payment Successful!');
+      setShowSuccessAnimation(true);
+      /*
       setModal({
         isOpen: true,
         title: 'Success!',
@@ -1324,6 +1339,7 @@ export default function BillingPage() {
         onConfirm: handleTransactionDone,
         showCancel: false
       });
+      */
 
     } catch (error) {
       console.error("Payment Error:", error);
@@ -1331,7 +1347,7 @@ export default function BillingPage() {
     } finally {
       setIsCreatingLink(false); setIsMessaging(false);
     }
-  }, [selectedPayment, totalAmount, cart, handleTransactionDone, whatsAppNumber, sendWhatsAppReceipt, customerName]); 
+  }, [selectedPayment, totalAmount, cart, handleTransactionDone, whatsAppNumber, sendWhatsAppReceipt, customerName]);
 
   const toggleScanner = React.useCallback(() => {
     setScanning(prev => { if (!prev) { setScannerError(''); } return !prev; });
@@ -1492,6 +1508,14 @@ export default function BillingPage() {
         </div>
       </div>
       <Modal isOpen={modal.isOpen} onClose={() => setModal({ ...modal, isOpen: false, message: '' })} title={modal.title} onConfirm={modal.onConfirm} confirmText={modal.confirmText} showCancel={modal.showCancel}>{modal.message}</Modal>
+
+      {showSuccessAnimation && (
+        <PaymentSuccess
+          amount={totalAmount}
+          message={successMessage}
+          onComplete={handleTransactionDone}
+        />
+      )}
     </>
   );
 }
