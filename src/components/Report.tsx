@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import CRMComponent from '@/components/CRM';
 import ProfitSection from '@/components/Profit';
-import { ChevronDown, ChevronUp, BarChart3, TrendingUp, Lock, ArrowRight } from 'lucide-react';
+import { ChevronDown, ChevronUp, BarChart3, TrendingUp, Lock, ArrowRight, CreditCard } from 'lucide-react';
 
 export default function ReportPage() {
   // --- AUTHENTICATION STATE ---
@@ -17,13 +17,58 @@ export default function ReportPage() {
 
   // --- REPORT UI STATE ---
   const [showCRM, setShowCRM] = useState<boolean>(false);
+
   const [showProfit, setShowProfit] = useState<boolean>(false);
+  const [showPayment, setShowPayment] = useState<boolean>(false);
+
+  // --- PAYMENT STATE ---
+  const [merchantId, setMerchantId] = useState('');
+  const [merchantSecretKey, setMerchantSecretKey] = useState('');
+  const [isSavingPayment, setIsSavingPayment] = useState(false);
 
 
   // Fix for Hydration Error: Only render content after component mounts
   useEffect(() => {
     setIsMounted(true);
+
   }, []);
+
+  // Fetch Merchant Details when component mounts or authentication succeeds
+  useEffect(() => {
+    if (isAuthenticated) {
+      fetch('/api/merchant/details')
+        .then(res => res.json())
+        .then(data => {
+          if (data) {
+            setMerchantId(data.merchantId || '');
+            setMerchantSecretKey(data.merchantSecretKey || '');
+          }
+        })
+        .catch(err => console.error('Failed to load merchant details', err));
+    }
+  }, [isAuthenticated]);
+
+  const handleSavePayment = async () => {
+    setIsSavingPayment(true);
+    try {
+      const res = await fetch('/api/merchant/details', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ merchantId, merchantSecretKey }),
+      });
+
+      if (res.ok) {
+        alert('Payment settings saved successfully!');
+      } else {
+        alert('Failed to save settings.');
+      }
+    } catch (error) {
+      console.error('Error saving payment settings:', error);
+      alert('Error saving settings.');
+    } finally {
+      setIsSavingPayment(false);
+    }
+  };
 
   const handlePinSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -190,6 +235,78 @@ export default function ReportPage() {
             )}
           </div>
 
+        </div>
+
+        {/* FULL WIDTH: Payment Section */}
+        <div className="bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden lg:col-span-2 mt-6">
+          <button
+            onClick={() => setShowPayment(!showPayment)}
+            className="flex items-center justify-between w-full px-6 py-5 text-white transition-all duration-300 group"
+            style={{ backgroundColor: '#5a4fcf' }}
+            onMouseEnter={(e: React.MouseEvent<HTMLButtonElement>) => e.currentTarget.style.backgroundColor = '#4a3fbf'}
+            onMouseLeave={(e: React.MouseEvent<HTMLButtonElement>) => e.currentTarget.style.backgroundColor = '#5a4fcf'}
+          >
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-white/20 rounded-lg flex items-center justify-center group-hover:bg-white/30 transition-all">
+                <CreditCard className="w-5 h-5" />
+              </div>
+              <div className="text-left">
+                <span className="font-semibold text-lg block">Payment Settings</span>
+                <span className="text-xs opacity-90">Manage merchant credentials</span>
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-sm opacity-90 hidden sm:block">
+                {showPayment ? 'Hide' : 'Show'} Details
+              </span>
+              <div className="w-8 h-8 bg-white/20 rounded-lg flex items-center justify-center group-hover:bg-white/30 transition-all">
+                {showPayment ? <ChevronUp className="w-5 h-5" /> : <ChevronDown className="w-5 h-5" />}
+              </div>
+            </div>
+          </button>
+
+          {showPayment && (
+            <div className="p-6 bg-gray-50 border-t border-gray-100">
+              <div className="max-w-xl mx-auto space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Merchant ID</label>
+                  <input
+                    type="text"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#5a4fcf] focus:border-transparent outline-none transition-all"
+                    placeholder="Enter Merchant ID"
+                    value={merchantId}
+                    onChange={(e) => setMerchantId(e.target.value)}
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Merchant Secret Key</label>
+                  <div className="relative">
+                    <input
+                      type="password"
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#5a4fcf] focus:border-transparent outline-none transition-all"
+                      placeholder="Enter Merchant Secret Key"
+                      value={merchantSecretKey}
+                      onChange={(e) => setMerchantSecretKey(e.target.value)}
+                    />
+                  </div>
+                  <p className="text-xs text-gray-500 mt-1">
+                    This key is stored securely and used for processing payments.
+                  </p>
+                </div>
+                <div className="pt-2">
+                  <button
+                    onClick={handleSavePayment}
+                    disabled={isSavingPayment}
+                    className={`w-full py-2.5 px-4 rounded-lg text-white font-medium shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-2
+                      ${isSavingPayment ? 'opacity-70 cursor-not-allowed' : 'hover:-translate-y-0.5'}`}
+                    style={{ backgroundColor: '#5a4fcf' }}
+                  >
+                    {isSavingPayment ? 'Saving...' : 'Save Payment Settings'}
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Footer Info */}
