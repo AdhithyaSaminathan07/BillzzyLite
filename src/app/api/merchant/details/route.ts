@@ -38,7 +38,30 @@ import connectDB from '@/lib/mongodb';
 import Tenant from '@/models/Tenant';
 import crypto from 'crypto';
 
-export async function GET() {
+// Helper to determine the correct base URL
+function getBaseUrl(req?: Request) {
+  let baseUrl = process.env.NEXTAUTH_URL || process.env.NEXT_PUBLIC_APP_URL;
+
+  if (!baseUrl && req) {
+    const host = req.headers.get('host') || 'localhost:3000';
+    const protocol = host.includes('localhost') ? 'http' : 'https';
+    baseUrl = `${protocol}://${host}`;
+  }
+
+  // Fallback if no req and no env (should rarely happen in API routes)
+  if (!baseUrl) {
+    baseUrl = 'http://localhost:3000';
+  }
+
+  // Normalize: remove trailing slash
+  if (baseUrl.endsWith('/')) {
+    baseUrl = baseUrl.slice(0, -1);
+  }
+
+  return baseUrl;
+}
+
+export async function GET(req: Request) {
   try {
     const session = await getServerSession(authOptions);
     if (!session || !session.user?.email) {
@@ -51,11 +74,23 @@ export async function GET() {
     // Fetch real data
     const merchant = await Tenant.findOne({ subdomain });
 
+    // Dynamic Webhook URL Generation
+    let dynamicWebhookUrl = '';
+    const token = merchant?.webhookToken;
+
+    // Only generate URL if we have a token. 
+    // Prioritize NEXTAUTH_URL by using the helper functions.
+    if (token) {
+      const baseUrl = getBaseUrl(req);
+      dynamicWebhookUrl = `${baseUrl}/api/webhook/payment/${token}`;
+    }
+
     return NextResponse.json({
       name: merchant?.name || session.user.name,
       phoneNumber: session.user.phoneNumber || '',
       upiId: merchant?.upiId || '',
-      webhookUrl: merchant?.webhookUrl || '',
+      // Always return the dynamically generated URL to ensure it matches the current env
+      webhookUrl: dynamicWebhookUrl,
     });
   } catch (error) {
     console.error('Error fetching merchant details:', error);
@@ -91,14 +126,11 @@ export async function PATCH(req: Request) {
     const updateData: any = { ...body };
 
     // --- FIX FOR NEW TENANT CREATION ---
-    // If the tenant doesn't exist in DB (upsert case), Mongoose VALIDATION will fail
-    // because 'name' is required. So we MUST inject it into updateData.
     if (!existingTenant) {
       updateData.name = session.user.name;
       updateData.email = session.user.email;
       updateData.subdomain = subdomain;
     }
-    // -----------------------------------
 
     // --- IMPROVED TOKEN GENERATION LOGIC ---
     // 1. Get or Generate Token
@@ -110,18 +142,10 @@ export async function PATCH(req: Request) {
     }
 
     // 2. Determine Base URL (Dynamic)
-    // We ALWAYS recalculate this to ensure migrating from Localhost -> Prod updates the URL.
-    let baseUrl = process.env.NEXTAUTH_URL || process.env.NEXT_PUBLIC_APP_URL;
+    const baseUrl = getBaseUrl(req);
 
-    if (!baseUrl) {
-      const host = req.headers.get('host') || 'localhost:3000';
-      const protocol = host.includes('localhost') ? 'http' : 'https';
-      baseUrl = `${protocol}://${host}`;
-    }
-
-    if (baseUrl.endsWith('/')) baseUrl = baseUrl.slice(0, -1);
-
-    // 3. Set/Update the Full URL
+    // 3. Set/Update the Full URL 
+    // (We update it in DB too, just in case, though GET now ignores it)
     updateData.webhookUrl = `${baseUrl}/api/webhook/payment/${tokenToUse}`;
     // ---------------------------------------
 
