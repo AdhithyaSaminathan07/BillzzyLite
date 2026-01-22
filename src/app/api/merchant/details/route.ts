@@ -90,9 +90,19 @@ export async function PATCH(req: Request) {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const updateData: any = { ...body };
 
+    // --- FIX FOR NEW TENANT CREATION ---
+    // If the tenant doesn't exist in DB (upsert case), Mongoose VALIDATION will fail
+    // because 'name' is required. So we MUST inject it into updateData.
+    if (!existingTenant) {
+      updateData.name = session.user.name;
+      updateData.email = session.user.email;
+      updateData.subdomain = subdomain;
+    }
+    // -----------------------------------
+
     // --- IMPROVED TOKEN GENERATION LOGIC ---
     // 1. Get or Generate Token
-    let tokenToUse = existingTenant.webhookToken;
+    let tokenToUse = existingTenant?.webhookToken;
     if (!tokenToUse) {
       console.log("Token missing. Generating new Webhook Token...");
       tokenToUse = crypto.randomBytes(16).toString('hex');
@@ -119,7 +129,7 @@ export async function PATCH(req: Request) {
     const updated = await Tenant.findOneAndUpdate(
       { subdomain },
       { $set: updateData },
-      { upsert: true, new: true }
+      { upsert: true, new: true, setDefaultsOnInsert: true }
     );
 
     return NextResponse.json(updated);
